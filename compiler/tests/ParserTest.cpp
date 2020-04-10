@@ -118,10 +118,9 @@ TEST(NablaCompilerTest, checkVarDecl)
     NABLA::Parser parser(callback, errorCallback);
 
     std::vector<TestCase> testCases { 
-        {"int: myInt"  , "int:myInt"}, 
-      //  {"str:myStr"  , "myStr"},
-      //  {"real:myreal", "myreal"},
-      //  {"int:  MyInt", "MyInt"}
+        {"int: myInt"  , "int:myInt" }, 
+        {"str:myStr"  , "str:myStr"  },
+ //       {"real:myreal", "real:myreal"}
     };
 
     for(auto &i: testCases)

@@ -13,11 +13,9 @@ namespace NABLA
         
         INT_DECL,   // int: VARIABLE
         REAL_DECL,  // real: VARIABLE
+        STR_DECL,   // str:
         
 
-        FUNC_DEF,   // def
-        FUNC_NAME,  // def 'functionName'
-        FUNC_PARAM, // def functionName( 'param' 'param' 'param' )
         L_PAREN,    // (
         R_PAREN,    // )
         OP_ADD,     // +

@@ -628,8 +628,24 @@ namespace NABLA
             matchNext('r', startPos+2)   && 
             matchNext(':', startPos+3))
         {
-#warning THIS ISNT DONE
+            if(currentLine.size() <= startPos+4)
+            {
+                return RETURN_ERROR;
+            }
+
+            TokenValue variableVar;
+
+            if(RETURN_NOT_FOUND == scanForVariable(startPos+4, variableVar))
+            {
+                errorCallback(createError("No variable name given for variable decl"));
+                return RETURN_ERROR;
+            }
+
+            token.token = Token::STR_DECL;
+            token.value = "str:";
+            return 4;
         }
+
 
         // ----------------------------------------------------
         //  Build a real declaration
@@ -640,7 +656,8 @@ namespace NABLA
             matchNext('l', startPos+2)   && 
             matchNext(':', startPos+3))
         {
-#warning THIS ISNT DONE
+
+            #warning not done
         }
 
         return RETURN_NOT_FOUND;
@@ -713,7 +730,7 @@ namespace NABLA
         {
             return RETURN_NOT_FOUND;
         }
-        
+
         // Setup the token!
         token.token = Token::VARIABLE;
         token.value = variableName;
