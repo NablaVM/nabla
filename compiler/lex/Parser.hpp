@@ -42,9 +42,25 @@ namespace NABLA
         bool matchNext(char c, int loc);
         bool matchPrev(char c, int loc);
 
-        // Returns how much of the string was consumed, builds all information
-        // from a function start ( def myFunction( param1, param2 .... ): )
-        int buildFunctionDefinition(int startPos);
+        // Sets 'token' to the next token found. Returns -1 if token not found,
+        // otherwise it will return the length of the token
+        int getNextToken(int startPos, TokenValue & token);
+
+        // Check if previous token is real, integer or variable
+        bool isPreviousTokenPrimitiveOrVariable();
+        bool isGivenTokenPrimitiveOrVariable(TokenValue token);
+
+        // Build a potential number
+        int buildFromDigit(int startPost, TokenValue & token);
+
+        // Tokens that could be arithmatic operation, or they could be a comment, etc
+        int buildPotentialOp(int startPos, TokenValue & token);
+
+        // Check for reserved keywords
+        int scanForKeywords(int startPos, TokenValue & token);
+
+        // Check for variable
+        int scanForVariable(int startPos, TokenValue & token);
 
         ErrorInformation createError(std::string message);
 
