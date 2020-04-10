@@ -62,6 +62,9 @@ namespace NABLA
         // Check for variable
         int scanForVariable(int startPos, TokenValue & token);
 
+        // Check for a function call
+        int scanForFunctionCall(int startPos, TokenValue & token);
+
         ErrorInformation createError(std::string message);
 
     };

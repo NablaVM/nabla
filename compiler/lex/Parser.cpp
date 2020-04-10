@@ -307,6 +307,7 @@ namespace NABLA
             // ----------------------------------------------------------------------------------
             //  Locate a number ( 42 | 42.22 )
             // ----------------------------------------------------------------------------------
+
             if(isdigit(currentLine[startPos]))
             {
                 return buildFromDigit(startPos, token);
@@ -317,10 +318,21 @@ namespace NABLA
             //  and all errors ___SHOULD___ be piped through nicely. 
             //  The only reason we don't go direct is so we don't RETURN_NOT_FOUND
             // ----------------------------------------------------------------------------------
+
             int keyWordScan = scanForKeywords(startPos, token);
             if(keyWordScan != RETURN_NOT_FOUND)
             {
                 return keyWordScan;
+            }
+
+            // ----------------------------------------------------------------------------------
+            //  Locate a function call 
+            // ----------------------------------------------------------------------------------
+
+            int functionCallScan = scanForFunctionCall(startPos, token);
+            if(functionCallScan != RETURN_NOT_FOUND)
+            {
+                return functionCallScan;
             }
 
             // ----------------------------------------------------------------------------------
@@ -437,6 +449,12 @@ namespace NABLA
                     currentOpToken = TokenValue{ Token::OP_ADD, "+"};
                     tokenSize = 1;
                 }
+                
+                if(!isPreviousTokenPrimitiveOrVariable())
+                {
+                    errorCallback(createError("Expected an int, real, or variable preceding given op"));
+                    return RETURN_ERROR;
+                }
                 break;
             }
 
@@ -455,6 +473,12 @@ namespace NABLA
                     currentOpToken = TokenValue{ Token::OP_SUB, "-"};
                     tokenSize = 1;
                 }
+                
+                if(!isPreviousTokenPrimitiveOrVariable())
+                {
+                    errorCallback(createError("Expected an int, real, or variable preceding given op"));
+                    return RETURN_ERROR;
+                }
                 break;
             }
 
@@ -472,6 +496,12 @@ namespace NABLA
                 {
                     currentOpToken = TokenValue{ Token::OP_MUL, "*"};
                     tokenSize = 1;
+                }
+                
+                if(!isPreviousTokenPrimitiveOrVariable())
+                {
+                    errorCallback(createError("Expected an int, real, or variable preceding given op"));
+                    return RETURN_ERROR;
                 }
                 break;
             }
@@ -497,6 +527,12 @@ namespace NABLA
                     currentOpToken = TokenValue{ Token::OP_DIV, "/"};
                     tokenSize = 1;
                 }
+                
+                if(!isPreviousTokenPrimitiveOrVariable())
+                {
+                    errorCallback(createError("Expected an int, real, or variable preceding given op"));
+                    return RETURN_ERROR;
+                }
                 break;
             }
 
@@ -512,6 +548,13 @@ namespace NABLA
                 }
                 else
                 {
+
+                    if(tokenValues.back().token != Token::VARIABLE)
+                    {
+                        errorCallback(createError("Syntax error. Expected variable preceding '='"));
+                        return RETURN_ERROR;
+                    }
+
                     currentOpToken = TokenValue{ Token::OP_ASSIGN,  "=" }; 
                     tokenSize = 1;
                 }
@@ -520,15 +563,7 @@ namespace NABLA
 
         }
 
-        // Ensure that the tokens to the L and R of the op are valid
-        //
-        // ------------------------------------------------------------
-        
-        if(!isPreviousTokenPrimitiveOrVariable())
-        {
-            errorCallback(createError("Expected an int, real, or variable preceding given op"));
-            return RETURN_ERROR;
-        }
+#warning Need to check for function call on RHS
 
         // Ensure we aren't at the end of the line
         if(startPos + tokenSize >= currentLine.size())
@@ -646,18 +681,32 @@ namespace NABLA
             return 4;
         }
 
-
         // ----------------------------------------------------
         //  Build a real declaration
         // ----------------------------------------------------
         if( currentLine[startPos] == 'r' &&
             matchNext('e', startPos+1)   && 
             matchNext('a', startPos+2)   && 
-            matchNext('l', startPos+2)   && 
-            matchNext(':', startPos+3))
+            matchNext('l', startPos+3)   && 
+            matchNext(':', startPos+4))
         {
 
-            #warning not done
+            if(currentLine.size() <= startPos+5)
+            {
+                return RETURN_ERROR;
+            }
+
+            TokenValue variableVar;
+
+            if(RETURN_NOT_FOUND == scanForVariable(startPos+5, variableVar))
+            {
+                errorCallback(createError("No variable name given for variable decl"));
+                return RETURN_ERROR;
+            }
+
+            token.token = Token::REAL_DECL;
+            token.value = "real:";
+            return 5;
         }
 
         return RETURN_NOT_FOUND;
@@ -708,7 +757,7 @@ namespace NABLA
             // If we already have an alpha we allow numeric 
             if(variableLength > 1)
             {
-                if(isalpha(currentLine[startPos + variableLength]))
+                if(isdigit(currentLine[startPos + variableLength]))
                 {
                     variableName += currentLine[startPos + variableLength];
                     variableLength++;
@@ -735,5 +784,123 @@ namespace NABLA
         token.token = Token::VARIABLE;
         token.value = variableName;
         return (int)variableName.size() + startPos;
+    }
+
+    // -------------------------------------------------------
+    // scanForVariable
+    // -------------------------------------------------------
+
+    int Parser::scanForFunctionCall(int startPos, TokenValue & token)
+    {
+        int functionNameLength = 0;
+
+        // variables cant start with a digit
+        if(isdigit(currentLine[startPos]))
+        {
+            return RETURN_NOT_FOUND;
+        }
+
+        std::string functionCallName;
+
+        bool scanForEnd = true;
+        while(scanForEnd)
+        {
+            //std::cout << functionCallName << std::endl;
+
+            // Allow ws before actual call
+            if(functionNameLength == 0 && isWsChar(currentLine[startPos]))
+            {
+                startPos++;
+                continue;
+            }
+
+            // If we are at the end and still scanning, we can't count it as a 
+            // valid function call
+            if(startPos + functionNameLength > currentLine.size())
+            {
+                return RETURN_NOT_FOUND;
+            }
+
+            // Check alpha
+            if(isalpha(currentLine[startPos + functionNameLength]))
+            {
+                functionCallName += currentLine[startPos + functionNameLength];
+                functionNameLength++;
+
+                continue;
+            }
+
+            // If we already have an alpha we allow numeric 
+            if(functionNameLength > 1)
+            {
+                if(isdigit(currentLine[startPos + functionNameLength]))
+                {
+                    functionCallName += currentLine[startPos + functionNameLength];
+                    functionNameLength++;
+
+                    continue;
+                }
+            }
+            scanForEnd = false;
+        }
+
+        // If nothing was found, then nothing was found. Oh well
+        if(functionNameLength == 0)
+        {
+            return RETURN_NOT_FOUND;
+        }
+
+        // Ensure the variable isn't a keyword
+        if(matchesKeywordString(functionCallName))
+        {
+            return RETURN_NOT_FOUND;
+        }
+
+        // Check for a '(' and a ')' under different rules than the standard parens
+
+#warning Need to ensure vars are all ',' seperated, and need to mark them - this whole thing mau need to be redone
+
+        bool findFirst = true;;
+        int lParenCount = 0;
+        int rParenCount = 0;
+        for(int parenScan = startPos + functionCallName.size(); 
+                parenScan < currentLine.size(); 
+                parenScan++)
+        {
+            if(currentLine[parenScan] == '(')
+            {
+                lParenCount++;
+                findFirst = false;
+            }
+
+            if(currentLine[parenScan] == ')')
+            {
+                rParenCount++;
+                if(findFirst)
+                {
+                    //errorCallback(createError("Syntax Error. Out of line ')' detected"));
+                    return RETURN_NOT_FOUND;
+                }
+            }
+
+            functionCallName += currentLine[parenScan];
+        }
+
+        if(lParenCount == 0 || rParenCount == 0)
+        {
+            //errorCallback(createError("Syntax Error. Missing parens on function call"));
+            return RETURN_NOT_FOUND;
+        }
+
+        if(lParenCount != rParenCount)
+        {
+            //errorCallback(createError("Syntax Error. Paren mismatch on function call"));
+            return RETURN_NOT_FOUND;
+        }
+
+        // Setup the token!
+        token.token = Token::FUNC_CALL;
+        token.value = functionCallName;
+        return (int)functionCallName.size() + startPos;
     }
 }

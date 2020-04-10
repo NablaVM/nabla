@@ -15,6 +15,7 @@ namespace NABLA
         REAL_DECL,  // real: VARIABLE
         STR_DECL,   // str:
         
+        FUNC_CALL,  // callSomeFunction()
 
         L_PAREN,    // (
         R_PAREN,    // )
