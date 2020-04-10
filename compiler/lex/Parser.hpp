@@ -42,6 +42,10 @@ namespace NABLA
         bool matchNext(char c, int loc);
         bool matchPrev(char c, int loc);
 
+        // Returns how much of the string was consumed, builds all information
+        // from a function start ( def myFunction( param1, param2 .... ): )
+        int buildFunctionDefinition(int startPos);
+
         ErrorInformation createError(std::string message);
 
     };

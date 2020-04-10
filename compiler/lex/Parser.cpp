@@ -106,6 +106,8 @@ namespace NABLA
                 indicateComplete();
                 break;
 
+#warning Parens need to ensure they aren't alone. i.e ')' needs to have something other than '(' before it
+
             // -------------------------------------------------------------------------------------
             //  Open Paren
             // -------------------------------------------------------------------------------------
@@ -135,6 +137,15 @@ namespace NABLA
             // -------------------------------------------------------------------------------------
             case ')': 
             {
+                if(tokenValues.back().token != Token::VARIABLE && 
+                   tokenValues.back().token != Token::INTEGER  && 
+                   tokenValues.back().token != Token::REAL     &&
+                   tokenValues.back().token != Token::R_PAREN)
+                {
+                    errorCallback(createError("Syntax Error. No item precedes ')'"));
+                    return false;
+                }
+
                 bool openFound = false;
                 for(int c = i; c >= 0 && !openFound; c--)
                 {
@@ -154,6 +165,7 @@ namespace NABLA
                 break;
             }
 
+#warning These 'math ops' need to check previous token for 'variable' or 'int' or 'real'
             // -------------------------------------------------------------------------------------
             //  +
             // -------------------------------------------------------------------------------------
@@ -185,7 +197,25 @@ namespace NABLA
                 }
                 break;
             }
+
+#warning Set op '=' needs to check prev for variable. And check next char for '=' to see if comparison
             
+            // -------------------------------------------------------------------------------------
+            //  / Could be a comment, could be a div could be a diveq
+            // -------------------------------------------------------------------------------------
+            case 'd':
+            {
+
+                if(matchNext('e', i+1) && matchNext('f', i+2) && matchNext(' ', i+3))
+                {
+                    i += buildFunctionDefinition(i);
+                }
+
+                // We don't error here, because a variable might start with d!
+                break;
+            }
+
+
             // -------------------------------------------------------------------------------------
             //  Everything else
             // -------------------------------------------------------------------------------------
@@ -248,9 +278,12 @@ namespace NABLA
                 } 
 
                 // ----------------------------------------------------------------------------------
-                //  Locate a literal
+                //  Locate a variable
                 // ----------------------------------------------------------------------------------
-
+                //if(currentLine[i] )
+                //{
+                //
+                //}
 
 
                 // ----------------------------------------------------------------------------------
@@ -267,6 +300,21 @@ namespace NABLA
         }
 
         return true;
+    }
+
+    // -------------------------------------------------------
+    // buildFunctionDefinition
+    // -------------------------------------------------------
+
+    int Parser::buildFunctionDefinition(int startPosition)
+    {
+#warning Need to ensure that the def is in the right are. i.e its not in another function, etc
+        // 'def ' matched to get us here 'startPosition' should be location of 'd'
+
+        // Return the number of chars matched - should be the only thing on the line
+        // except maybe a comment
+
+        return 0;
     }
 
 }

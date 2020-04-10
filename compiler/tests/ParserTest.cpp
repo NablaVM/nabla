@@ -82,7 +82,7 @@ TEST(NablaCompilerTest, checkInvalid)
 
     std::vector<std::string> errors { 
         ".4", "45.", "77.44. ", "4.3 + 4 ( 8 - 4", 
-        ") 4.5", ")(((()))))))))(", "5.6 )" 
+        ") 4.5", ")(((()))))))))(", "5.6 )", "()" 
     };
 
     for(auto &i: errors)
