@@ -17,18 +17,18 @@ bool instruction_add();
 bool instruction_sub();
 bool instruction_div();
 bool instruction_mul();
-bool instruction_dadd();
-bool instruction_dsub();
-bool instruction_ddiv();
-bool instruction_dmul();
+bool instruction_addd();
+bool instruction_subd();
+bool instruction_divd();
+bool instruction_muld();
 bool instruction_mov();
-bool instruction_dmov();
+bool instruction_movd();
 bool instruction_ldw();
 bool instruction_stw();
 bool instruction_ldc();
 bool instruction_dldw();
-bool instruction_dstw();
-bool instruction_dldc();
+bool instruction_stwd();
+bool instruction_ldcd();
 bool instruction_bgt();
 bool instruction_blt();
 bool instruction_bgte();
@@ -71,21 +71,21 @@ namespace
 
     std::vector<MatchCall> parserMethods = {
         MatchCall{ std::regex("^add$")       , instruction_add       },
-        MatchCall{ std::regex("^dadd$")      , instruction_dadd      },
+        MatchCall{ std::regex("^addd$")      , instruction_addd      },
         MatchCall{ std::regex("^sub$")       , instruction_sub       },
-        MatchCall{ std::regex("^dsub$")      , instruction_dsub      },
+        MatchCall{ std::regex("^subd$")      , instruction_subd      },
         MatchCall{ std::regex("^mul$")       , instruction_mul       },
-        MatchCall{ std::regex("^dmul$")      , instruction_dmul      },
+        MatchCall{ std::regex("^muld$")      , instruction_muld      },
         MatchCall{ std::regex("^div$")       , instruction_div       },
-        MatchCall{ std::regex("^ddiv$")      , instruction_ddiv      },
+        MatchCall{ std::regex("^divd$")      , instruction_divd      },
         MatchCall{ std::regex("^mov$")       , instruction_mov       },
-        MatchCall{ std::regex("^dmov$")      , instruction_dmov       },
+        MatchCall{ std::regex("^movd$")      , instruction_movd       },
         MatchCall{ std::regex("^ldw$")       , instruction_ldw       },
         MatchCall{ std::regex("^stw$")       , instruction_stw       },
         MatchCall{ std::regex("^ldc$")       , instruction_ldc       },
         MatchCall{ std::regex("^dldw$")      , instruction_dldw      },
-        MatchCall{ std::regex("^dstw$")      , instruction_dstw      },
-        MatchCall{ std::regex("^dldc$")      , instruction_dldc      },
+        MatchCall{ std::regex("^stwd$")      , instruction_stwd      },
+        MatchCall{ std::regex("^ldcd$")      , instruction_ldcd      },
         MatchCall{ std::regex("^bgt$")       , instruction_bgt       },
         MatchCall{ std::regex("^blt$")       , instruction_blt       },
         MatchCall{ std::regex("^bgte$")      , instruction_bgte      },
@@ -107,10 +107,10 @@ namespace
         MUL  = 0x01,
         DIV  = 0x02,
         SUB  = 0x03,
-        DSUB = 0x04,
-        DDIV = 0x05,
-        DADD = 0x06,
-        DMUL = 0x07
+        SUBD = 0x04,
+        DIVD = 0x05,
+        ADDD = 0x06,
+        MULD = 0x07
     };
 }
 
@@ -407,13 +407,13 @@ inline static std::string convertArithToString(ArithmaticTypes type)
     switch(type)
     {
         case ArithmaticTypes::ADD : return "ADD";
-        case ArithmaticTypes::DADD: return "DADD";
+        case ArithmaticTypes::ADDD: return "ADDD";
         case ArithmaticTypes::MUL : return "MUL";
-        case ArithmaticTypes::DMUL: return "DMUL";
+        case ArithmaticTypes::MULD: return "MULD";
         case ArithmaticTypes::DIV : return "DIV";
-        case ArithmaticTypes::DDIV: return "DDIV";
+        case ArithmaticTypes::DIVD: return "DIVD";
         case ArithmaticTypes::SUB : return "SUB";
-        case ArithmaticTypes::DSUB: return "DSUB";
+        case ArithmaticTypes::SUBD: return "SUBD";
         default:                    return "UNKNOWN"; // Keep that compiler happy.
     }
 }
@@ -695,60 +695,60 @@ bool instruction_mul()
 //
 // -----------------------------------------------
 
-bool instruction_dadd()
+bool instruction_addd()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'dadd' instruction : " << currentLine << std::endl;
+        std::cerr << "Incomplete 'addd' instruction : " << currentLine << std::endl;
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::DADD);
+    return arithmatic_instruction(ArithmaticTypes::ADDD);
 }
 
 // -----------------------------------------------
 //
 // -----------------------------------------------
 
-bool instruction_dsub()
+bool instruction_subd()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'dsub' instruction : " << currentLine << std::endl;
+        std::cerr << "Incomplete 'subd' instruction : " << currentLine << std::endl;
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::DSUB);
+    return arithmatic_instruction(ArithmaticTypes::SUBD);
 }
 
 // -----------------------------------------------
 //
 // -----------------------------------------------
 
-bool instruction_ddiv()
+bool instruction_divd()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'ddiv' instruction : " << currentLine << std::endl;
+        std::cerr << "Incomplete 'divd' instruction : " << currentLine << std::endl;
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::DDIV);
+    return arithmatic_instruction(ArithmaticTypes::DIVD);
 }
 
 // -----------------------------------------------
 //
 // -----------------------------------------------
 
-bool instruction_dmul()
+bool instruction_muld()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'dmul' instruction : " << currentLine << std::endl;
+        std::cerr << "Incomplete 'muld' instruction : " << currentLine << std::endl;
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::DMUL);
+    return arithmatic_instruction(ArithmaticTypes::MULD);
 }
 
 // -----------------------------------------------
@@ -766,10 +766,10 @@ bool instruction_mov()
 //
 // -----------------------------------------------
 
-bool instruction_dmov()
+bool instruction_movd()
 {
 #warning OR START WORKING HERE
-    std::cout << "dmov (NYD): " << currentLine << std::endl;
+    std::cout << "movd (NYD): " << currentLine << std::endl;
     return false;
 }
 
@@ -817,9 +817,9 @@ bool instruction_dldw()
 //
 // -----------------------------------------------
 
-bool instruction_dstw()
+bool instruction_stwd()
 {
-    std::cout << "dstw : " << currentLine << std::endl;
+    std::cout << "stwd : " << currentLine << std::endl;
     return true;
 }
 
@@ -827,9 +827,9 @@ bool instruction_dstw()
 //
 // -----------------------------------------------
 
-bool instruction_dldc()
+bool instruction_ldcd()
 {
-    std::cout << "dldc : " << currentLine << std::endl;
+    std::cout << "ldcd : " << currentLine << std::endl;
     return true;
 }
 

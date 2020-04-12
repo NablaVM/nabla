@@ -1,4 +1,4 @@
-.file "dmov ASM"
+.file "movd ASM"
 .init main
 
 .double    EXAMPLE_DBL 33.33333
@@ -7,10 +7,10 @@
 
 main: 
 
-    dmov d0 &EXAMPLE_DBL
+    movd d0 &EXAMPLE_DBL
 
-    dmov d5 d7
+    movd d5 d7
 
-    dmov d3 $44.4445
+    movd d3 $44.4445
 
     exit
