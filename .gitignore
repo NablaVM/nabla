@@ -1,6 +1,6 @@
 # Prerequisites
 *.d
-
+*solaceAsm
 .vscode/
 
 # Compiled Object files

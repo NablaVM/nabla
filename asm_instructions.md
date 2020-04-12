@@ -53,6 +53,7 @@ Abbreviations :
 |     *i       | constant int ref        |
 |     *s       | constant string ref     |
 |     *d       | constant double ref     |
+|     *dn      | double numerical value  |
 |     sp       | stack pointer           |
 |     *sp      | stack pointer offset    |
 
@@ -60,19 +61,20 @@ Abbreviations :
 ## Artihmatic Instructions
 | Instruction   | Arg1          | Arg2                   | Arg3                | Description                        |
 |---            |---            |---                     |---                  |---                                 |
-|     add       |        r,  sp |    r , *n, *i ,  sp    |   r , *n, *i        |  Add Arg2 and Arg3, Store in Arg1  |
-|     dadd      |        d      |    d , *d ,     *sp    |   d , *d , *sp      |  Add Arg2 and Arg3, Store in Arg1  |
+|     add       |        r,  sp |    r , *n, *i , *sp    |   r , *n, *i   *sp  |  Add Arg2 and Arg3, Store in Arg1  |
 |     mul       |        r      |    r , *n, *i , *sp    |   r , *n, *i , *sp  |  Mul Arg2 and Arg3, Store in Arg1  |
-|     dmul      |        d      |    d , *d ,     *sp    |   d , *d , *sp      |  Mul Arg2 and Arg3, Store in Arg1  |
 |     div       |        r      |    r , *n, *i , *sp    |   r , *n, *i , *sp  |  Div Arg3 by  Arg2, Store in Arg1  |
-|     ddiv      |        d      |    d , *d ,     *sp    |   d , *d , *sp      |  Div Arg3 by  Arg2, Store in Arg1  |
 |     sub       |        r      |    r , *n, *i , *sp    |   r , *n, *i , *sp  |  Sub Arg3 from Arg3, Store in Arg1 |
-|     dsub      |        d      |    d , *d ,     *sp    |   d , *d , *sp      |  Sub Arg3 from Arg3, Store in Arg1 |
+|     dadd      |        d      |    d , *d, *dn         |   d , *d, *dn       |  Add Arg2 and Arg3, Store in Arg1  |
+|     dmul      |        d      |    d , *d, *dn         |   d , *d, *dn       |  Mul Arg2 and Arg3, Store in Arg1  |
+|     ddiv      |        d      |    d , *d, *dn         |   d , *d, *dn       |  Div Arg3 by  Arg2, Store in Arg1  |
+|     dsub      |        d      |    d , *d, *dn         |   d , *d, *dn       |  Sub Arg3 from Arg3, Store in Arg1 |
 
 ## Loading / Storing Instructions
 |  Instruction     |  Arg1     |  Arg2               |  Description                               |
 |---               |---        |---                  |---                                         |
-|      mov         |    r, d   |   r , d             |  Move data from Arg2 into Arg1             |
+|      mov         |     r     | r, *sp, *i, *n, sys |  Move data from Arg2 into Arg1             |
+|      dmov        |     d     |   d,  *d, *nd       |  Move data from Arg2 into Arg1             |
 |      ldw         |     r     |   *sp, *s           |  Load word from Arg2 into Arg1             |
 |      dldw        |     d     |   *sp, d            |  Load double-word from Arg2 into Arg1      |
 |      stw         |     *sp   |   r                 |  Store Arg2 at Arg1                        |
