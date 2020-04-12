@@ -19,9 +19,13 @@ Each register is 8 bytes,
 
 [64 bytes in total]
 
+## Addresses
+
+An address is comprised of 4 bytes, giving us 2^32 addresses.
+
 ## Comments
 
-Everything after a stray '#' on a line will be treated as a comment
+Everything after a stray ';' on a line will be treated as a comment
 
 ## Read-only system registers
 
@@ -42,33 +46,44 @@ Each register is 4 bytes.
 |   .double	    |   3.14 	    |   emit 3,14 ID to double table            	|
 |   .include	|  "file.asm" 	|   add "file,asm" to source                   	|
 
+### In-place numerical values
+
+For arithmatic operations a drop-in numerical value can be given to an instruction. This drop-in is the numerical value prefixed
+with a '$'. These numerical drop-ins are unsigned and encoded directly into the instruction. The valid range for an in-place value
+is the maximum number able to be stored by 2 bytes (2^16) 
+
+### Directive references
+
+Constant ints strings and doubles defined by their corresponding directive will yeild their address when placed within an instruction
+by prefixing them with a '&'. Since they are addresses, they must be loaded into a register prior to performing an arithmatic operation.
+This can be done using the 'ldw' command, which will drop their value into a register.
+
 ## Instructions
 Abbreviations : 
-| Abbreviation | Meaning                 |
-|---           |---                      |
-|      r       | register                |
-|      d       | double register         |
-|     sys      | system register         |
-|     *n       | numerical value         |
-|     *i       | constant int ref        |
-|     *s       | constant string ref     |
-|     *d       | constant double ref     |
-|     *dn      | double numerical value  |
-|     sp       | stack pointer           |
-|     *sp      | stack pointer offset    |
+| Abbreviation | Meaning                           |
+|---           |---                                |
+|      r       | register                          |
+|      d       | double register                   |
+|     sys      | system register                   |
+|     *n       | in-place numerical value          |
+|     *i       | constant int ref    (address)     |
+|     *s       | constant string ref (address)     |
+|     *d       | constant double ref (address)     |
+|     sp       | stack pointer                     |
+|     *sp      | stack pointer offset              |
 
 
 ## Artihmatic Instructions
-| Instruction   | Arg1          | Arg2                   | Arg3                | Description                        |
-|---            |---            |---                     |---                  |---                                 |
-|     add       |        r,  sp |    r , *n, *i , *sp    |   r , *n, *i   *sp  |  Add Arg2 and Arg3, Store in Arg1  |
-|     mul       |        r      |    r , *n, *i , *sp    |   r , *n, *i , *sp  |  Mul Arg2 and Arg3, Store in Arg1  |
-|     div       |        r      |    r , *n, *i , *sp    |   r , *n, *i , *sp  |  Div Arg3 by  Arg2, Store in Arg1  |
-|     sub       |        r      |    r , *n, *i , *sp    |   r , *n, *i , *sp  |  Sub Arg3 from Arg3, Store in Arg1 |
-|     addd      |        d      |    d , *d, *dn         |   d , *d, *dn       |  Add Arg2 and Arg3, Store in Arg1  |
-|     muld      |        d      |    d , *d, *dn         |   d , *d, *dn       |  Mul Arg2 and Arg3, Store in Arg1  |
-|     divd      |        d      |    d , *d, *dn         |   d , *d, *dn       |  Div Arg3 by  Arg2, Store in Arg1  |
-|     subd      |        d      |    d , *d, *dn         |   d , *d, *dn       |  Sub Arg3 from Arg3, Store in Arg1 |
+| Instruction   | Arg1          | Arg2       | Arg3           | Description                        |
+|---            |---            |---         |---             |---                                 |
+|     add       |        r,  sp |    r , *n  |   r , *n       |  Add Arg2 and Arg3, Store in Arg1  |
+|     mul       |        r      |    r , *n  |   r , *n       |  Mul Arg2 and Arg3, Store in Arg1  |
+|     div       |        r      |    r , *n  |   r , *n       |  Div Arg3 by  Arg2, Store in Arg1  |
+|     sub       |        r      |    r , *n  |   r , *n       |  Sub Arg3 from Arg3, Store in Arg1 |
+|     addd      |        d      |    d       |   d            |  Add Arg2 and Arg3, Store in Arg1  |
+|     muld      |        d      |    d       |   d            |  Mul Arg2 and Arg3, Store in Arg1  |
+|     divd      |        d      |    d       |   d            |  Div Arg3 by  Arg2, Store in Arg1  |
+|     subd      |        d      |    d       |   d            |  Sub Arg3 from Arg3, Store in Arg1 |
 
 ## Branch Instructions
 
@@ -81,19 +96,20 @@ Abbreviations :
 |      beq      |  r, d          |   r, d           |   label            | Branch to Arg3 if Arg1 == Arg2   |
 |      bne      |  r, d          |   r, d           |   label            | Branch to Arg3 if Arg1 != Arg2   |
 
-
-    THESE STILL NEED TO BE WORKED OUT - AND THE SOLACE PARSER WILL NEED TO BE UPDATED
-
 ## Loading / Storing Instructions
-|  Instruction     |  Arg1     |  Arg2               |  Description                               |
-|---               |---        |---                  |---                                         |
-|      mov         |     r     |   r, *i, *n, sys    |  Move data from Arg2 into Arg1             |
-|      movd        |     d     |   d, *d, *nd        |  Move data from Arg2 into Arg1             |
-|      lda         |     r     |   *sp, *s, *i *d    |  Load address from Arg2 into Arg1          |
-|      stw         |     *sp   |   r                 |  Store Arg2 at Arg1                        |
-|      stwd        |     *sp   |   d                 |  Store Arg2 at Arg1                        |
-|      ldc         |     r     |   *n, *i            |  Load constant from Arg2 into Arg1         |
-|      ldcd        |     d     |   *d                |  Load double-constant from Arg2 into Arg1  |
+|  Instruction     |  Arg1     |  Arg2               |  Description                                 |
+|---               |---        |---                  |---                                           |
+|      mov         |     r     |   r                 |  Move data from Arg2 into Arg1               |
+|      movd        |     d     |   d                 |  Move data from Arg2 into Arg1               |
+|      lda         |     r     |   *i, *s, *d, *sp   |  Load address of Arg2 into Arg1              |
+|      stw         |     *sp   |   r                 |  Store Arg2 data at Arg1 (arg1=addr)         |
+|      stwd        |     *sp   |   d                 |  Store Arg2 data at Arg1 (arg1=addr)         |
+|      ldw         |     r     |   r, *i, *s, *sp    |  Load 4 bytes from Arg2 (address) into Arg1  |
+|      ldwd        |     d     |   r, *d, *s         |  Load 8 bytes from Arg2 (address) into Arg1  |
+
+*Note:* Moves destroy data in source. It will 0-out the data.
+*Note:* ldw/ldwd assumes data from Arg2 represents an address, and will attempt to pull data from whatever address it assumes. We can leverage a dReg to load string data if we want to, but performing arithmatic operations on data representing a string will result in undefined behaviour (this applies for rRegs as well)
+**Note:** The reason we can ldwd from a rReg is because we are ldwd-ing an address (4 bytes) that is stored in that reg.
 
 ## Jump
 
@@ -114,63 +130,82 @@ Now, using a reference to a constant
 
     .int EXAMPLE_INT 3265
     
-    add r0 $10 &EXAMPLE_INT ; adds '3265' to '10' and stores in r0
+    ldw r0 &EXAMPLE_INT     ; Load 3265 from its address into r0
 
+    add r0 r0 $1            ; Add 1 to 3265, store in r0
+
+
+
+**NOTE:** WE NEED TO LOOK AT HOW WE ARE GOING TO USE SP, AND WHAT ROLE IT WILL PLAY IN THE VM - This is not yet worked through
 
 ## Using stack pointer
 
 To use a stack pointer offset, prefix with an in-place constant i.e : $10(sp)
-A stack pointer can be offset with a regular constant as well i.e   : &EXAMPLE_INT(sp)
+This will offset the address yeilded by 'sp' by 10
 
 
 ## Instruction Data
+
 Each full instruction is 8 bytes. 
 
 ### Arithmatic operations
 
+[Byte 1]
 The first 6 bits represent the specific instruction (add / mul/ etc)
 The remaining 2 bits of the first byte indicate what the remaining bytes represent.
 
 The indication bits are as follows:
-00 - Next byte is a register, the byte following is also a register
-01 - Next byte is a register, the following three are an address
-10 - Next three bytes are an address, with the following byte being a register
-11 - Next three bytes are an address, the following three are also an address
+00 - Byte 3 will be a register, Byte 4 will be a register
+01 - Byte 3 will be a register, Byte 4/5 will be a 2-byte integer
+10 - Byte 3/4 will be a 2-byte integer, Byte 5 will be a register
+11 - Byte 3/4 will be a 2-byte integer, Byte 5/6 will be a 2-byte integer
 
-This means that addressing has a maximum of 2^24 addresses
+[Byte 2]
+The second byte is the destination register
+
+Unaccounted bytes will be unused, and marked as '1'
+
+**Note:** Since drop-ins are not allowed on double-based arithmatic operations, the id bits listed above
+and displayed below are not applicable. Instead, double-based arithmatic operations will default to the 
+'00' case listed below.
 
 Here is an example of the bit layout given an arithmatic operation. Note: All but ID here are filled
 with '1' just for the sake of demonstration
 
     Case 00:
-    INS    ID   REGISTER    REGISTER    [ ------------------ UNUSED ----------------------------]
+    INS    ID   REGISTER    REGISTER    REGISTER  [ ----------------- UNUSED -------------------]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
     Case 01:
-    INS    ID   REGISTER    [ -------   ADDRESS  -----------]   [ ---------- UNUSED ------------]
+    INS    ID   REGISTER    REGISTER    [ ---- INTEGER ---- ]   [ -------- UNUSED --------------]
     111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
     Case 10:
-    INS    ID   [ --------   ADDRESS  ----------]   REGISTER    [ ---------- UNUSED ------------]
+    INS    ID   REGISTER    [ ---- INTEGER ---- ]   REGISTER    [ -------- UNUSED --------------]
     111111 10 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-    Case 11:
-    INS    ID   [ --------   ADDRESS   ----------]  [ --------   ADDRESS   ----------]  [UNUSED]
+    Case 10:
+    INS    ID   REGISTER    [ ---- INTEGER ---- ]   [ ---- INTEGER ---- ]   [ ---- UNUSED ---- ]
     111111 11 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
-
+    
 ### Branch operations
 
-Since addresses are 3 bytes, and instructions are 8, branches are limited to working with registers.
-This way, we can stay within the 8 byte instruction size (with the draw back of having extra instruction to load registers)
-
-The first 6 bytes represent the specific instruction (bge / blt / etc)
+[Byte 1]
+The first 6 bits represent the specific instruction (bge / blt / etc)
 The following 2 bits will be set to 00, unused, but also represents that 2 registers are being used.
+
+[Byte 2-3]
 The following 2 bytes, are the registers that are used for the branch comparison.
-The following 3 bytes will be the address to branch to.
+
+[Byte 4-7]
+The following 4 bytes will be the address to branch to.
+
+[Byte 8]
+The last byte is unused 
 
 Here is an example of a bit layout for a branch operation
 
-    INS    ID   REGISTER    REGISTER    [ --------   ADDRESS  ----------]   [ ----- UNUSED ---- ]
+    INS    ID   REGISTER    REGISTER    [ --------------   ADDRESS  ----------------]   [ UNUSED ] 
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 ### Load / Store operations
