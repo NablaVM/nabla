@@ -137,6 +137,8 @@ Now, using a reference to a constant
 
 
 **NOTE:** WE NEED TO LOOK AT HOW WE ARE GOING TO USE SP, AND WHAT ROLE IT WILL PLAY IN THE VM - This is not yet worked through
+Perhaps instead of using sp at all, a 'reserve' keyword could be used and an 'address (@) ?' keyword could be used to specify a direct 
+address location for ldw, etc
 
 ## Using stack pointer
 
