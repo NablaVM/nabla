@@ -1,27 +1,15 @@
 # This will be expanded as things move along, 
 
-### Registers
+## Registers
 
-There will be 2 types of registers
+Prefixed with 'r' there are 16 8-byte registers [ r0, r15 ]
+These registers are used to read/write any data to/from.
 
-## 4-Byte Registers
-
-Prefixed with 'r' there are 16 registers [ r0, r15 ]
-These registers are used to store integers and strings, Each register is 4 bytes,
-
-[64 bytes in total]
-
-## 8-Byte registers
-
-Prefixed with 'd' there are 8 double registers [d0, d7]
-These registers are used to store double precision numbers and to perform operations on,
-Each register is 8 bytes,
-
-[64 bytes in total]
+[128 bytes overhead]
 
 ## Addresses
 
-An address is comprised of 4 bytes, giving us 2^32 addresses.
+An address is comprised of 4 bytes, giving us 2^32 possible addresses.
 
 ## Comments
 
@@ -36,6 +24,12 @@ Each register is 4 bytes.
 
 [8 bytes in total]
 
+## Functions
+
+Functions begin with a '<' followed by a name and a ':'. Functions are each given their own operational stack. This allows for the separation of functional memory. Standard function's stack will be emptied upon the return from that function. Every program function can access the following: its own stack, the global stack, and the system registers.
+
+To access a function, a 'call' must occur, you can not jump to a function. Further, you can not jump to a label in another function. Jumping is localized to the function that is currently being operated in.
+
 ### Pseudo Ops
 |  Directive 	|   Argument	|   Description                                 |
 |---	        |---	        |---	                                        |
@@ -43,7 +37,7 @@ Each register is 4 bytes.
 |   .init	    |  entry_label 	|   emit entry_label APP_ENTRY to symbol table 	|
 |   .string	    |  "string"     |   emit "string" ID to string table	        |
 |   .int	    |     42        |   emit 42 ID to integer table	                |
-|   .double	    |   3.14 	    |   emit 3,14 ID to double table            	|
+|   .double	    |   3.14 	    |   emit 3.14 ID to double table            	|
 |   .include	|  "file.asm" 	|   add "file,asm" to source                   	|
 
 ### In-place numerical values
@@ -56,68 +50,79 @@ is the maximum number able to be stored by 2 bytes (2^16)
 
 Constant ints strings and doubles defined by their corresponding directive will yeild their address when placed within an instruction
 by prefixing them with a '&'. Since they are addresses, they must be loaded into a register prior to performing an arithmatic operation.
-This can be done using the 'ldw' command, which will drop their value into a register.
+This can be done using the 'ldb' command, which will drop their value into a register.
 
 ## Instructions
 Abbreviations : 
-| Abbreviation | Meaning                           |
-|---           |---                                |
-|      r       | register                          |
-|      d       | double register                   |
-|     sys      | system register                   |
-|     *n       | in-place numerical value          |
-|     *i       | constant int ref    (address)     |
-|     *s       | constant string ref (address)     |
-|     *d       | constant double ref (address)     |
-|     sp       | stack pointer                     |
-|     *sp      | stack pointer offset              |
-
+| Abbreviation | Meaning                                |
+|---           |---                                     |
+|      r       | register                               |
+|     sys      | system register                        |
+|     *n       | in-place numerical value               |
+|     *i       | constant int ref    (address)          |
+|     *s       | constant string ref (address)          |
+|     *d       | constant double ref (address)          |
+|     sp       | stack pointer   (ls, gs)               |
+|     *sp      | stack pointer offset  ($N(ls), $N(gs)) |
 
 ## Artihmatic Instructions
-| Instruction   | Arg1          | Arg2       | Arg3           | Description                        |
-|---            |---            |---         |---             |---                                 |
-|     add       |        r,  sp |    r , *n  |   r , *n       |  Add Arg2 and Arg3, Store in Arg1  |
-|     mul       |        r      |    r , *n  |   r , *n       |  Mul Arg2 and Arg3, Store in Arg1  |
-|     div       |        r      |    r , *n  |   r , *n       |  Div Arg3 by  Arg2, Store in Arg1  |
-|     sub       |        r      |    r , *n  |   r , *n       |  Sub Arg3 from Arg3, Store in Arg1 |
-|     addd      |        d      |    d       |   d            |  Add Arg2 and Arg3, Store in Arg1  |
-|     muld      |        d      |    d       |   d            |  Mul Arg2 and Arg3, Store in Arg1  |
-|     divd      |        d      |    d       |   d            |  Div Arg3 by  Arg2, Store in Arg1  |
-|     subd      |        d      |    d       |   d            |  Sub Arg3 from Arg3, Store in Arg1 |
+| Instruction     | Arg1      | Arg2       | Arg3      | Description                                  |
+|---              |---        |---         |---        |---                                           |
+|     add         |        r  |    r , *n  |   r , *n  |  Add Arg2 and Arg3, Store in Arg1            |
+|     sub         |        r  |    r , *n  |   r , *n  |  Sub Arg3 from Arg3, Store in Arg1           |
+|     mul         |        r  |    r , *n  |   r , *n  |  Mul Arg2 and Arg3, Store in Arg1            |
+|     div         |        r  |    r , *n  |   r , *n  |  Div Arg3 by  Arg2, Store in Arg1            |
+|     add.d       |        r  |      r     |     r     |  Add (double) Arg2 and Arg3, Store in Arg1   |
+|     sub.d       |        r  |      r     |     r     |  Sub (double) Arg3 from Arg3, Store in Arg1  |
+|     mul.d       |        r  |      r     |     r     |  Mul (double) Arg2 and Arg3, Store in Arg1   |
+|     div.d       |        r  |      r     |     r     |  Div (double) Arg3 by  Arg2, Store in Arg1   |
+
+Arithmatic instructions that specify 'd' assumes that the values being operated on are double-precision floating point
+numbers, if the value in a given 'd' register is not a floating point, the behaviour is undefined.
 
 ## Branch Instructions
 
-| Instruction   | Arg1           | Arg2             | Arg3               | Description                      |
-|---            |---             |---               |---                 |---                               |
-|      bgt      |  r, d          |   r, d           |   label            | Branch to Arg3 if Arg1 > Arg2    |
-|      bgte     |  r, d          |   r, d           |   label            | Branch to Arg3 if Arg1 >= Arg2   |
-|      blt      |  r, d          |   r, d           |   label            | Branch to Arg3 if Arg1 <= Arg2   |
-|      blte     |  r, d          |   r, d           |   label            | Branch to Arg3 if Arg1 <= Arg2   |
-|      beq      |  r, d          |   r, d           |   label            | Branch to Arg3 if Arg1 == Arg2   |
-|      bne      |  r, d          |   r, d           |   label            | Branch to Arg3 if Arg1 != Arg2   |
+| Instruction   | Arg1           | Arg2             | Arg3               | Description                               |
+|---            |---             |---               |---                 |---                                        |
+|      bgt      |  r             |   r              |   label            | Branch to Arg3 if Arg1 > Arg2             |
+|      bgte     |  r             |   r              |   label            | Branch to Arg3 if Arg1 >= Arg2            |
+|      blt      |  r             |   r              |   label            | Branch to Arg3 if Arg1 <= Arg2            |
+|      blte     |  r             |   r              |   label            | Branch to Arg3 if Arg1 <= Arg2            |
+|      beq      |  r             |   r              |   label            | Branch to Arg3 if Arg1 == Arg2            |
+|      bne      |  r             |   r              |   label            | Branch to Arg3 if Arg1 != Arg2            |
+|      bgt.d    |  r             |   r              |   label            | Branch (double) to Arg3 if Arg1 > Arg2    |
+|      bgte.d   |  r             |   r              |   label            | Branch (double) to Arg3 if Arg1 >= Arg2   |
+|      blt.d    |  r             |   r              |   label            | Branch (double) to Arg3 if Arg1 <= Arg2   |
+|      blte.d   |  r             |   r              |   label            | Branch (double) to Arg3 if Arg1 <= Arg2   |
+|      beq.d    |  r             |   r              |   label            | Branch (double) to Arg3 if Arg1 == Arg2   |
+|      bne.d    |  r             |   r              |   label            | Branch (double) to Arg3 if Arg1 != Arg2   |
+
+Branch instructions assume that the conditional values stored in registers are integer values unless 'd' is specified. 
+If 'd' is specified and the value in a given register is not a floating point, the behaviour is undefined.
 
 ## Loading / Storing Instructions
-|  Instruction     |  Arg1     |  Arg2               |  Description                                 |
-|---               |---        |---                  |---                                           |
-|      mov         |     r     |   r                 |  Move data from Arg2 into Arg1               |
-|      movd        |     d     |   d                 |  Move data from Arg2 into Arg1               |
-|      lda         |     r     |   *i, *s, *d, *sp   |  Load address of Arg2 into Arg1              |
-|      stw         |     *sp   |   r                 |  Store Arg2 data at Arg1 (arg1=addr)         |
-|      stwd        |     *sp   |   d                 |  Store Arg2 data at Arg1 (arg1=addr)         |
-|      ldw         |     r     |   r, *i, *s, *sp    |  Load 4 bytes from Arg2 (address) into Arg1  |
-|      ldwd        |     d     |   r, *d, *s         |  Load 8 bytes from Arg2 (address) into Arg1  |
+|  Instruction     |  Arg1     |  Arg2                   |  Description                                 |
+|---               |---        |---                      |---                                           |
+|      mov         |    r      |   r                     |  Move data from Arg2 into Arg1               |
+|      lda         |    r      |   *i, *s, *d, *sp       |  Load address of Arg2 into Arg1              |
+|      ldb         |    r      |   r, *i, *s, *sp, *d    |  Load data from Arg2 (address) into Arg1     |
+|      stb         |   *sp     |   r                     |  Store Arg2 data at Arg1 (arg1=addr)         |
+|      push        |    sp     |   r                     |  Data from Arg2 into Arg1                    |
+|      pop         |    sp     |   r                     |  Data from Arg2 into Arg1                    |
+
 
 *Note:* Moves destroy data in source. It will 0-out the data.
-*Note:* ldw/ldwd assumes data from Arg2 represents an address, and will attempt to pull data from whatever address it assumes. We can leverage a dReg to load string data if we want to, but performing arithmatic operations on data representing a string will result in undefined behaviour (this applies for rRegs as well)
-**Note:** The reason we can ldwd from a rReg is because we are ldwd-ing an address (4 bytes) that is stored in that reg.
+*Note:* ldb assumes data from Arg2 represents an address, and will attempt to pull data from whatever address it assumes. We can leverage a dReg to load string data if we want to, but performing arithmatic operations on data representing a string will result in undefined behaviour.
+*Note:* A mix of rRegs and dRegs can be used for mov and ldb, but it is important to note that since rRegs store only 4 bytes,
+if you move rReg data to dReg data and attempt an arithmatic operation that is meant for dRegs undefined behaviour will result. 
 
 ## Jump / Call
 
-| Instruction | Arg1  | Description                                   |
-|---          |---    |---                                            |
-| jmp         | label | Jump to label                                 |
-| call        | label | Call label - return address stored in sys0    |
-| ret         |       | Return to the address stored in sys0          |
+| Instruction | Arg1     | Description                                      |
+|---          |---       |---                                               |
+| jmp         | label    | Jump to label                                    |
+| call        | function | Call function - return address stored in sys0    |
+| ret         |          | Return to the address stored in sys0             |
 
 ## Exit
 
@@ -138,7 +143,7 @@ Now, using a reference to a constant
 
     .int EXAMPLE_INT 3265
     
-    ldw r0 &EXAMPLE_INT     ; Load 3265 from its address into r0
+    ldb r0 &EXAMPLE_INT     ; Load 3265 from its address into r0
 
     add r0 r0 $1            ; Add 1 to 3265, store in r0
 
@@ -219,7 +224,7 @@ The first 6 bytes represent the specific instruction (mov / movd / etc)
 Since not all load / store operations are the same their bit fields differ slightly by specific instruction.
 For all instructions except ldw/ldwd the ID bits don't matter. 
 
-**mov/movd**
+**mov**
 
     INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
@@ -229,12 +234,12 @@ For all instructions except ldw/ldwd the ID bits don't matter.
     INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ----- UNUSED ---- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**stw/stwd**
+**stb**
 
     INS    ID   [ ---------------   ADDRESS  ---------------]   REGISTER    [ ---- UNUSED ----- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**ldw/ldwd**
+**ldb**
 
 For ldw/ldwd the ID bits represent if the source is an address in a register, or if it is an address
 stored within the instruction.
@@ -249,6 +254,17 @@ Id bits:
 
     INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ---- UNUSED ----- ]
     111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**push**
+
+    INS    ID      STACK     REGISTER    [ ---- UNUSED ----- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**pop**
+
+    INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ----- UNUSED ---- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
 
 ### Jump / return operation
 
@@ -269,3 +285,8 @@ taken when executing sequential jumps as
 
 
 ## The stack
+
+In this system, there are multiple stacks that can be accessed, but only 2 that can be accessed at any given time. The functional stack, and the global stack. Each slot of each stack is 8 bytes.
+
+### Functional stack
+
