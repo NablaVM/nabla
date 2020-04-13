@@ -1,3 +1,38 @@
+/*
+    Argument          Parsed            Generated
+    ----------------------------------------------
+        add             X
+        sub             X
+        mul             X
+        div             X
+        add.d           X
+        sub.d           X
+        mul.d           X
+        div.d           X
+        bgt   
+        bgte  
+        blt   
+        blte  
+        beq   
+        bne   
+        bgt.d 
+        bgte.d
+        blt.d 
+        blte.d
+        beq.d 
+        bne.d 
+        mov             X
+        lda             X
+        ldb             X
+        stb             X
+        push            X
+        pop             X
+        jmp 
+        call
+        ret 
+        exit    
+*/
+
 #include "solace.hpp"
 
 #include <algorithm>
@@ -57,25 +92,28 @@ namespace
 {
     struct Payload
     {
-        std::map<std::string, uint32_t> const_ints;     // Name / Values. 
-        std::map<std::string, uint32_t> const_doubles;
+        std::map<std::string, uint32_t>              const_ints;     // Constant integers
+        std::map<std::string, uint32_t>              const_doubles;  // Constant doubles
+        std::map<std::string, std::vector<uint8_t> > const_strings;  // Constant strings
+        std::map<std::string, uint32_t>              labels;         // Labels
 
-        std::map<std::string, std::vector<uint8_t> > const_strings;
+        std::vector<std::string> filesParsed;   // Files that have been parsed
 
-        std::map<std::string, uint32_t> labels;
+        std::string entryPoint;                 // Application entry point
 
-        std::vector<std::string> filesParsed;
-
-        std::string entryPoint;
-
-        std::vector<uint8_t> bytes;                     // Resulting byte codes
+        std::vector<uint8_t> bytes;             // Resulting byte data
     };
 
+    // The final payload
     Payload finalPayload;
 
+    // The current line we are parsing
     std::string currentLine;
+
+    // The pieces of the line we are parsing
     std::vector<std::string> currentPieces;
 
+    // Tie regex matches to function calls that
     struct MatchCall
     {
         std::regex reg;
@@ -141,6 +179,22 @@ namespace
         DIVD = 0x05,
         ADDD = 0x06,
         MULD = 0x07
+    };
+
+    enum class BranchTypes
+    {  
+        BGT   = 0x01, 
+        BGTE  = 0x02, 
+        BLT   = 0x03, 
+        BLTE  = 0x04, 
+        BEQ   = 0x05, 
+        BNE   = 0x06, 
+        BGTD  = 0x07,
+        BGTED = 0x08,
+        BLTD  = 0x09,
+        BLTED = 0x0A,
+        BEQD  = 0x0B,
+        BNED  = 0x0C,
     };
 }
 
@@ -355,9 +409,27 @@ inline static bool isDirectGlobalStackPointer(std::string piece)
 //
 // -----------------------------------------------
 
+inline static bool isStackOffsetInRange(std::string piece)
+{
+    std::string str = piece.substr(1, piece.size()-5);
+
+    int64_t n = std::stoi(str);
+
+    return ( n < 4294967295 );
+}
+
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
 inline static bool isOffsetLocalStackpointer(std::string piece)
 {
-    return std::regex_match(piece, std::regex("^\\$[0-9]+\\(ls\\)$"));
+    if( std::regex_match(piece, std::regex("^\\$[0-9]+\\(ls\\)$")) )
+    {
+        return isStackOffsetInRange(piece);
+    }
+    return false;
 }
 
 // -----------------------------------------------
@@ -366,7 +438,24 @@ inline static bool isOffsetLocalStackpointer(std::string piece)
 
 inline static bool isOffsetGlobalStackpointer(std::string piece)
 {
-    return std::regex_match(piece, std::regex("^\\$[0-9]+\\(gs\\)$"));
+    if( std::regex_match(piece, std::regex("^\\$[0-9]+\\(gs\\)$")) )
+    {
+        return isStackOffsetInRange(piece);
+    }
+    return false;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static bool isDirectNumericalInRange(std::string numerical)
+{
+    std::string str = numerical.substr(1, numerical.size());
+
+    int n = std::stoi(str);
+
+    return ( n < 32767 && n > -32768 );
 }
 
 // -----------------------------------------------
@@ -375,7 +464,11 @@ inline static bool isOffsetGlobalStackpointer(std::string piece)
 
 inline static bool isDirectNumerical(std::string piece)
 {
-    return std::regex_match(piece, std::regex("(^\\$[0-9]+$)|(^\\$\\-[0-9]+$)"));
+    if(std::regex_match(piece, std::regex("(^\\$[0-9]+$)|(^\\$\\-[0-9]+$)")))
+    {
+        return isDirectNumericalInRange(piece);
+    }
+    return false;
 }
 
 // -----------------------------------------------
@@ -471,7 +564,7 @@ inline static std::string convertArithToString(ArithmaticTypes type)
 }
 
 // -----------------------------------------------
-//
+// Parsed, not complete
 // -----------------------------------------------
 
 inline static bool arithmatic_instruction(ArithmaticTypes type)
@@ -510,6 +603,7 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         else if(isDirectNumerical(currentPieces[2]))
         {
             std::cout << "Direct Numerical : " << currentPieces[2] << std::endl; 
+
             argumentTwoFound = true;
         }
         else if(isReferencedConstant(currentPieces[2]))
@@ -544,6 +638,13 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         else if(isDirectNumerical(currentPieces[3]))
         {
             std::cout << "Direct Numerical : " << currentPieces[3] << std::endl;
+
+            if(!isDirectNumericalInRange(currentPieces[3]))
+            {
+                std::cerr << "Error: Direct numerical insert is out of range: " << currentPieces[3] << std::endl;
+                return false;
+            }
+
             argumentThreeFound = true;
         }
         else if(isReferencedConstant(currentPieces[3]))
@@ -739,13 +840,353 @@ bool instruction_muld()
 }
 
 // -----------------------------------------------
-//
+// Parsed, not complete
 // -----------------------------------------------
 
 bool instruction_mov()
 {
-#warning START WORKING HERE
-    std::cout << "mov (NYD): " << currentLine << std::endl;
+    std::cout << "mov : " << currentLine << std::endl;
+
+    if(currentPieces.size() != 3)
+    {
+        std::cerr << "Invalid 'mov' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    if(!isRegister(currentPieces[1]))
+    {
+        std::cerr << "Argument 1 of 'mov' must be a register" << std::endl;
+        return false;
+    }
+
+    if(!isRegister(currentPieces[2]))
+    {
+        std::cerr << "Argument 2 of 'mov' must be a register" << std::endl;
+        return false;
+    }
+
+    // Both are confirmed registers!
+
+    return true;
+}
+
+// -----------------------------------------------
+// Parsed, not complete
+// -----------------------------------------------
+
+bool instruction_lda()
+{
+    std::cout << "lda : " << currentLine << std::endl;
+    
+    if(currentPieces.size() != 3)
+    {
+        std::cerr << "Invalid 'lda' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    // Check if arg1 is a register
+    if(!isRegister(currentPieces[1]))
+    {
+        std::cerr << "Error: First argument of 'lda' must be a register, but [" << currentPieces[1] << "] was given" << std::endl;
+        return false;
+    }
+
+    // Check if arg2 is a register
+    if (isReferencedConstant(currentPieces[2]))
+    {
+        std::string constantName = currentPieces[2].substr(1, currentPieces[2].size());
+
+        std::cout << "Argument 2 is referenced constant : " << constantName;
+
+        // Is it an int ?
+        if(isConstIntInPayload(constantName))
+        {
+            std::cout << " -> constant_int " << std::endl;
+
+        }
+
+        // Is it a double ?
+        else if (isConstDoubleInPayload(constantName))
+        {
+            std::cout << " -> constant_double " << std::endl;
+
+        }
+        
+        // Is it a string ?
+        else if (isConstStringInPayload(constantName))
+        {
+            std::cout << " -> constant_string " << std::endl;
+
+        }
+
+        // IT ISN'T ANYTHING ! UGH!
+        else
+        {
+            std::cout << " ERROR - Unable to locate given constant" << std::endl;
+            return false;
+        }
+    }
+
+    // Check if its a global stack pointer
+    else if (isOffsetGlobalStackpointer(currentPieces[2]))
+    {
+        std::cout << "Argument 2 -> global_stack_pointer " << std::endl;
+
+    }
+
+    // Check if its a local stack pointer
+    else if (isOffsetLocalStackpointer(currentPieces[2]))
+    {
+        std::cout << "Argument 2 -> local_stack_pointer " << std::endl;
+
+    }
+    else
+    {
+        std::cout << "'lda' argument 2 not matched" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+// -----------------------------------------------
+// Parsed, not complete
+// -----------------------------------------------
+
+bool instruction_stb()
+{
+    std::cout << "stb : " << currentLine << std::endl;
+
+    if(currentPieces.size() != 3)
+    {
+        std::cerr << "Invalid 'stb' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    // Check argument 1 
+    if(isOffsetGlobalStackpointer(currentPieces[1]))
+    {
+        std::cout << "Argument 1 is global spo : " << currentPieces[1] << std::endl;
+    }
+    else if (isOffsetLocalStackpointer(currentPieces[1]))
+    {
+        std::cout << "Argument 1 is local spo : " << currentPieces[1] << std::endl;
+    }
+    else
+    {
+        std::cerr << "'stb' argument 1 must be a stack pointer offset, got : " << currentPieces[1] << " instread" << std::endl;
+        return false;
+    }
+    
+    if(!isRegister(currentPieces[2]))
+    {
+        std::cerr << "'stb' argument 2 must be a register, got : " << currentPieces[2] << " instead" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+// -----------------------------------------------
+// Parsed, not complete
+// -----------------------------------------------
+
+bool instruction_ldb()
+{
+    std::cout << "ldb : " << currentLine << std::endl;
+
+    if(currentPieces.size() != 3)
+    {
+        std::cerr << "Invalid 'ldb' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    if(!isRegister(currentPieces[1]))
+    {
+        std::cerr << "Error: First argument of 'ldb' must be a register, but [" << currentPieces[1] << "] was given" << std::endl;
+        return false;
+    }
+
+    if(isRegister(currentPieces[2]))
+    {
+        std::cout << "Argument 2 is register : " << currentPieces[2] << std::endl;
+
+    }
+
+    // Check if its a referenced constant, and if it is try to find it
+    else if (isReferencedConstant(currentPieces[2]))
+    {
+        std::string constantName = currentPieces[2].substr(1, currentPieces[2].size());
+
+        std::cout << "Argument 2 is referenced constant : " << constantName;
+
+        // Is it an int ?
+        if(isConstIntInPayload(constantName))
+        {
+            std::cout << " -> constant_int " << std::endl;
+
+        }
+
+        // Is it a double ?
+        else if (isConstDoubleInPayload(constantName))
+        {
+            std::cout << " -> constant_double " << std::endl;
+
+        }
+        
+        // Is it a string ?
+        else if (isConstStringInPayload(constantName))
+        {
+            std::cout << " -> constant_string " << std::endl;
+
+        }
+
+        // IT ISN'T ANYTHING ! UGH!
+        else
+        {
+            std::cout << " ERROR - Unable to locate given constant" << std::endl;
+            return false;
+        }
+    }
+
+    // Check if its a global stack pointer
+    else if (isOffsetGlobalStackpointer(currentPieces[2]))
+    {
+        std::cout << "Argument 2 -> global_stack_pointer " << std::endl;
+
+    }
+
+    // Check if its a local stack pointer
+    else if (isOffsetLocalStackpointer(currentPieces[2]))
+    {
+        std::cout << "Argument 2 -> local_stack_pointer " << std::endl;
+
+    }
+    else
+    {
+        std::cout << "'ldb' argument 2 must be constant or stack offset" << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+// -----------------------------------------------
+// Parsed, not complete
+// -----------------------------------------------
+
+bool instruction_push()
+{
+    std::cout << "push : " << currentLine << std::endl;
+
+    if(!currentPieces.size() == 3)
+    {
+        std::cerr << "Invalid 'push' instruction : " << currentLine << std::endl;
+        return false; 
+    }
+
+    // Argument 2
+    if(isDirectLocalStackPointer(currentPieces[1]))
+    {
+        std::cout << "Argument 1 is a local stack pointer " << std::endl;
+    }
+    else if (isDirectGlobalStackPointer(currentPieces[1]))
+    {
+        std::cout << "Argument 1 is a global stack pointer " << std::endl;
+    }
+    else
+    {
+        std::cerr << "'push' instruction argument 1 must be a global or local stack pointer" << std::endl;
+        return false;
+    }
+    
+    // Argument 2
+    if(!isRegister(currentPieces[2]))
+    {
+        std::cout << "'push' instruction argument 2 must be a register" << std::endl;
+    }
+
+    return true;
+}
+
+// -----------------------------------------------
+// Parsed, not complete
+// -----------------------------------------------
+
+bool instruction_pop()
+{
+    std::cout << "pop : " << currentLine << std::endl;
+
+    if(!currentPieces.size() == 3)
+    {
+        std::cerr << "Invalid 'pop' instruction : " << currentLine << std::endl;
+        return false; 
+    }
+
+    // Argument 2
+    if(isDirectLocalStackPointer(currentPieces[1]))
+    {
+        std::cout << "Argument 1 is a local stack pointer " << std::endl;
+    }
+    else if (isDirectGlobalStackPointer(currentPieces[1]))
+    {
+        std::cout << "Argument 1 is a global stack pointer " << std::endl;
+    }
+    else
+    {
+        std::cerr << "'pop' instruction argument 1 must be a global or local stack pointer (not an offset)" << std::endl;
+        return false;
+    }
+    
+    // Argument 2
+    if(!isRegister(currentPieces[2]))
+    {
+        std::cout << "'pop' instruction argument 2 must be a register" << std::endl;
+    }
+
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static std::string convertBranchToString(BranchTypes type)
+{
+    switch(type)
+    {
+        case BranchTypes::BGT  : return "BGT  "; 
+        case BranchTypes::BGTE : return "BGTE "; 
+        case BranchTypes::BLT  : return "BLT  "; 
+        case BranchTypes::BLTE : return "BLTE "; 
+        case BranchTypes::BEQ  : return "BEQ  "; 
+        case BranchTypes::BNE  : return "BNE  "; 
+        case BranchTypes::BGTD : return "BGTD ";
+        case BranchTypes::BGTED: return "BGTED";
+        case BranchTypes::BLTD : return "BLTD ";
+        case BranchTypes::BLTED: return "BLTED";
+        case BranchTypes::BEQD : return "BEQD ";
+        case BranchTypes::BNED : return "BNED ";
+        default:                 return "UNKNOWN"; // Keep that compiler happy.
+    }
+}
+
+inline bool branch_instruction(BranchTypes type)
+{
+    std::cout << "Branch : " << convertBranchToString(type) << ": " << currentLine << std::endl;
+
+
+    if(static_cast<unsigned>(type) <= 0x06)
+    {
+        std::cout << "Regular, non-double branch" << std::endl;
+    }
+    else
+    {
+        std::cout << "Not regular, double branch" << std::endl;
+    }
+
+
+    std::cerr << "Returning error because this aint done dood" << std::endl;
     return false;
 }
 
@@ -753,64 +1194,15 @@ bool instruction_mov()
 //
 // -----------------------------------------------
 
-bool instruction_lda()
-{
-    std::cout << "lda : " << currentLine << std::endl;
-    return true;
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-bool instruction_stb()
-{
-    std::cout << "stb : " << currentLine << std::endl;
-    return true;
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-bool instruction_ldb()
-{
-    std::cout << "ldb : " << currentLine << std::endl;
-
-
-
-    return true;
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-bool instruction_push()
-{
-    std::cout << "push : " << currentLine << std::endl;
-    return true;
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-bool instruction_pop()
-{
-    std::cout << "pop : " << currentLine << std::endl;
-    return true;
-}
-
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
 bool instruction_bgt()
 {
-    std::cout << "bgt : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'bgt' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BGT);
 }
 
 // -----------------------------------------------
@@ -819,8 +1211,13 @@ bool instruction_bgt()
 
 bool instruction_blt()
 {
-    std::cout << "blt : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'blt' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BGT);
 }
 
 // -----------------------------------------------
@@ -829,8 +1226,13 @@ bool instruction_blt()
 
 bool instruction_bgte()
 {
-    std::cout << "bgte : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'bgte' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BGTE);
 }
 
 // -----------------------------------------------
@@ -839,8 +1241,13 @@ bool instruction_bgte()
 
 bool instruction_blte()
 {
-    std::cout << "blte : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'blte' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BLTE);
 }
 
 // -----------------------------------------------
@@ -849,8 +1256,13 @@ bool instruction_blte()
 
 bool instruction_beq()
 {
-    std::cout << "beq : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'beq' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BEQ);
 }
 
 // -----------------------------------------------
@@ -859,8 +1271,13 @@ bool instruction_beq()
 
 bool instruction_bne()
 {
-    std::cout << "bne : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'bne' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BNE);
 }
 
 // -----------------------------------------------
@@ -869,8 +1286,13 @@ bool instruction_bne()
 
 bool instruction_bgtd()
 {
-    std::cout << "bgtd : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'bgtd' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BGTD);
 }
 
 // -----------------------------------------------
@@ -879,8 +1301,13 @@ bool instruction_bgtd()
 
 bool instruction_bltd()
 {
-    std::cout << "bltd : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'bltd' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BLT);
 }
 
 // -----------------------------------------------
@@ -889,8 +1316,13 @@ bool instruction_bltd()
 
 bool instruction_bgted()
 {
-    std::cout << "bgted : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'bgted' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BGTED);
 }
 
 // -----------------------------------------------
@@ -899,8 +1331,13 @@ bool instruction_bgted()
 
 bool instruction_blted()
 {
-    std::cout << "blted : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'blted' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BLTED);
 }
 
 // -----------------------------------------------
@@ -909,8 +1346,13 @@ bool instruction_blted()
 
 bool instruction_beqd()
 {
-    std::cout << "beqd : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'beqd' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BEQD);
 }
 
 // -----------------------------------------------
@@ -919,8 +1361,13 @@ bool instruction_beqd()
 
 bool instruction_bned()
 {
-    std::cout << "bned : " << currentLine << std::endl;
-    return true;
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'bned' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    return branch_instruction(BranchTypes::BNED);
 }
 
 // -----------------------------------------------
