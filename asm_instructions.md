@@ -111,12 +111,20 @@ Abbreviations :
 *Note:* ldw/ldwd assumes data from Arg2 represents an address, and will attempt to pull data from whatever address it assumes. We can leverage a dReg to load string data if we want to, but performing arithmatic operations on data representing a string will result in undefined behaviour (this applies for rRegs as well)
 **Note:** The reason we can ldwd from a rReg is because we are ldwd-ing an address (4 bytes) that is stored in that reg.
 
-## Jump
+## Jump / Call
 
 | Instruction | Arg1  | Description                                   |
 |---          |---    |---                                            |
-| jmp         | label | Jump to label - return address stored in sys0 |
+| jmp         | label | Jump to label                                 |
+| call        | label | Call label - return address stored in sys0    |
 | ret         |       | Return to the address stored in sys0          |
+
+## Exit
+
+| Instruction | Description                                   |
+|---          |---                                            |
+| exit        | Quit execution of program                     |
+
 
 ### Constants and references
 
@@ -135,15 +143,9 @@ Now, using a reference to a constant
     add r0 r0 $1            ; Add 1 to 3265, store in r0
 
 
-
 **NOTE:** WE NEED TO LOOK AT HOW WE ARE GOING TO USE SP, AND WHAT ROLE IT WILL PLAY IN THE VM - This is not yet worked through
 Perhaps instead of using sp at all, a 'reserve' keyword could be used and an 'address (@) ?' keyword could be used to specify a direct 
 address location for ldw, etc
-
-## Using stack pointer
-
-To use a stack pointer offset, prefix with an in-place constant i.e : $10(sp)
-This will offset the address yeilded by 'sp' by 10
 
 
 ## Instruction Data
@@ -215,10 +217,55 @@ Here is an example of a bit layout for a branch operation
 The first 6 bytes represent the specific instruction (mov / movd / etc)
 
 Since not all load / store operations are the same their bit fields differ slightly by specific instruction.
+For all instructions except ldw/ldwd the ID bits don't matter. 
+
+**mov/movd**
+
+    INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**lda**
+
+    INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ----- UNUSED ---- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 **stw/stwd**
 
-    INS    ID   REGISTER    REGISTER    [ --------   ADDRESS  ----------]   [ ----- UNUSED ---- ]
+    INS    ID   [ ---------------   ADDRESS  ---------------]   REGISTER    [ ---- UNUSED ----- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
+**ldw/ldwd**
 
+For ldw/ldwd the ID bits represent if the source is an address in a register, or if it is an address
+stored within the instruction.
+
+Id bits:
+00 - Byte 3 is a register (presumably with an address in it)
+
+    INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+01 - Byte 3-6 is an address encoded into the instruction
+
+    INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ---- UNUSED ----- ]
+    111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+### Jump / return operation
+
+The jump operation is straight forward. The only data in the jump is the address to jump to.
+Upon executing the jump instruction, the address immediatly after jump's address will be stored in
+sys0 so that when a 'return' instruction is executed it can know where to go. 
+
+    INS    ID   [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+Since return only reads the sys0 register for an address, its bit field is pretty straight forward. 
+
+    INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ---- UNUSED ----- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+It is important to note, that since the jump instruction writes an address to sys0, care needs to be 
+taken when executing sequential jumps as 
+
+
+## The stack

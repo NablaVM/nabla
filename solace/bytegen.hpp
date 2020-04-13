@@ -3,8 +3,7 @@
 
 namespace SOLACE
 {
-
-    uint8_t
+ 
 
 }
 

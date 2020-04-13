@@ -1,6 +1,7 @@
 .file "mov ASM"
 .init main
 
+
 .int    EXAMPLE_INT 42
 
 ; THIS IS NOT YET IMPLEMENTED IN SOLACE
