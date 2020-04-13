@@ -66,17 +66,17 @@ Abbreviations :
 |     *sp      | stack pointer offset  ($N(ls), $N(gs)) |
 
 ## Artihmatic Instructions
-| Instruction     | Arg1      | Arg2       | Arg3      | Description                                  |
-|---              |---        |---         |---        |---                                           |
-|     add         |        r  |    r , *n  |   r , *n  |  Add Arg2 and Arg3, Store in Arg1            |
-|     sub         |        r  |    r , *n  |   r , *n  |  Sub Arg3 from Arg3, Store in Arg1           |
-|     mul         |        r  |    r , *n  |   r , *n  |  Mul Arg2 and Arg3, Store in Arg1            |
-|     div         |        r  |    r , *n  |   r , *n  |  Div Arg3 by  Arg2, Store in Arg1            |
-|     add.d       |        r  |      r     |     r     |  Add (double) Arg2 and Arg3, Store in Arg1   |
-|     sub.d       |        r  |      r     |     r     |  Sub (double) Arg3 from Arg3, Store in Arg1  |
-|     mul.d       |        r  |      r     |     r     |  Mul (double) Arg2 and Arg3, Store in Arg1   |
-|     div.d       |        r  |      r     |     r     |  Div (double) Arg3 by  Arg2, Store in Arg1   |
-
+| Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
+|---              |---        |---            |---           |---                                           |
+|     add         |        r  |    r , *n, *i |   r , *n, *i |  Add Arg2 and Arg3, Store in Arg1            |
+|     sub         |        r  |    r , *n, *i |   r , *n, *i |  Sub Arg3 from Arg3, Store in Arg1           |
+|     mul         |        r  |    r , *n, *i |   r , *n, *i |  Mul Arg2 and Arg3, Store in Arg1            |
+|     div         |        r  |    r , *n, *i |   r , *n, *i |  Div Arg3 by  Arg2, Store in Arg1            |
+|     add.d       |        r  |      r        |     r        |  Add (double) Arg2 and Arg3, Store in Arg1   |
+|     sub.d       |        r  |      r        |     r        |  Sub (double) Arg3 from Arg3, Store in Arg1  |
+|     mul.d       |        r  |      r        |     r        |  Mul (double) Arg2 and Arg3, Store in Arg1   |
+|     div.d       |        r  |      r        |     r        |  Div (double) Arg3 by  Arg2, Store    in Arg1   |
+   
 Arithmatic instructions that specify 'd' assumes that the values being operated on are double-precision floating point
 numbers, if the value in a given 'd' register is not a floating point, the behaviour is undefined.
 
@@ -111,6 +111,8 @@ If 'd' is specified and the value in a given register is not a floating point, t
 |      pop         |    sp     |   r                     |  Data from Arg2 into Arg1                    |
 
 
+**DEVELOPMENT NOTE:** Consider adding in-place int and double placement in PUSH, as-well-as *i, *s, and *d
+
 *Note:* Moves destroy data in source. It will 0-out the data.
 *Note:* ldb assumes data from Arg2 represents an address, and will attempt to pull data from whatever address it assumes. We can leverage a dReg to load string data if we want to, but performing arithmatic operations on data representing a string will result in undefined behaviour.
 *Note:* A mix of rRegs and dRegs can be used for mov and ldb, but it is important to note that since rRegs store only 4 bytes,
@@ -118,11 +120,12 @@ if you move rReg data to dReg data and attempt an arithmatic operation that is m
 
 ## Jump / Call
 
-| Instruction | Arg1     | Description                                      |
-|---          |---       |---                                               |
-| jmp         | label    | Jump to label                                    |
-| call        | function | Call function - return address stored in sys0    |
-| ret         |          | Return to the address stored in sys0             |
+| Instruction | Arg1     | Description                                       |
+|---          |---       |---                                                |
+| jmp         | label    | Jump to label                                     |
+| call        | function | Call function - return address stored sys stack   |
+| ret         |          | Return to the address stored on top of sys stack  |
+
 
 ## Exit
 
@@ -146,12 +149,6 @@ Now, using a reference to a constant
     ldb r0 &EXAMPLE_INT     ; Load 3265 from its address into r0
 
     add r0 r0 $1            ; Add 1 to 3265, store in r0
-
-
-**NOTE:** WE NEED TO LOOK AT HOW WE ARE GOING TO USE SP, AND WHAT ROLE IT WILL PLAY IN THE VM - This is not yet worked through
-Perhaps instead of using sp at all, a 'reserve' keyword could be used and an 'address (@) ?' keyword could be used to specify a direct 
-address location for ldw, etc
-
 
 ## Instruction Data
 
@@ -241,9 +238,6 @@ For all instructions except ldw/ldwd the ID bits don't matter.
 
 **ldb**
 
-For ldw/ldwd the ID bits represent if the source is an address in a register, or if it is an address
-stored within the instruction.
-
 Id bits:
 00 - Byte 3 is a register (presumably with an address in it)
 
@@ -257,36 +251,56 @@ Id bits:
 
 **push**
 
-    INS    ID      STACK     REGISTER    [ ---- UNUSED ----- ]
+    INS    ID      STACK     REGISTER   [ ------------------- UNUSED -------------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 **pop**
 
-    INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ----- UNUSED ---- ]
+    INS    ID   REGISTER      STACK     [ --------------------   UNUSED  ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 
 ### Jump / return operation
 
+**jump**
+
 The jump operation is straight forward. The only data in the jump is the address to jump to.
-Upon executing the jump instruction, the address immediatly after jump's address will be stored in
-sys0 so that when a 'return' instruction is executed it can know where to go. 
 
     INS    ID   [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-Since return only reads the sys0 register for an address, its bit field is pretty straight forward. 
+**call**
 
-    INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ---- UNUSED ----- ]
+Upon executing the call instruction, the address immediatly after call's address will be stored in
+the system stack. 
+
+    INS    ID   [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-It is important to note, that since the jump instruction writes an address to sys0, care needs to be 
-taken when executing sequential jumps as 
+**return**
+
+The return address will be on the top of the system stack. Executing return will return to whatever
+address is on the top of the system stack, and then pop it. 
+
+    INS    ID  [ ----------------------------------- UNUSED ----------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+Note: Implicit returns happen at the bottom of a function. If the bottom of the function is reached, 
+a return will occur.
 
 
 ## The stack
 
-In this system, there are multiple stacks that can be accessed, but only 2 that can be accessed at any given time. The functional stack, and the global stack. Each slot of each stack is 8 bytes.
+In this system, there are multiple stacks, but only 2 that can be accessed at any given time programatically. The functional stack, and the global stack. Each slot of each stack is 8 bytes. 
 
 ### Functional stack
 
+A stack accessed by 'ls' for 'local stack' that accesses the stack preserved for the current function. Once the system leaves the function, the local stack is blown away. 
+
+### Global stack
+
+A stack accessed by 'gs' for 'global stack' that accesses the stack used across the entire program. Great care should be taken when using this stack, as there is no garbage collection in the scope of what I care to do here.
+
+### System stack
+
+Not able to be accessed by software directly. The system stack is pushed and popped by calls and returns.

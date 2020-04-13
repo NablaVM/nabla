@@ -13,15 +13,13 @@
     push ls r0  ; store 33 in local stack
     push ls r1  ; store 42 in local stack
 
-    ldw r3 $1(ls) ; Loads 33 from local stack 
-    stw $0(ls) $55 ; Overwrites 42 in ls to 55
+    ldb r3 $1(ls) ; Loads 33 from local stack 
+    stb $0(ls) $55 ; Overwrites 42 in ls to 55
 
     pop r0 ls ; 55 now in r0
 
     pop r1 ls ; 33 now in r3
-
 >
-
 
 
 <other:

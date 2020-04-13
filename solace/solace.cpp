@@ -21,33 +21,46 @@ bool instruction_addd();
 bool instruction_subd();
 bool instruction_divd();
 bool instruction_muld();
+
 bool instruction_mov();
-bool instruction_movd();
-bool instruction_ldw();
-bool instruction_stw();
-bool instruction_ldc();
-bool instruction_dldw();
-bool instruction_stwd();
-bool instruction_ldcd();
+bool instruction_lda();
+bool instruction_stb();
+bool instruction_ldb();
+bool instruction_push();
+bool instruction_pop();
+
 bool instruction_bgt();
 bool instruction_blt();
 bool instruction_bgte();
 bool instruction_blte();
 bool instruction_beq();
 bool instruction_bne();
+
+bool instruction_bgtd();
+bool instruction_bltd();
+bool instruction_bgted();
+bool instruction_blted();
+bool instruction_beqd();
+bool instruction_bned();
+
 bool instruction_jmp();
+bool instruction_call();
 bool instruction_return();
+
 bool instruction_exit();
+
 bool instruction_directive();
-bool instruction_create_label();
+bool instruction_create_function();
+bool instruction_end_function();
 
 namespace 
 {
     struct Payload
     {
         std::map<std::string, uint32_t> const_ints;     // Name / Values. 
-        std::map<std::string, uint32_t> const_strings;
         std::map<std::string, uint32_t> const_doubles;
+
+        std::map<std::string, std::vector<uint8_t> > const_strings;
 
         std::map<std::string, uint32_t> labels;
 
@@ -70,33 +83,50 @@ namespace
     };
 
     std::vector<MatchCall> parserMethods = {
+        
+        // Arithmatic
         MatchCall{ std::regex("^add$")       , instruction_add       },
-        MatchCall{ std::regex("^addd$")      , instruction_addd      },
         MatchCall{ std::regex("^sub$")       , instruction_sub       },
-        MatchCall{ std::regex("^subd$")      , instruction_subd      },
         MatchCall{ std::regex("^mul$")       , instruction_mul       },
-        MatchCall{ std::regex("^muld$")      , instruction_muld      },
         MatchCall{ std::regex("^div$")       , instruction_div       },
-        MatchCall{ std::regex("^divd$")      , instruction_divd      },
-        MatchCall{ std::regex("^mov$")       , instruction_mov       },
-        MatchCall{ std::regex("^movd$")      , instruction_movd       },
-        MatchCall{ std::regex("^ldw$")       , instruction_ldw       },
-        MatchCall{ std::regex("^stw$")       , instruction_stw       },
-        MatchCall{ std::regex("^ldc$")       , instruction_ldc       },
-        MatchCall{ std::regex("^dldw$")      , instruction_dldw      },
-        MatchCall{ std::regex("^stwd$")      , instruction_stwd      },
-        MatchCall{ std::regex("^ldcd$")      , instruction_ldcd      },
+        MatchCall{ std::regex("^add\\.d$")   , instruction_addd      },
+        MatchCall{ std::regex("^sub\\.d$")   , instruction_subd      },
+        MatchCall{ std::regex("^mul\\.d$")   , instruction_muld      },
+        MatchCall{ std::regex("^div\\.d$")   , instruction_divd      },
+
+        // Branches
         MatchCall{ std::regex("^bgt$")       , instruction_bgt       },
         MatchCall{ std::regex("^blt$")       , instruction_blt       },
         MatchCall{ std::regex("^bgte$")      , instruction_bgte      },
         MatchCall{ std::regex("^blte$")      , instruction_blte      },
         MatchCall{ std::regex("^beq$")       , instruction_beq       },
         MatchCall{ std::regex("^bne$")       , instruction_bne       },
+        
+        MatchCall{ std::regex("^bgt\\.d$")   , instruction_bgtd      },
+        MatchCall{ std::regex("^blt\\.d$")   , instruction_bltd      },
+        MatchCall{ std::regex("^bgte\\.d$")  , instruction_bgted     },
+        MatchCall{ std::regex("^blte\\.d$")  , instruction_blted     },
+        MatchCall{ std::regex("^beq\\.d$")   , instruction_beqd      },
+        MatchCall{ std::regex("^bne\\.d$")   , instruction_bned      },
+
+        MatchCall{ std::regex("^mov$")       , instruction_mov       },
+        MatchCall{ std::regex("^lda$")       , instruction_lda       },
+        MatchCall{ std::regex("^ldb$")       , instruction_ldb       },
+        MatchCall{ std::regex("^stb$")       , instruction_stb       },
+        
+        MatchCall{ std::regex("^push$")      , instruction_push      },
+        MatchCall{ std::regex("^pop$")       , instruction_pop      },
+
         MatchCall{ std::regex("^jmp$")       , instruction_jmp       },
+        MatchCall{ std::regex("^call$")      , instruction_call      },
         MatchCall{ std::regex("^ret$")       , instruction_return    },
+
         MatchCall{ std::regex("^exit$")      , instruction_exit      },
         MatchCall{ std::regex("^\\.[a-z]+$") , instruction_directive },
-        MatchCall{ std::regex("[a-zA-Z0-9_]+:$") , instruction_create_label },
+        MatchCall{ std::regex("^\\<[a-zA-Z0-9_]+:$") , instruction_create_function },
+        MatchCall{ std::regex("^\\>$") , instruction_end_function },
+
+        
     };
 
     constexpr char UNDEFINED_ENTRY_POINT[] = "___UNDEFINED__ENTRY__POINT___";
@@ -157,7 +187,21 @@ inline static std::vector<std::string> chunkLine(std::string line)
 //
 // -----------------------------------------------
 
-inline static std::string &ltrim (std::string &line)
+inline static std::string rtrim(std::string &line) 
+{
+    line.erase(std::find_if(line.rbegin(), line.rend(), 
+    [](int ch) 
+    {
+        return !std::isspace(ch);
+    }).base(), line.end());
+    return line;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static std::string ltrim (std::string &line)
 {
     line.erase(line.begin(),find_if_not(line.begin(),line.end(),
     [](int c)
@@ -190,7 +234,7 @@ inline static bool parseFile(std::string file)
         {
             currentPieces = chunkLine(currentLine);
 
-            if(currentPieces.size() > 1)
+            if(currentPieces.size() > 0)
             {
                 bool found = false;
                 for(auto &i : parserMethods)
@@ -284,15 +328,6 @@ inline static bool isRegister(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isDoubleRegister(std::string piece)
-{
-    return std::regex_match(piece, std::regex("^d{1}[0-7]$"));
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
 inline static bool isSystemRegister(std::string piece)
 {
     return std::regex_match(piece, std::regex("^sys{1}[0-1]$"));
@@ -302,18 +337,36 @@ inline static bool isSystemRegister(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isDirectStackPointer(std::string piece)
+inline static bool isDirectLocalStackPointer(std::string piece)
 {
-    return std::regex_match(piece, std::regex("^sp$"));
+    return std::regex_match(piece, std::regex("^ls$"));
 }
 
 // -----------------------------------------------
 //
 // -----------------------------------------------
 
-inline static bool isStackPointerOffset(std::string piece)
+inline static bool isDirectGlobalStackPointer(std::string piece)
 {
-    return std::regex_match(piece, std::regex("^\\$[0-9]+\\(sp\\)$"));
+    return std::regex_match(piece, std::regex("^gs$"));
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static bool isOffsetLocalStackpointer(std::string piece)
+{
+    return std::regex_match(piece, std::regex("^\\$[0-9]+\\(ls\\)$"));
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static bool isOffsetGlobalStackpointer(std::string piece)
+{
+    return std::regex_match(piece, std::regex("^\\$[0-9]+\\(gs\\)$"));
 }
 
 // -----------------------------------------------
@@ -322,7 +375,7 @@ inline static bool isStackPointerOffset(std::string piece)
 
 inline static bool isDirectNumerical(std::string piece)
 {
-    return std::regex_match(piece, std::regex("^\\$[0-9]+$"));
+    return std::regex_match(piece, std::regex("(^\\$[0-9]+$)|(^\\$\\-[0-9]+$)"));
 }
 
 // -----------------------------------------------
@@ -333,7 +386,6 @@ inline static bool isDirectNumericalDouble(std::string piece)
 {
     return std::regex_match(piece, std::regex("^\\$[0-9]+.[0-9]+$"));
 }
-
 
 // -----------------------------------------------
 //
@@ -424,9 +476,6 @@ inline static std::string convertArithToString(ArithmaticTypes type)
 
 inline static bool arithmatic_instruction(ArithmaticTypes type)
 {
-    bool argumentOneFound   = false;
-    bool argumentTwoFound   = false;
-    bool argumentThreeFound = false;
 
     // These are the non-double commands
     if(static_cast<unsigned>(type) <= 0x03)
@@ -439,25 +488,15 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         if(isRegister(currentPieces[1]))
         {
             std::cout << convertArithToString(type) << "::arg1::register::" << currentPieces[1] << std::endl;
-
-            argumentOneFound = true;
         }
-
-        // ADDs can have a stack pointer in the first bit, so we need to check that
-        if(ArithmaticTypes::ADD == type && !argumentOneFound)
-        {
-            if(isStackPointerOffset(currentPieces[1]))
-            {
-                std::cout << convertArithToString(type) << "::arg1::stack_pointer::" << currentPieces[1] << std::endl;
-                argumentOneFound = true;
-            }
-        }
-
-        if(!argumentOneFound)
+        else
         {
             std::cout << convertArithToString(type) << "::arg1::not_matched, given :" << currentPieces[1] << std::endl;
             return false;
         }
+
+        bool argumentTwoFound   = false;
+        bool argumentThreeFound = false;
 
         // --------------------------------------------
         //  ARG 2
@@ -471,11 +510,6 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         else if(isDirectNumerical(currentPieces[2]))
         {
             std::cout << "Direct Numerical : " << currentPieces[2] << std::endl; 
-            argumentTwoFound = true;
-        }
-        else if(isStackPointerOffset(currentPieces[2]))
-        {
-            std::cout << "Stack pointer offset : " << currentPieces[2] << std::endl; 
             argumentTwoFound = true;
         }
         else if(isReferencedConstant(currentPieces[2]))
@@ -494,7 +528,7 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
 
         if(!argumentTwoFound)
         {
-            std::cout << convertArithToString(type) << "::arg2::not_matched, given :" << currentPieces[1] << std::endl;
+            std::cout << convertArithToString(type) << "::arg2::not_matched, given :" << currentPieces[2] << std::endl;
             return false;
         }
 
@@ -512,11 +546,6 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
             std::cout << "Direct Numerical : " << currentPieces[3] << std::endl;
             argumentThreeFound = true;
         }
-        else if(isStackPointerOffset(currentPieces[3]))
-        {
-            std::cout << "Stack pointer offset : " << currentPieces[3] << std::endl; 
-            argumentThreeFound = true;
-        }
         else if(isReferencedConstant(currentPieces[3]))
         {
             std::cout << "Referenced Constant : " << currentPieces[3] << std::endl;
@@ -533,7 +562,7 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
 
         if(!argumentThreeFound)
         {
-            std::cout << convertArithToString(type) << "::arg3::not_matched, given :" << currentPieces[1] << std::endl;
+            std::cout << convertArithToString(type) << "::arg3::not_matched, given :" << currentPieces[3] << std::endl;
             return false;
         }
     } 
@@ -547,14 +576,11 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         // --------------------------------------------
 
         // Check if is register
-        if(isDoubleRegister(currentPieces[1]))
+        if(isRegister(currentPieces[1]))
         {
-            std::cout << convertArithToString(type) << "::arg1::double_register::" << currentPieces[1] << std::endl;
-
-            argumentOneFound = true;
+            std::cout << convertArithToString(type) << "::arg1::register::" << currentPieces[1] << std::endl;
         }
-
-        if(!argumentOneFound)
+        else
         {
             std::cout << convertArithToString(type) << "::arg1::not_matched, given :" << currentPieces[1] << std::endl;
             return false;
@@ -564,33 +590,13 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         //  ARG 2
         // --------------------------------------------
 
-        if(isDoubleRegister(currentPieces[2]))
+        if(isRegister(currentPieces[2]))
         {
             std::cout << "Double Register : " << currentPieces[2] << std::endl;
-            argumentTwoFound = true;
         }
-        else if(isDirectNumericalDouble(currentPieces[2]))
+        else
         {
-            std::cout << "Direct Numerical Double: " << currentPieces[2] << std::endl; 
-            argumentTwoFound = true;
-        }
-        else if(isReferencedConstant(currentPieces[2]))
-        {
-            std::cout << "Referenced Constant : " << currentPieces[2] << std::endl;
-
-            std::string constantName = currentPieces[2].substr(1, currentPieces[2].size());
-
-            if(!isConstDoubleInPayload(constantName))
-            {
-                std::cerr << "Given 'double' constant has not been set : " << constantName << std::endl;
-                return false;
-            }
-            argumentTwoFound = true;
-        }
-
-        if(!argumentTwoFound)
-        {
-            std::cout << convertArithToString(type) << "::arg2::not_matched, given :" << currentPieces[1] << std::endl;
+            std::cout << convertArithToString(type) << "::arg2::not_matched, given :" << currentPieces[2] << std::endl;
             return false;
         }
 
@@ -598,36 +604,17 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         //  ARG 3
         // --------------------------------------------
 
-        if(isDoubleRegister(currentPieces[3]))
+        if(isRegister(currentPieces[3]))
         {
-            std::cout << "Double Register : " << currentPieces[3] << std::endl;
-            argumentThreeFound = true;
+            std::cout << "Register : " << currentPieces[3] << std::endl;
         }
-        else if(isDirectNumericalDouble(currentPieces[3]))
+        else
         {
-            std::cout << "Direct Numerical Double: " << currentPieces[3] << std::endl;
-            argumentThreeFound = true;
-        }
-        else if(isReferencedConstant(currentPieces[3]))
-        {
-            std::cout << "Referenced Constant : " << currentPieces[3] << std::endl;
-
-            std::string constantName = currentPieces[3].substr(1, currentPieces[3].size());
-
-            if(!isConstDoubleInPayload(constantName))
-            {
-                std::cerr << "Given 'double' constant has not been set : " << constantName << std::endl;
-                return false;
-            }
-            argumentThreeFound = true;
-        }
-
-        if(!argumentThreeFound)
-        {
-            std::cout << convertArithToString(type) << "::arg3::not_matched, given :" << currentPieces[1] << std::endl;
+            std::cout << convertArithToString(type) << "::arg3::not_matched, given :" << currentPieces[3] << std::endl;
             return false;
         }
     }
+    
     return true;
 }
 
@@ -639,7 +626,7 @@ bool instruction_add()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'add' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'add' instruction : " << currentLine << std::endl;
         return false;
     }
     
@@ -654,7 +641,7 @@ bool instruction_sub()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'sub' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'sub' instruction : " << currentLine << std::endl;
         return false;
     }
     
@@ -669,7 +656,7 @@ bool instruction_div()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'div' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'div' instruction : " << currentLine << std::endl;
         return false;
     }
     
@@ -684,7 +671,7 @@ bool instruction_mul()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'mul' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'mul' instruction : " << currentLine << std::endl;
         return false;
     }
     
@@ -699,7 +686,7 @@ bool instruction_addd()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'addd' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'addd' instruction : " << currentLine << std::endl;
         return false;
     }
     
@@ -714,7 +701,7 @@ bool instruction_subd()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'subd' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'subd' instruction : " << currentLine << std::endl;
         return false;
     }
     
@@ -729,7 +716,7 @@ bool instruction_divd()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'divd' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'divd' instruction : " << currentLine << std::endl;
         return false;
     }
     
@@ -744,7 +731,7 @@ bool instruction_muld()
 {
     if(currentPieces.size() != 4)
     {
-        std::cerr << "Incomplete 'muld' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'muld' instruction : " << currentLine << std::endl;
         return false;
     }
     
@@ -766,20 +753,9 @@ bool instruction_mov()
 //
 // -----------------------------------------------
 
-bool instruction_movd()
+bool instruction_lda()
 {
-#warning OR START WORKING HERE
-    std::cout << "movd (NYD): " << currentLine << std::endl;
-    return false;
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-bool instruction_ldw()
-{
-    std::cout << "ldw : " << currentLine << std::endl;
+    std::cout << "lda : " << currentLine << std::endl;
     return true;
 }
 
@@ -787,9 +763,9 @@ bool instruction_ldw()
 //
 // -----------------------------------------------
 
-bool instruction_stw()
+bool instruction_stb()
 {
-    std::cout << "stw : " << currentLine << std::endl;
+    std::cout << "stb : " << currentLine << std::endl;
     return true;
 }
 
@@ -797,9 +773,12 @@ bool instruction_stw()
 //
 // -----------------------------------------------
 
-bool instruction_ldc()
+bool instruction_ldb()
 {
-    std::cout << "ldc : " << currentLine << std::endl;
+    std::cout << "ldb : " << currentLine << std::endl;
+
+
+
     return true;
 }
 
@@ -807,9 +786,9 @@ bool instruction_ldc()
 //
 // -----------------------------------------------
 
-bool instruction_dldw()
+bool instruction_push()
 {
-    std::cout << "dldw : " << currentLine << std::endl;
+    std::cout << "push : " << currentLine << std::endl;
     return true;
 }
 
@@ -817,21 +796,12 @@ bool instruction_dldw()
 //
 // -----------------------------------------------
 
-bool instruction_stwd()
+bool instruction_pop()
 {
-    std::cout << "stwd : " << currentLine << std::endl;
+    std::cout << "pop : " << currentLine << std::endl;
     return true;
 }
 
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-bool instruction_ldcd()
-{
-    std::cout << "ldcd : " << currentLine << std::endl;
-    return true;
-}
 
 // -----------------------------------------------
 //
@@ -897,11 +867,82 @@ bool instruction_bne()
 //
 // -----------------------------------------------
 
+bool instruction_bgtd()
+{
+    std::cout << "bgtd : " << currentLine << std::endl;
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_bltd()
+{
+    std::cout << "bltd : " << currentLine << std::endl;
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_bgted()
+{
+    std::cout << "bgted : " << currentLine << std::endl;
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_blted()
+{
+    std::cout << "blted : " << currentLine << std::endl;
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_beqd()
+{
+    std::cout << "beqd : " << currentLine << std::endl;
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_bned()
+{
+    std::cout << "bned : " << currentLine << std::endl;
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
 bool instruction_jmp()
 {
     std::cout << "jmp : " << currentLine << std::endl;
 
-    // Put return address in sys1 - Consider adding a 'call'
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_call()
+{
+    std::cout << "call : " << currentLine << std::endl;
+
+    // Put return address in sys0
     return true;
 }
 
@@ -985,7 +1026,58 @@ bool instruction_directive()
     else if (std::regex_match(currentPieces[0], std::regex("^\\.string$"))) 
     {
         std::cout << "\tstring: " << currentLine << std::endl;
+
+        // Make sure everything is there
+        if(currentPieces.size() < 3)
+        {
+            std::cerr << "Invalid .string constant detected. Requires : .string CONST_NAME \"str\", but [" << currentLine << "] given." << std::endl;
+            return false;
+        }
+
+        // Ensure name is valid
+        if(!isConstNameValid(currentPieces[1]))
+        {
+            std::cerr << "Invalid name given to constant .string : " << currentPieces[1] << std::endl;
+            return false;
+        }
+
+        // Ensure the thing is a string
+        if(!isString(currentPieces[2]))
+        {
+            std::cerr << "Invalid type given to constant .string : " << currentPieces[2] << std::endl;
+            return false;
+        }
+
+        // Clean up the string
+        std::string str = currentPieces[2];
+
+        str = ltrim(str);
+        str = rtrim(str);
+        str = str.substr(1, str.size()-2);
+
+        if(str.size() == 0)
+        {
+            std::cerr << "Constant .string " << currentPieces[1] << " was determined to be empty after removeing \"s" << std::endl;
+            return false;
+        }
+
+        // Ensure that we haven't had it defined yet
+        if(isConstStringInPayload(currentPieces[1]))
+        {
+            std::cerr << "Constant .string " << currentPieces[1] << " previously defined with value."<< std::endl;
+            return false;
+        }
+
+        // Get the destination vector ready
+        finalPayload.const_strings[currentPieces[1]] = std::vector<uint8_t>();
+
+        // Put the chars in the array
+        for(auto& i : str)
+        {
+            finalPayload.const_strings[currentPieces[1]].push_back(static_cast<uint8_t>(i));
+        }
     }
+
     // ----------------------------------------------------------------------
     //  Create a .int constant
     // ----------------------------------------------------------------------
@@ -1103,11 +1195,23 @@ bool instruction_directive()
 //
 // -----------------------------------------------
 
-bool instruction_create_label()
+bool instruction_create_function()
 {
-    std::cout << "Create Label: " << currentLine << std::endl;
+    std::cout << "Create function: " << currentLine << std::endl;
 
     return true;
 }
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_end_function()
+{
+    std::cout << "End function: " << currentLine << std::endl;
+
+    return true;
+}
+
 
 } // End namespace SOLACE
