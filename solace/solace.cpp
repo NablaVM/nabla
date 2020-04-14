@@ -346,6 +346,15 @@ bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes)
 //
 // -----------------------------------------------
 
+inline static bool isLabel(std::string name)
+{
+    return std::regex_match(name, std::regex("^[a-zA-Z_0-9]+:$"));
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
 inline static bool isConstNameValid(std::string name)
 {
     return std::regex_match(name, std::regex("^[a-zA-Z_0-9]+"));
@@ -1174,6 +1183,26 @@ inline static std::string convertBranchToString(BranchTypes type)
 inline bool branch_instruction(BranchTypes type)
 {
     std::cout << "Branch : " << convertBranchToString(type) << ": " << currentLine << std::endl;
+
+    if(!isRegister(currentPieces[1]))
+    {
+        std::cerr << "branch argument 1 must be a register" << std::endl;
+        return false;
+    }
+
+    if(!isRegister(currentPieces[2]))
+    {
+        std::cerr << "branch argument 2 must be a register" << std::endl;
+        return false;
+    }
+
+    if(!isLabel(currentPieces[1]))
+    {
+#warning The label here doesn't need to be created yet, but we need to ensure they exist before invoking branch create method
+
+        std::cerr << "branch argument 3 must be a label" << std::endl;
+        return false;
+    }
 
 
     if(static_cast<unsigned>(type) <= 0x06)
