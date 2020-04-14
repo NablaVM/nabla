@@ -1,6 +1,6 @@
 #include "bytegen.hpp"
 
-#include "insmanifest.hpp"
+#include "InsManifest.hpp"
 
 namespace SOLACE
 {

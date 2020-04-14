@@ -1,3 +1,10 @@
+/*
+    Josh Bosley
+
+    The actual byte generator. Solace.h/cpp play the part of parsing and ensuring that there aren't any mistakes in the
+    hand-written asm code. The bytegen is called into by solace.h/cpp to actually generate the bytes used for the VM.
+*/
+
 #ifndef SOLACE_BYTEGEN_H
 #define SOLACE_BYTEGEN_H
 

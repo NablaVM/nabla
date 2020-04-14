@@ -1,6 +1,12 @@
+/*
+    Josh Bosley
+
+    This is the complete list of instructions for the VM, used by the solace compiler as-well-as the nabla VM.
+
+*/
+
 #ifndef SOLACE_INS_MANIFEST_HPP
 #define SOLACE_INS_MANIFEST_HPP
-
 
 #include <iostream>
 #include <iomanip>
@@ -10,6 +16,9 @@ namespace SOLACE
 {
     namespace MANIFEST
     {
+        // Most instructions are 6-bit so it is essential to ensure that the lowest 2 bits being gone don't
+        // mess with the uniqueness of the instruction. To get by this, we must be careful in the values we chose.
+        // In the bottom of this file are a list of possible values to use, and the ones in use are marked as such
         constexpr uint8_t INS_ADD             = 0x7C;
         constexpr uint8_t INS_SUB             = 0x80;
         constexpr uint8_t INS_MUL             = 0x84;
@@ -69,6 +78,8 @@ namespace SOLACE
         constexpr uint8_t REGISTER_14         = 0x0E;
         constexpr uint8_t REGISTER_15         = 0x0F;
 
+        //  This is a helper method for the sake of debugging. I do not intend on keeping this here in the long run.
+        //
         void displayManifest()
         {
             std::cout << "INS_ADD             =" << std::hex << (int)INS_ADD             << " \t| " << std::bitset<8>(INS_ADD            ) << std::endl;
