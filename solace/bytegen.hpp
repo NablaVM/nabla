@@ -53,6 +53,25 @@ namespace SOLACE
         };
 
         //!
+        //! \brief Types of branches 
+        //!
+        enum class BranchTypes
+        {  
+            BGT   = 0x01, 
+            BGTE  = 0x02, 
+            BLT   = 0x03, 
+            BLTE  = 0x04, 
+            BEQ   = 0x05, 
+            BNE   = 0x06, 
+            BGTD  = 0x07,
+            BGTED = 0x08,
+            BLTD  = 0x09,
+            BLTED = 0x0A,
+            BEQD  = 0x0B,
+            BNED  = 0x0C,
+        };
+
+        //!
         //! \brief Create a bytegen
         //!
         Bytegen();
@@ -92,6 +111,13 @@ namespace SOLACE
         //! \note  With this function you could attempt to add in-place numerical constants in double-precision instructions.
         //!        _DONT_ try that. You won't like the resul. GARBAGE IN = GARBAGE OUT . RTFM
         Instruction createArithmaticInstruction(ArithmaticTypes type, ArithmaticSetup setup, int16_t arg1, int16_t arg2, int16_t arg3);
+
+        //! \brief Create a branch instruction
+        //! \param type The branch type
+        //! \param reg1  Register 1
+        //! \param reg2  Register 2
+        //! \param location Location within function to branch to
+        Instruction createBranchInstruction(BranchTypes type, uint8_t reg1, uint8_t reg2, uint32_t location);
 
     private:
 

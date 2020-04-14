@@ -34,6 +34,21 @@ namespace SOLACE
                     break;
             }
         }
+
+        // Helper for debugging
+        void dumpInstruction(Bytegen::Instruction ins)
+        {
+            std::cout << std::endl << "\t"
+            << std::bitset<8>(ins.bytes[0]) << " | " 
+            << std::bitset<8>(ins.bytes[1]) << " | " 
+            << std::bitset<8>(ins.bytes[2]) << " | " 
+            << std::bitset<8>(ins.bytes[3]) << " | " 
+            << std::bitset<8>(ins.bytes[4]) << " | " 
+            << std::bitset<8>(ins.bytes[5]) << " | " 
+            << std::bitset<8>(ins.bytes[6]) << " | " 
+            << std::bitset<8>(ins.bytes[7]) << "   " 
+            << std::endl << std::endl;
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -242,17 +257,49 @@ namespace SOLACE
 #warning Remove this output after debugging
 
         std::cout << "Arg1: " << arg1 << " Arg2: " << arg2 << " Arg3: " << arg3 << std::endl;
-        std::cout << std::endl << "\t"
-                  << std::bitset<8>(ins.bytes[0]) << " | " 
-                  << std::bitset<8>(ins.bytes[1]) << " | " 
-                  << std::bitset<8>(ins.bytes[2]) << " | " 
-                  << std::bitset<8>(ins.bytes[3]) << " | " 
-                  << std::bitset<8>(ins.bytes[4]) << " | " 
-                  << std::bitset<8>(ins.bytes[5]) << " | " 
-                  << std::bitset<8>(ins.bytes[6]) << " | " 
-                  << std::bitset<8>(ins.bytes[7]) << "   " 
-                  << std::endl << std::endl;
+        dumpInstruction(ins);
 
         return ins;
     }
-}
+
+
+    // ------------------------------------------------------------------------
+    // createBranchInstruction
+    // ------------------------------------------------------------------------
+    
+    Bytegen::Instruction Bytegen::createBranchInstruction(BranchTypes type, uint8_t reg1, uint8_t reg2, uint32_t location)
+    {
+        Instruction ins;
+
+        // Set the instruction op
+        switch(type)
+        {
+            case Bytegen::BranchTypes::BGT  : ins.bytes[0] = MANIFEST::INS_BGT  ; break; 
+            case Bytegen::BranchTypes::BGTE : ins.bytes[0] = MANIFEST::INS_BGTE ; break; 
+            case Bytegen::BranchTypes::BLT  : ins.bytes[0] = MANIFEST::INS_BLT  ; break; 
+            case Bytegen::BranchTypes::BLTE : ins.bytes[0] = MANIFEST::INS_BLTE ; break; 
+            case Bytegen::BranchTypes::BEQ  : ins.bytes[0] = MANIFEST::INS_BEQ  ; break; 
+            case Bytegen::BranchTypes::BNE  : ins.bytes[0] = MANIFEST::INS_BNE  ; break; 
+            case Bytegen::BranchTypes::BGTD : ins.bytes[0] = MANIFEST::INS_BGTD ; break;
+            case Bytegen::BranchTypes::BGTED: ins.bytes[0] = MANIFEST::INS_BGTED; break;
+            case Bytegen::BranchTypes::BLTD : ins.bytes[0] = MANIFEST::INS_BLTD ; break;
+            case Bytegen::BranchTypes::BLTED: ins.bytes[0] = MANIFEST::INS_BLTED; break;
+            case Bytegen::BranchTypes::BEQD : ins.bytes[0] = MANIFEST::INS_BEQD ; break;
+            case Bytegen::BranchTypes::BNED : ins.bytes[0] = MANIFEST::INS_BNED ; break;
+            default:                          return ins; // Keep that compiler happy.
+        }
+
+        ins.bytes[1] = integerToRegister(reg1);
+        ins.bytes[2] = integerToRegister(reg2);
+        ins.bytes[3] = (location & 0xFF000000) >> 24 ;
+        ins.bytes[4] = (location & 0x00FF0000) >> 16 ;
+        ins.bytes[5] = (location & 0x0000FF00) >> 8  ;
+        ins.bytes[6] = (location & 0x000000FF) >> 0  ;
+        ins.bytes[7] = 0xFF;
+
+        dumpInstruction(ins);
+
+        return ins;
+    }
+
+} // End of namespace

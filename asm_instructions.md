@@ -101,6 +101,8 @@ numbers, if the value in a given 'd' register is not a floating point, the behav
 Branch instructions assume that the conditional values stored in registers are integer values unless 'd' is specified. 
 If 'd' is specified and the value in a given register is not a floating point, the behaviour is undefined.
 
+Currently branches must branch to existing labels, that is, labels that come before them within the function.
+
 ## Loading / Storing Instructions
 |  Instruction     |  Arg1     |  Arg2                   |  Description                                 |
 |---               |---        |---                      |---                                           |

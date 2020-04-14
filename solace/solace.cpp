@@ -9,18 +9,18 @@
         sub.d           X                   X
         mul.d           X                   X
         div.d           X                   X
-        bgt   
-        bgte  
-        blt   
-        blte  
-        beq   
-        bne   
-        bgt.d 
-        bgte.d
-        blt.d 
-        blte.d
-        beq.d 
-        bne.d 
+        bgt             X                   X
+        bgte            X                   X
+        blt             X                   X
+        blte            X                   X
+        beq             X                   X
+        bne             X                   X
+        bgt.d           X                   X
+        bgte.d          X                   X
+        blt.d           X                   X
+        blte.d          X                   X
+        beq.d           X                   X
+        bne.d           X                   X
         mov             X
         lda             X
         ldb             X
@@ -31,6 +31,7 @@
         call
         ret 
         exit    
+        label           X                   NA
 
 
 
@@ -107,6 +108,7 @@ bool instruction_bned();
 bool instruction_jmp();
 bool instruction_call();
 bool instruction_return();
+bool instruction_create_label();
 
 bool instruction_exit();
 
@@ -127,7 +129,6 @@ namespace
         std::map<std::string, std::vector<uint8_t> > const_ints;     // Constant integers
         std::map<std::string, std::vector<uint8_t> > const_doubles;  // Constant doubles
         std::map<std::string, std::vector<uint8_t> > const_strings;  // Constant strings
-        std::map<std::string, uint32_t>              labels;         // Labels - rhs value is their index within a function
         std::map<std::string, uint32_t>              functions;      // Functions
 
         std::vector<std::string> filesParsed;   // Files that have been parsed
@@ -196,6 +197,8 @@ namespace
         MatchCall{ std::regex("^call$")      , instruction_call      },
         MatchCall{ std::regex("^ret$")       , instruction_return    },
 
+        MatchCall{ std::regex("^[a-zA-Z0-9_]+:$") , instruction_create_label },
+
         MatchCall{ std::regex("^exit$")      , instruction_exit      },
         MatchCall{ std::regex("^\\.[a-z]+$") , instruction_directive },
         MatchCall{ std::regex("^\\<[a-zA-Z0-9_]+:$") , instruction_create_function },
@@ -204,27 +207,12 @@ namespace
         
     };
 
-    enum class BranchTypes
-    {  
-        BGT   = 0x01, 
-        BGTE  = 0x02, 
-        BLT   = 0x03, 
-        BLTE  = 0x04, 
-        BEQ   = 0x05, 
-        BNE   = 0x06, 
-        BGTD  = 0x07,
-        BGTED = 0x08,
-        BLTD  = 0x09,
-        BLTED = 0x0A,
-        BEQD  = 0x0B,
-        BNED  = 0x0C,
-    };
-
     // A temporary function instruction accumulator
     struct FunctionInformation
     {
         std::string name;
         std::vector<uint8_t> instructions;
+        std::map<std::string, uint32_t>    labels;         // Labels - rhs value is their index within a function
     };
 
     FunctionInformation currentFunction;
@@ -386,9 +374,9 @@ bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes)
 //
 // -----------------------------------------------
 
-inline static bool isLabel(std::string name)
+inline static bool isBranchableLabel(std::string name)
 {
-    return std::regex_match(name, std::regex("^[a-zA-Z_0-9]+:$"));
+    return std::regex_match(name, std::regex("^[a-zA-Z_0-9]+$"));
 }
 
 // -----------------------------------------------
@@ -424,7 +412,7 @@ inline static bool isDouble(std::string piece)
 
 inline static bool isRegister(std::string piece)
 {
-    return std::regex_match(piece, std::regex("^r{1}([0-9]|1[015])$"));
+    return std::regex_match(piece, std::regex("^r{1}([0-9]|1[0-5])$"));
 }
 
 // -----------------------------------------------
@@ -588,9 +576,9 @@ inline static bool isConstStringInPayload(std::string name)
 //
 // -----------------------------------------------
 
-inline static bool isLabelInPayload(std::string name)
+inline static bool isLabelInCurrentFunction(std::string name)
 {
-    return (finalPayload.labels.find(name) != finalPayload.labels.end());
+    return (currentFunction.labels.find(name) != currentFunction.labels.end());
 }
 
 // -----------------------------------------------
@@ -1270,27 +1258,27 @@ bool instruction_pop()
 //
 // -----------------------------------------------
 
-inline static std::string convertBranchToString(BranchTypes type)
+inline static std::string convertBranchToString(Bytegen::BranchTypes type)
 {
     switch(type)
     {
-        case BranchTypes::BGT  : return "BGT  "; 
-        case BranchTypes::BGTE : return "BGTE "; 
-        case BranchTypes::BLT  : return "BLT  "; 
-        case BranchTypes::BLTE : return "BLTE "; 
-        case BranchTypes::BEQ  : return "BEQ  "; 
-        case BranchTypes::BNE  : return "BNE  "; 
-        case BranchTypes::BGTD : return "BGTD ";
-        case BranchTypes::BGTED: return "BGTED";
-        case BranchTypes::BLTD : return "BLTD ";
-        case BranchTypes::BLTED: return "BLTED";
-        case BranchTypes::BEQD : return "BEQD ";
-        case BranchTypes::BNED : return "BNED ";
+        case Bytegen::BranchTypes::BGT  : return "BGT  "; 
+        case Bytegen::BranchTypes::BGTE : return "BGTE "; 
+        case Bytegen::BranchTypes::BLT  : return "BLT  "; 
+        case Bytegen::BranchTypes::BLTE : return "BLTE "; 
+        case Bytegen::BranchTypes::BEQ  : return "BEQ  "; 
+        case Bytegen::BranchTypes::BNE  : return "BNE  "; 
+        case Bytegen::BranchTypes::BGTD : return "BGTD ";
+        case Bytegen::BranchTypes::BGTED: return "BGTED";
+        case Bytegen::BranchTypes::BLTD : return "BLTD ";
+        case Bytegen::BranchTypes::BLTED: return "BLTED";
+        case Bytegen::BranchTypes::BEQD : return "BEQD ";
+        case Bytegen::BranchTypes::BNED : return "BNED ";
         default:                 return "UNKNOWN"; // Keep that compiler happy.
     }
 }
 
-inline bool branch_instruction(BranchTypes type)
+inline bool branch_instruction(Bytegen::BranchTypes type)
 {
     if(!isSystemBuildingFunction)
     {
@@ -1312,27 +1300,29 @@ inline bool branch_instruction(BranchTypes type)
         return false;
     }
 
-    if(!isLabel(currentPieces[1]))
+    if(!isBranchableLabel(currentPieces[3]))
     {
-#warning The label here doesn't need to be created yet, but we need to ensure they exist before invoking branch create method
-
-        std::cerr << "branch argument 3 must be a label" << std::endl;
+        std::cerr << "branch argument 3 must be a label, got : " << currentPieces[3] <<  std::endl;
         return false;
     }
 
-
-    if(static_cast<unsigned>(type) <= 0x06)
+    if(!isLabelInCurrentFunction(currentPieces[3]))
     {
-        std::cout << "Regular, non-double branch" << std::endl;
-    }
-    else
-    {
-        std::cout << "Not regular, double branch" << std::endl;
+        std::cerr << "branches must branch to existing labels. - We hope to extend this functionality later" << std::endl;
+        return false;
     }
 
+    // We are expecting registers as regex magic has already deemed them fit to be registers.
+    // The following method simply peels off the 'r' so we are left with the integer 
+    uint8_t reg1 = getNumberFromNumericalOrRegister(currentPieces[1]);
+    uint8_t reg2 = getNumberFromNumericalOrRegister(currentPieces[2]);
 
-    std::cerr << "Returning error because this aint done dood" << std::endl;
-    return false;
+    // Generate the bytes and add to the current function
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createBranchInstruction(type, reg1, reg2, currentFunction.labels[currentPieces[3]])
+        );
+
+    return true;
 }
 
 // -----------------------------------------------
@@ -1347,7 +1337,7 @@ bool instruction_bgt()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BGT);
+    return branch_instruction(Bytegen::BranchTypes::BGT);
 }
 
 // -----------------------------------------------
@@ -1362,7 +1352,7 @@ bool instruction_blt()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BGT);
+    return branch_instruction(Bytegen::BranchTypes::BGT);
 }
 
 // -----------------------------------------------
@@ -1377,7 +1367,7 @@ bool instruction_bgte()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BGTE);
+    return branch_instruction(Bytegen::BranchTypes::BGTE);
 }
 
 // -----------------------------------------------
@@ -1392,7 +1382,7 @@ bool instruction_blte()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BLTE);
+    return branch_instruction(Bytegen::BranchTypes::BLTE);
 }
 
 // -----------------------------------------------
@@ -1407,7 +1397,7 @@ bool instruction_beq()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BEQ);
+    return branch_instruction(Bytegen::BranchTypes::BEQ);
 }
 
 // -----------------------------------------------
@@ -1422,7 +1412,7 @@ bool instruction_bne()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BNE);
+    return branch_instruction(Bytegen::BranchTypes::BNE);
 }
 
 // -----------------------------------------------
@@ -1437,7 +1427,7 @@ bool instruction_bgtd()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BGTD);
+    return branch_instruction(Bytegen::BranchTypes::BGTD);
 }
 
 // -----------------------------------------------
@@ -1452,7 +1442,7 @@ bool instruction_bltd()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BLT);
+    return branch_instruction(Bytegen::BranchTypes::BLT);
 }
 
 // -----------------------------------------------
@@ -1467,7 +1457,7 @@ bool instruction_bgted()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BGTED);
+    return branch_instruction(Bytegen::BranchTypes::BGTED);
 }
 
 // -----------------------------------------------
@@ -1482,7 +1472,7 @@ bool instruction_blted()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BLTED);
+    return branch_instruction(Bytegen::BranchTypes::BLTED);
 }
 
 // -----------------------------------------------
@@ -1497,7 +1487,7 @@ bool instruction_beqd()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BEQD);
+    return branch_instruction(Bytegen::BranchTypes::BEQD);
 }
 
 // -----------------------------------------------
@@ -1512,7 +1502,7 @@ bool instruction_bned()
         return false;
     }
 
-    return branch_instruction(BranchTypes::BNED);
+    return branch_instruction(Bytegen::BranchTypes::BNED);
 }
 
 // -----------------------------------------------
@@ -1565,6 +1555,38 @@ bool instruction_return()
     std::cout << "return : " << currentLine << std::endl;
 
     // Pull address from sys1
+    return true;
+}
+
+bool instruction_create_label()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Lables must exist within a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 1)
+    {
+        std::cerr << "Invalid label definition : " << currentLine << std::endl;
+        return false;
+    }
+
+    currentPieces[0] = rtrim(currentPieces[0]);
+
+    std::string label = currentPieces[0] .substr(0, currentPieces[0].size()-1);
+
+    if(isLabelInCurrentFunction(label))
+    {
+        std::cerr << "Label [" << label << "] already exists in function [" << currentFunction.name << "] " << std::endl;
+        return false;
+    }
+
+    // Set the label ...  Current location + 1 will get us the instruction that we need to be at
+    currentFunction.labels[label] = (currentFunction.instructions.size()/8) + 1;
+
+    // Labels don't have bytes generated with them, instead we keep track of them for the life of the function and 
+    // place their instruction location in corresponding branches
     return true;
 }
 
@@ -1624,12 +1646,6 @@ bool instruction_directive()
                       << "] but [" 
                       << currentPieces[1] 
                       << "] was requested" << std::endl;
-            return false;
-        }
-
-        if(isLabelInPayload(currentPieces[1]))
-        {
-            std::cerr << ".init [" << currentPieces[1] << "] already parsed into solace payload." << std::endl;
             return false;
         }
 
@@ -1919,6 +1935,8 @@ bool instruction_end_function()
     isSystemBuildingFunction = false;
     currentFunction.name = "UNDEFINED";
     currentFunction.instructions.clear();
+
+    currentFunction.labels.clear();
 
     return true;
 }
