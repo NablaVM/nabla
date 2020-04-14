@@ -4,6 +4,7 @@
 
 Prefixed with 'r' there are 16 8-byte registers [ r0, r15 ]
 These registers are used to read/write any data to/from.
+The addresses for the registers are [0b, 15b]
 
 [128 bytes overhead]
 
@@ -68,10 +69,10 @@ Abbreviations :
 ## Artihmatic Instructions
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
 |---              |---        |---            |---           |---                                           |
-|     add         |        r  |    r , *n, *i |   r , *n, *i |  Add Arg2 and Arg3, Store in Arg1            |
-|     sub         |        r  |    r , *n, *i |   r , *n, *i |  Sub Arg3 from Arg3, Store in Arg1           |
-|     mul         |        r  |    r , *n, *i |   r , *n, *i |  Mul Arg2 and Arg3, Store in Arg1            |
-|     div         |        r  |    r , *n, *i |   r , *n, *i |  Div Arg3 by  Arg2, Store in Arg1            |
+|     add         |        r  |    r , *n     |   r , *n     |  Add Arg2 and Arg3, Store in Arg1            |
+|     sub         |        r  |    r , *n     |   r , *n     |  Sub Arg3 from Arg3, Store in Arg1           |
+|     mul         |        r  |    r , *n     |   r , *n     |  Mul Arg2 and Arg3, Store in Arg1            |
+|     div         |        r  |    r , *n     |   r , *n     |  Div Arg3 by  Arg2, Store in Arg1            |
 |     add.d       |        r  |      r        |     r        |  Add (double) Arg2 and Arg3, Store in Arg1   |
 |     sub.d       |        r  |      r        |     r        |  Sub (double) Arg3 from Arg3, Store in Arg1  |
 |     mul.d       |        r  |      r        |     r        |  Mul (double) Arg2 and Arg3, Store in Arg1   |
@@ -134,21 +135,15 @@ if you move rReg data to dReg data and attempt an arithmatic operation that is m
 | exit        | Quit execution of program                     |
 
 
-### Constants and references
+## Functions / Labels
 
-In-place constants must be prefixed with a '$' while referenced constants must be prefixed with a '&' 
+| Instruction    | Description                          |
+|---             |---                                   |
+| <funcName:     | Create function 'funcName'           |
+| >              | End of function declaration          |
+| labelName:     | Create label 'labelName'             |
 
-For instance:
 
-    add r0 $10 $10 ; Will add '10' to '10' and store in r0
-
-Now, using a reference to a constant 
-
-    .int EXAMPLE_INT 3265
-    
-    ldb r0 &EXAMPLE_INT     ; Load 3265 from its address into r0
-
-    add r0 r0 $1            ; Add 1 to 3265, store in r0
 
 ## Instruction Data
 
@@ -287,6 +282,52 @@ address is on the top of the system stack, and then pop it.
 
 Note: Implicit returns happen at the bottom of a function. If the bottom of the function is reached, 
 a return will occur.
+
+
+### Functions / Labels
+
+Function start / end are special instructions that are scanned for upon initial program load
+to tell the VM how to structure its self. 
+
+**function start**
+
+    INS    ID   [ --------------------- NUM INSTRUCTIONS IN FUNC ------------------------------ ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**function end**
+
+    INS    ID   [ ---------------------------------- UNUSED ----------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+## Constants
+
+Constant creation instructions dont follow standard instruction layout which is why they were saved for last.
+
+**.int**
+
+id bits: 00 - 8-bit  int [1 byte]
+id bits: 01 - 16-bit int [2 bytes]
+id bits: 10 - 32-bit int [4 bytes]
+id bits: 11 - 64-bit int [8 bytes]
+
+    INS    ID   [ --- INTEGER BYTES ---- ]
+    111111 00 | 1111 1111 .... | 1111 1111
+
+**.string**
+
+id bits ignored
+
+The current maximum is 256 bytes for a string
+
+    INS    ID    BYTES      [ ------- STR BYTES ------ ]
+    111111 00 | 1111 1111 | 1111 1111 | .... | 1111 1111
+
+**.double**
+
+id bits ignored 
+
+    INS    ID   [ ------------------------------- DOUBLE DATA -------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 
 ## The stack

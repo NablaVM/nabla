@@ -1,14 +1,14 @@
 /*
     Argument          Parsed            Generated
     ----------------------------------------------
-        add             X
-        sub             X
-        mul             X
-        div             X
-        add.d           X
-        sub.d           X
-        mul.d           X
-        div.d           X
+        add             X                   X
+        sub             X                   X
+        mul             X                   X
+        div             X                   X
+        add.d           X                   X
+        sub.d           X                   X
+        mul.d           X                   X
+        div.d           X                   X
         bgt   
         bgte  
         blt   
@@ -31,9 +31,35 @@
         call
         ret 
         exit    
+
+
+
+    This parser is a bit long and in need of explanation. The basic gist is this :
+
+        A file name is given to parse. We open the file and iterate over each line.
+        
+        Each line is 'chunked' or split into pieces of relevant information. 
+            Since we are working with an asm-like code, the first section that has been 'chunked' we can key off to determine the
+            validitiy of the following statement.
+
+        As we iterate over the chunked lines, we go through a vector (parserMethods) that matches regex against the first relevant part of the line
+            in an attempt to locate an instruction. If a known instruction is matched, its corresponding function will be called
+            as layed-out by the 'parserMethods' vector. 
+
+            If no expression is matched, the line is deemed invalid and we indicate this by returning false and refusing to continue parsing
+    
+        A matched expression's call will handle the particulars of instruction. It will validate the arguments allowed by the instruction and ensure
+            that referenced constants exist, etc. 
+
+        For items that might not exist at the time of parsing (call <function>, jmp <label>, and [branch_command] <label> ) things get a little tricky. 
+
+
+
+
 */
 
 #include "solace.hpp"
+#include "bytegen.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -90,12 +116,19 @@ bool instruction_end_function();
 
 namespace 
 {
+    constexpr int      MAXIMUM_STRING_ALLOWED   = 256;
+    constexpr uint64_t MAXIMUM_STACK_OFFSET     = 4294967295;
+    constexpr uint16_t INPLACE_NUM_RANGE        = 32767;
+
+    Bytegen nablaByteGen;
+
     struct Payload
     {
-        std::map<std::string, uint32_t>              const_ints;     // Constant integers
-        std::map<std::string, uint32_t>              const_doubles;  // Constant doubles
+        std::map<std::string, std::vector<uint8_t> > const_ints;     // Constant integers
+        std::map<std::string, std::vector<uint8_t> > const_doubles;  // Constant doubles
         std::map<std::string, std::vector<uint8_t> > const_strings;  // Constant strings
-        std::map<std::string, uint32_t>              labels;         // Labels
+        std::map<std::string, uint32_t>              labels;         // Labels - rhs value is their index within a function
+        std::map<std::string, uint32_t>              functions;      // Functions
 
         std::vector<std::string> filesParsed;   // Files that have been parsed
 
@@ -106,6 +139,10 @@ namespace
 
     // The final payload
     Payload finalPayload;
+
+    // Default name given to entry point (defined by .init)
+    constexpr char UNDEFINED_ENTRY_POINT[] = "___UNDEFINED__ENTRY__POINT___";
+    bool initPointDefined;
 
     // The current line we are parsing
     std::string currentLine;
@@ -167,20 +204,6 @@ namespace
         
     };
 
-    constexpr char UNDEFINED_ENTRY_POINT[] = "___UNDEFINED__ENTRY__POINT___";
-
-    enum class ArithmaticTypes
-    {
-        ADD  = 0x00,
-        MUL  = 0x01,
-        DIV  = 0x02,
-        SUB  = 0x03,
-        SUBD = 0x04,
-        DIVD = 0x05,
-        ADDD = 0x06,
-        MULD = 0x07
-    };
-
     enum class BranchTypes
     {  
         BGT   = 0x01, 
@@ -196,6 +219,17 @@ namespace
         BEQD  = 0x0B,
         BNED  = 0x0C,
     };
+
+    // A temporary function instruction accumulator
+    struct FunctionInformation
+    {
+        std::string name;
+        std::vector<uint8_t> instructions;
+    };
+
+    FunctionInformation currentFunction;
+
+    bool isSystemBuildingFunction;
 }
 
 // -----------------------------------------------
@@ -327,6 +361,12 @@ bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes)
     // Mark the entry point as undefined to start
     finalPayload.entryPoint = UNDEFINED_ENTRY_POINT;
 
+    // Indicate that we haven't seen a definition for the entry point yet
+    initPointDefined = false;
+
+    currentFunction.name = "UNDEFINED";
+    isSystemBuildingFunction = false;
+
     // Mark the file as parsed before anything in an attempt to reduce depends loops =]
     finalPayload.filesParsed.push_back(asmFile);
 
@@ -366,7 +406,7 @@ inline static bool isConstNameValid(std::string name)
 
 inline static bool isInteger(std::string name)
 {
-    return std::regex_match(name, std::regex("^[0-9]+$"));
+    return std::regex_match(name, std::regex("(^[0-9]+$|^\\-[0-9]+$)"));
 }
 
 // -----------------------------------------------
@@ -414,6 +454,7 @@ inline static bool isDirectGlobalStackPointer(std::string piece)
     return std::regex_match(piece, std::regex("^gs$"));
 }
 
+
 // -----------------------------------------------
 //
 // -----------------------------------------------
@@ -424,7 +465,7 @@ inline static bool isStackOffsetInRange(std::string piece)
 
     int64_t n = std::stoi(str);
 
-    return ( n < 4294967295 );
+    return ( n < MAXIMUM_STACK_OFFSET );
 }
 
 
@@ -458,13 +499,22 @@ inline static bool isOffsetGlobalStackpointer(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isDirectNumericalInRange(std::string numerical)
+inline static int getNumberFromNumericalOrRegister(std::string numerical)
 {
     std::string str = numerical.substr(1, numerical.size());
 
-    int n = std::stoi(str);
+    return std::stoi(str);
+}
 
-    return ( n < 32767 && n > -32768 );
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static bool isDirectNumericalInRange(std::string numerical)
+{
+    int n = getNumberFromNumericalOrRegister(numerical);
+
+    return ( n < INPLACE_NUM_RANGE && n > - INPLACE_NUM_RANGE );
 }
 
 // -----------------------------------------------
@@ -547,6 +597,15 @@ inline static bool isLabelInPayload(std::string name)
 //
 // -----------------------------------------------
 
+inline static bool isFunctionInPayload(std::string name)
+{
+    return (finalPayload.functions.find(name) != finalPayload.functions.end());
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
 inline static bool wasFileParsed(std::string name)
 {
     return (std::find(finalPayload.filesParsed.begin(), finalPayload.filesParsed.end(), name) != finalPayload.filesParsed.end());
@@ -556,18 +615,41 @@ inline static bool wasFileParsed(std::string name)
 //
 // -----------------------------------------------
 
-inline static std::string convertArithToString(ArithmaticTypes type)
+inline static void addBytegenInstructionToPayload(Bytegen::Instruction ins)
+{
+    finalPayload.bytes.push_back(ins.bytes[0]); finalPayload.bytes.push_back(ins.bytes[1]); finalPayload.bytes.push_back(ins.bytes[2]);
+    finalPayload.bytes.push_back(ins.bytes[3]); finalPayload.bytes.push_back(ins.bytes[4]); finalPayload.bytes.push_back(ins.bytes[5]);
+    finalPayload.bytes.push_back(ins.bytes[6]); finalPayload.bytes.push_back(ins.bytes[7]);
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static void addBytegenInstructionToCurrentFunction(Bytegen::Instruction ins)
+{
+    currentFunction.instructions.push_back(ins.bytes[0]); currentFunction.instructions.push_back(ins.bytes[4]);
+    currentFunction.instructions.push_back(ins.bytes[1]); currentFunction.instructions.push_back(ins.bytes[5]);
+    currentFunction.instructions.push_back(ins.bytes[2]); currentFunction.instructions.push_back(ins.bytes[6]);
+    currentFunction.instructions.push_back(ins.bytes[3]); currentFunction.instructions.push_back(ins.bytes[7]);
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static std::string convertArithToString(Bytegen::ArithmaticTypes type)
 {
     switch(type)
     {
-        case ArithmaticTypes::ADD : return "ADD";
-        case ArithmaticTypes::ADDD: return "ADDD";
-        case ArithmaticTypes::MUL : return "MUL";
-        case ArithmaticTypes::MULD: return "MULD";
-        case ArithmaticTypes::DIV : return "DIV";
-        case ArithmaticTypes::DIVD: return "DIVD";
-        case ArithmaticTypes::SUB : return "SUB";
-        case ArithmaticTypes::SUBD: return "SUBD";
+        case Bytegen::ArithmaticTypes::ADD : return "ADD";
+        case Bytegen::ArithmaticTypes::ADDD: return "ADDD";
+        case Bytegen::ArithmaticTypes::MUL : return "MUL";
+        case Bytegen::ArithmaticTypes::MULD: return "MULD";
+        case Bytegen::ArithmaticTypes::DIV : return "DIV";
+        case Bytegen::ArithmaticTypes::DIVD: return "DIVD";
+        case Bytegen::ArithmaticTypes::SUB : return "SUB";
+        case Bytegen::ArithmaticTypes::SUBD: return "SUBD";
         default:                    return "UNKNOWN"; // Keep that compiler happy.
     }
 }
@@ -576,8 +658,16 @@ inline static std::string convertArithToString(ArithmaticTypes type)
 // Parsed, not complete
 // -----------------------------------------------
 
-inline static bool arithmatic_instruction(ArithmaticTypes type)
+inline static bool arithmatic_instruction(Bytegen::ArithmaticTypes type)
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
+    bool isArg2Register = true;
+    bool isArg3Register = true;
 
     // These are the non-double commands
     if(static_cast<unsigned>(type) <= 0x03)
@@ -587,18 +677,11 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         // --------------------------------------------
 
         // Check if is register
-        if(isRegister(currentPieces[1]))
+        if(!isRegister(currentPieces[1]))
         {
-            std::cout << convertArithToString(type) << "::arg1::register::" << currentPieces[1] << std::endl;
-        }
-        else
-        {
-            std::cout << convertArithToString(type) << "::arg1::not_matched, given :" << currentPieces[1] << std::endl;
+            std::cerr << convertArithToString(type) << "::arg1::not_matched, given :" << currentPieces[1] << std::endl;
             return false;
         }
-
-        bool argumentTwoFound   = false;
-        bool argumentThreeFound = false;
 
         // --------------------------------------------
         //  ARG 2
@@ -606,32 +689,23 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
 
         if(isRegister(currentPieces[2]))
         {
-            std::cout << "Register : " << currentPieces[2] << std::endl;
-            argumentTwoFound = true;
+            //std::cout << "Register : " << currentPieces[2] << std::endl;
         }
         else if(isDirectNumerical(currentPieces[2]))
         {
-            std::cout << "Direct Numerical : " << currentPieces[2] << std::endl; 
+            //std::cout << "Direct Numerical : " << currentPieces[2] << std::endl;
 
-            argumentTwoFound = true;
-        }
-        else if(isReferencedConstant(currentPieces[2]))
-        {
-            std::cout << "Referenced Constant : " << currentPieces[2] << std::endl;
-
-            std::string constantName = currentPieces[2].substr(1, currentPieces[2].size());
-
-            if(!isConstIntInPayload(constantName))
+            if(!isDirectNumericalInRange(currentPieces[2]))
             {
-                std::cerr << "Given 'int' constant has not been set : " << constantName << std::endl;
+                std::cerr << "Error: Direct numerical insert is out of range: " << currentPieces[2] << std::endl;
                 return false;
             }
-            argumentTwoFound = true;
-        }
 
-        if(!argumentTwoFound)
+            isArg2Register = false;
+        }
+        else
         {
-            std::cout << convertArithToString(type) << "::arg2::not_matched, given :" << currentPieces[2] << std::endl;
+            std::cerr << convertArithToString(type) << "::arg2::not_matched, given :" << currentPieces[2] << std::endl;
             return false;
         }
 
@@ -641,12 +715,11 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
 
         if(isRegister(currentPieces[3]))
         {
-            std::cout << "Register : " << currentPieces[3] << std::endl;
-            argumentThreeFound = true;
+            //std::cout << "Register : " << currentPieces[3] << std::endl;
         }
         else if(isDirectNumerical(currentPieces[3]))
         {
-            std::cout << "Direct Numerical : " << currentPieces[3] << std::endl;
+            //std::cout << "Direct Numerical : " << currentPieces[3] << std::endl;
 
             if(!isDirectNumericalInRange(currentPieces[3]))
             {
@@ -654,25 +727,11 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
                 return false;
             }
 
-            argumentThreeFound = true;
+            isArg3Register = false;
         }
-        else if(isReferencedConstant(currentPieces[3]))
+        else
         {
-            std::cout << "Referenced Constant : " << currentPieces[3] << std::endl;
-
-            std::string constantName = currentPieces[3].substr(1, currentPieces[3].size());
-
-            if(!isConstIntInPayload(constantName))
-            {
-                std::cerr << "Given 'int' constant has not been set : " << constantName << std::endl;
-                return false;
-            }
-            argumentThreeFound = true;
-        }
-
-        if(!argumentThreeFound)
-        {
-            std::cout << convertArithToString(type) << "::arg3::not_matched, given :" << currentPieces[3] << std::endl;
+            std::cerr << convertArithToString(type) << "::arg3::not_matched, given :" << currentPieces[3] << std::endl;
             return false;
         }
     } 
@@ -688,11 +747,11 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
         // Check if is register
         if(isRegister(currentPieces[1]))
         {
-            std::cout << convertArithToString(type) << "::arg1::register::" << currentPieces[1] << std::endl;
+            //std::cout << convertArithToString(type) << "::arg1::register::" << currentPieces[1] << std::endl;
         }
         else
         {
-            std::cout << convertArithToString(type) << "::arg1::not_matched, given :" << currentPieces[1] << std::endl;
+            std::cerr << convertArithToString(type) << "::arg1::not_matched, given :" << currentPieces[1] << std::endl;
             return false;
         }
 
@@ -702,11 +761,11 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
 
         if(isRegister(currentPieces[2]))
         {
-            std::cout << "Double Register : " << currentPieces[2] << std::endl;
+            //std::cout << "Double Register : " << currentPieces[2] << std::endl;
         }
         else
         {
-            std::cout << convertArithToString(type) << "::arg2::not_matched, given :" << currentPieces[2] << std::endl;
+            std::cerr << convertArithToString(type) << "::arg2::not_matched, given :" << currentPieces[2] << std::endl;
             return false;
         }
 
@@ -716,15 +775,30 @@ inline static bool arithmatic_instruction(ArithmaticTypes type)
 
         if(isRegister(currentPieces[3]))
         {
-            std::cout << "Register : " << currentPieces[3] << std::endl;
+            //std::cout << "Register : " << currentPieces[3] << std::endl;
         }
         else
         {
-            std::cout << convertArithToString(type) << "::arg3::not_matched, given :" << currentPieces[3] << std::endl;
+            std::cerr << convertArithToString(type) << "::arg3::not_matched, given :" << currentPieces[3] << std::endl;
             return false;
         }
     }
-    
+
+    // Get numerical values of the numbers OR regs
+    int16_t arg1 = getNumberFromNumericalOrRegister(currentPieces[1]);
+    int16_t arg2 = getNumberFromNumericalOrRegister(currentPieces[2]);
+    int16_t arg3 = getNumberFromNumericalOrRegister(currentPieces[3]);
+
+    // Determine how we want to inform the bytegen whats going on 
+    Bytegen::ArithmaticSetup setup;
+    if (isArg2Register && isArg3Register)       { setup = Bytegen::ArithmaticSetup::REG_REG; }
+    else if (isArg2Register && !isArg3Register) { setup = Bytegen::ArithmaticSetup::REG_NUM; }
+    else if (isArg3Register && !isArg2Register) { setup = Bytegen::ArithmaticSetup::NUM_REG; }
+    else                                        { setup = Bytegen::ArithmaticSetup::NUM_NUM; }
+
+    // Call to create the instruction and add to current function
+    addBytegenInstructionToCurrentFunction(nablaByteGen.createArithmaticInstruction(type, setup, arg1, arg2, arg3));
+
     return true;
 }
 
@@ -740,7 +814,7 @@ bool instruction_add()
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::ADD);
+    return arithmatic_instruction(Bytegen::ArithmaticTypes::ADD);
 }
 
 // -----------------------------------------------
@@ -755,7 +829,7 @@ bool instruction_sub()
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::SUB);
+    return arithmatic_instruction(Bytegen::ArithmaticTypes::SUB);
 }
 
 // -----------------------------------------------
@@ -770,7 +844,7 @@ bool instruction_div()
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::DIV);
+    return arithmatic_instruction(Bytegen::ArithmaticTypes::DIV);
 }
 
 // -----------------------------------------------
@@ -785,7 +859,7 @@ bool instruction_mul()
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::MUL);
+    return arithmatic_instruction(Bytegen::ArithmaticTypes::MUL);
 }
 
 // -----------------------------------------------
@@ -800,7 +874,7 @@ bool instruction_addd()
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::ADDD);
+    return arithmatic_instruction(Bytegen::ArithmaticTypes::ADDD);
 }
 
 // -----------------------------------------------
@@ -815,7 +889,7 @@ bool instruction_subd()
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::SUBD);
+    return arithmatic_instruction(Bytegen::ArithmaticTypes::SUBD);
 }
 
 // -----------------------------------------------
@@ -830,7 +904,7 @@ bool instruction_divd()
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::DIVD);
+    return arithmatic_instruction(Bytegen::ArithmaticTypes::DIVD);
 }
 
 // -----------------------------------------------
@@ -845,7 +919,7 @@ bool instruction_muld()
         return false;
     }
     
-    return arithmatic_instruction(ArithmaticTypes::MULD);
+    return arithmatic_instruction(Bytegen::ArithmaticTypes::MULD);
 }
 
 // -----------------------------------------------
@@ -854,6 +928,12 @@ bool instruction_muld()
 
 bool instruction_mov()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "mov : " << currentLine << std::endl;
 
     if(currentPieces.size() != 3)
@@ -885,6 +965,12 @@ bool instruction_mov()
 
 bool instruction_lda()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "lda : " << currentLine << std::endl;
     
     if(currentPieces.size() != 3)
@@ -964,6 +1050,12 @@ bool instruction_lda()
 
 bool instruction_stb()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "stb : " << currentLine << std::endl;
 
     if(currentPieces.size() != 3)
@@ -1002,6 +1094,12 @@ bool instruction_stb()
 
 bool instruction_ldb()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "ldb : " << currentLine << std::endl;
 
     if(currentPieces.size() != 3)
@@ -1086,6 +1184,12 @@ bool instruction_ldb()
 
 bool instruction_push()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "push : " << currentLine << std::endl;
 
     if(!currentPieces.size() == 3)
@@ -1124,6 +1228,12 @@ bool instruction_push()
 
 bool instruction_pop()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "pop : " << currentLine << std::endl;
 
     if(!currentPieces.size() == 3)
@@ -1182,6 +1292,12 @@ inline static std::string convertBranchToString(BranchTypes type)
 
 inline bool branch_instruction(BranchTypes type)
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "Branch : " << convertBranchToString(type) << ": " << currentLine << std::endl;
 
     if(!isRegister(currentPieces[1]))
@@ -1405,6 +1521,12 @@ bool instruction_bned()
 
 bool instruction_jmp()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "jmp : " << currentLine << std::endl;
 
     return true;
@@ -1416,6 +1538,12 @@ bool instruction_jmp()
 
 bool instruction_call()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "call : " << currentLine << std::endl;
 
     // Put return address in sys0
@@ -1428,6 +1556,12 @@ bool instruction_call()
 
 bool instruction_return()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "return : " << currentLine << std::endl;
 
     // Pull address from sys1
@@ -1440,6 +1574,12 @@ bool instruction_return()
 
 bool instruction_exit()
 {
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
     std::cout << "exit : " << currentLine << std::endl;
     return true;
 }
@@ -1450,6 +1590,12 @@ bool instruction_exit()
 
 bool instruction_directive()
 {
+    if(isSystemBuildingFunction)
+    {
+        std::cerr << "All directives must happen outside of functions. Currently in function : " << currentFunction.name << std::endl;
+        return false;
+    }
+
     std::cout << "Directive: " << currentLine << std::endl;
 
     if(currentPieces.size() < 2)
@@ -1537,6 +1683,13 @@ bool instruction_directive()
             return false;
         }
 
+        // Ensure it isn't too big
+        if(str.size() > MAXIMUM_STRING_ALLOWED)
+        {
+            std::cerr << "Constant string exceeds allowed maximum : " << (int)MAXIMUM_STRING_ALLOWED << std::endl;
+            return false;
+        }
+
         // Ensure that we haven't had it defined yet
         if(isConstStringInPayload(currentPieces[1]))
         {
@@ -1585,7 +1738,7 @@ bool instruction_directive()
         // Ensure that we haven't had it defined yet
         if(isConstIntInPayload(currentPieces[1]))
         {
-            std::cerr << "Constant .int " << currentPieces[1] << " previously defined with value : " << finalPayload.const_ints[currentPieces[1]] << std::endl;
+            std::cerr << "Constant .int " << currentPieces[1] << " previously defined" << std::endl;
             return false;
         }
 
@@ -1593,7 +1746,7 @@ bool instruction_directive()
         int64_t givenInt = std::stoi(currentPieces[2]);
 
         // Store it
-        finalPayload.const_ints[currentPieces[1]] = static_cast<uint32_t>(givenInt);
+        finalPayload.const_ints[currentPieces[1]] = nablaByteGen.createConstantInt(static_cast<uint32_t>(givenInt));
     }
     // ----------------------------------------------------------------------
     //  Create a .double constant
@@ -1626,16 +1779,15 @@ bool instruction_directive()
         // Ensure that we haven't had it defined yet
         if(isConstDoubleInPayload(currentPieces[1]))
         {
-            std::cerr << "Constant .double " << currentPieces[1] << " previously defined with value : " << finalPayload.const_doubles[currentPieces[1]] << std::endl;
+            std::cerr << "Constant .double " << currentPieces[1] << " previously defined" << std::endl;
             return false;
         }
 
         // Get the int
-        double divenDouble = std::stod(currentPieces[2]);
+        double givenDouble = std::stod(currentPieces[2]);
 
-#warning this double to uint32_t needs to be evaluated
         // Store it
-        finalPayload.const_doubles[currentPieces[1]] = static_cast<uint32_t>(divenDouble + 0.5);
+        finalPayload.const_doubles[currentPieces[1]] = nablaByteGen.createConstantDouble(givenDouble);
     }
     // ----------------------------------------------------------------------
     //  Include a file
@@ -1673,7 +1825,51 @@ bool instruction_directive()
 
 bool instruction_create_function()
 {
-    std::cout << "Create function: " << currentLine << std::endl;
+    if(isSystemBuildingFunction)
+    {
+        std::cerr << "Can not create function inside of another function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() > 1)
+    {
+        std::cerr << "Function definition invalid : " << currentLine << std::endl;
+        return false;
+    }
+
+    //std::cout << "Create function: " << currentLine << std::endl;
+
+    std::string functionName = currentPieces[0].substr(1, currentPieces[0].size()-2);
+    
+    // Ensure we have been told an entry point
+    if(finalPayload.entryPoint == UNDEFINED_ENTRY_POINT)
+    {
+        std::cerr << "Initial entry point (.init) must be declared prior to the existence of any function. Please declare at the top of the main file" << std::endl;
+        return false;
+    }
+
+    // Check if the function name exists yet
+    if(isFunctionInPayload(functionName))
+    {
+        std::cerr << "Error [" << functionName << "] previously defined " << std::endl;
+        return false;
+    }
+
+    // Check if the unique function is the entry point under the condition that we haven't found it yet
+    if(!initPointDefined)
+    {
+        if (functionName == finalPayload.entryPoint)
+        {
+            initPointDefined = true;
+        }
+    }
+
+    // Ask to create the function. 
+
+    isSystemBuildingFunction = true;
+
+    currentFunction.name = functionName;
+    currentFunction.instructions.clear();
 
     return true;
 }
@@ -1684,7 +1880,45 @@ bool instruction_create_function()
 
 bool instruction_end_function()
 {
-    std::cout << "End function: " << currentLine << std::endl;
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray function end. Not currently building a function" << std::endl;
+        return false;
+    }
+    
+    if(currentPieces.size() != 1)
+    {
+        std::cerr << "Invalid function end. Expected '>' got : " << currentLine << std::endl;
+        return false;
+    }
+
+    uint32_t functionAddress = 0;
+
+    Bytegen::Instruction funcCreate = nablaByteGen.createFunctionStart(currentFunction.name, 
+                                                                       currentFunction.instructions.size(), 
+                                                                       functionAddress);
+
+
+#warning Remove this after debugging
+
+    std::cout << "Created function : " << currentFunction.name << " at address " << (int)functionAddress
+              << " with " << currentFunction.instructions.size() << " bytes " << std::endl;
+
+
+    addBytegenInstructionToPayload(funcCreate);
+
+    for(auto & ins : currentFunction.instructions )
+    {
+        finalPayload.bytes.push_back(ins);
+    }
+
+    Bytegen::Instruction funcEnd = nablaByteGen.createFunctionEnd();
+
+    addBytegenInstructionToPayload(funcEnd);
+
+    isSystemBuildingFunction = false;
+    currentFunction.name = "UNDEFINED";
+    currentFunction.instructions.clear();
 
     return true;
 }
