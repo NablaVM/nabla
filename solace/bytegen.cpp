@@ -401,6 +401,28 @@ namespace SOLACE
     }
 
     // ------------------------------------------------------------------------
+    // createStbInstruction
+    // ------------------------------------------------------------------------
+    
+    Bytegen::Instruction Bytegen::createStbInstruction(Stacks stack, uint32_t location, uint8_t reg)
+    {
+        Instruction ins;
+
+        ins.bytes[0] = MANIFEST::INS_STB;
+        ins.bytes[1] = getStackAddress(stack);
+        ins.bytes[2] = (location & 0xFF000000) >> 24 ;
+        ins.bytes[3] = (location & 0x00FF0000) >> 16 ;
+        ins.bytes[4] = (location & 0x0000FF00) >> 8  ;
+        ins.bytes[5] = (location & 0x000000FF) >> 0  ;
+        ins.bytes[6] = integerToRegister(reg);
+        ins.bytes[7] = 0xFF;
+
+        dumpInstruction(ins);
+
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
     // createReturnInstruction
     // ------------------------------------------------------------------------
 

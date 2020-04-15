@@ -230,7 +230,7 @@ For all instructions except ldw/ldwd the ID bits don't matter.
 
 **stb**
 
-    INS    ID   [ ---------------   ADDRESS  ---------------]   REGISTER    [ ---- UNUSED ----- ]
+    INS    ID    STACK       [ ---------------   ADDRESS  ---------------]   REGISTER    UNUSED
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 **ldb**

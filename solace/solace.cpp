@@ -24,7 +24,7 @@
         mov             X                   X                  X
         lda             X
         ldb             X
-        stb             X
+        stb             X                   X                  X
         push            X                   X                  X
         pop             X                   X                  X
         jmp             X                   X                  X
@@ -447,6 +447,18 @@ inline static bool isDirectGlobalStackPointer(std::string piece)
     return std::regex_match(piece, std::regex("^gs$"));
 }
 
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+static inline uint32_t getOffsetFromStackOffset(std::string piece)
+{
+    std::string str = piece.substr(1, piece.size()-5);
+
+    uint32_t n = std::stoi(str);
+
+    return n;
+}
 
 // -----------------------------------------------
 //
@@ -454,11 +466,7 @@ inline static bool isDirectGlobalStackPointer(std::string piece)
 
 inline static bool isStackOffsetInRange(std::string piece)
 {
-    std::string str = piece.substr(1, piece.size()-5);
-
-    int64_t n = std::stoi(str);
-
-    return ( n < MAXIMUM_STACK_OFFSET );
+    return ( getOffsetFromStackOffset(piece) < MAXIMUM_STACK_OFFSET );
 }
 
 
@@ -1061,18 +1069,30 @@ bool instruction_stb()
         return false;
     }
 
+    Bytegen::Stacks stackType;
+
     // Check argument 1 
     if(isOffsetGlobalStackpointer(currentPieces[1]))
     {
         if(isParserVerbose){ std::cout << "Argument 1 is global spo : " << currentPieces[1] << std::endl; }
+
+        stackType = Bytegen::Stacks::GLOBAL;
     }
     else if (isOffsetLocalStackpointer(currentPieces[1]))
     {
         if(isParserVerbose){ std::cout << "Argument 1 is local spo : " << currentPieces[1] << std::endl; }
+        
+        stackType = Bytegen::Stacks::LOCAL;
     }
     else
     {
         std::cerr << "'stb' argument 1 must be a stack pointer offset, got : " << currentPieces[1] << " instread" << std::endl;
+        return false;
+    }
+
+    if(!isStackOffsetInRange(currentPieces[1]))
+    {
+        std::cerr << "Stack offset [" << currentPieces[1] << "] is out of the acceptable range of offsets" << std::endl;
         return false;
     }
     
@@ -1081,6 +1101,13 @@ bool instruction_stb()
         std::cerr << "'stb' argument 2 must be a register, got : " << currentPieces[2] << " instead" << std::endl;
         return false;
     }
+
+    uint32_t location = getOffsetFromStackOffset(currentPieces[1]);
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[2]);
+
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createStbInstruction(stackType, location, reg)
+        );
 
     return true;
 }
