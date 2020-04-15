@@ -25,12 +25,12 @@
         lda             X
         ldb             X
         stb             X
-        push            X
-        pop             X
+        push            X                   X                  X
+        pop             X                   X                  X
         jmp             X                   X                  X
         call
-        ret 
-        exit    
+        ret             X                   X                  X
+        exit            X                   X                  X
         label           X                   NA
 
 
@@ -1187,14 +1187,22 @@ bool instruction_push()
         return false; 
     }
 
-    // Argument 2
+    if(isParserVerbose){ std::cout << "push : " << currentLine << std::endl; }
+
+    Bytegen::Stacks stackType;
+
+    // Argument 1
     if(isDirectLocalStackPointer(currentPieces[1]))
     {
         if(isParserVerbose){ std::cout << "Argument 1 is a local stack pointer " << std::endl; }
+
+        stackType = Bytegen::Stacks::LOCAL;
     }
     else if (isDirectGlobalStackPointer(currentPieces[1]))
     {
         if(isParserVerbose){ std::cout << "Argument 1 is a global stack pointer " << std::endl; }
+        
+        stackType = Bytegen::Stacks::GLOBAL;
     }
     else
     {
@@ -1208,6 +1216,12 @@ bool instruction_push()
         std::cout << "'push' instruction argument 2 must be a register" << std::endl;
         return false;
     }
+
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[2]);
+    
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createPushInstruction(stackType, reg)
+        );
 
     return true;
 }
@@ -1230,27 +1244,41 @@ bool instruction_pop()
         return false; 
     }
 
-    // Argument 2
-    if(isDirectLocalStackPointer(currentPieces[1]))
+    if(isParserVerbose){ std::cout << "pop : " << currentLine << std::endl; }
+
+    // Argument 1
+    if(!isRegister(currentPieces[1]))
     {
-        if(isParserVerbose){ std::cout << "Argument 1 is a local stack pointer " << std::endl; }
+        std::cerr << "'pop' instruction argument 1 must be a register" << std::endl;
+        return false;
     }
-    else if (isDirectGlobalStackPointer(currentPieces[1]))
+
+    Bytegen::Stacks stackType;
+
+    // Argument 2
+    if(isDirectLocalStackPointer(currentPieces[2]))
     {
-        if(isParserVerbose){ std::cout << "Argument 1 is a global stack pointer " << std::endl; }
+        if(isParserVerbose){ std::cout << "Argument 2 is a local stack pointer " << std::endl; }
+
+        stackType = Bytegen::Stacks::LOCAL;
+    }
+    else if (isDirectGlobalStackPointer(currentPieces[2]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 2 is a global stack pointer " << std::endl; }
+        
+        stackType = Bytegen::Stacks::GLOBAL;
     }
     else
     {
-        std::cerr << "'pop' instruction argument 1 must be a global or local stack pointer (not an offset)" << std::endl;
+        std::cerr << "'pop' instruction argument 2 must be a global or local stack pointer (not an offset)" << std::endl;
         return false;
     }
     
-    // Argument 2
-    if(!isRegister(currentPieces[2]))
-    {
-        std::cerr << "'pop' instruction argument 2 must be a register" << std::endl;
-        return false;
-    }
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[1]);
+    
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createPopInstruction(stackType, reg)
+        );
 
     return true;
 }
@@ -1580,10 +1608,23 @@ bool instruction_return()
         std::cerr << "All Instructions must exist within a function" << std::endl;
         return false;
     }
+    
+    if(currentPieces.size() != 1)
+    {
+        std::cerr << "Invalid return instruction : " << currentLine << std::endl;
+        return false;
+    }
 
-    // Pull address from sys1
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createReturnInstruction()
+        );
+
     return true;
 }
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
 
 bool instruction_create_label()
 {
@@ -1628,6 +1669,17 @@ bool instruction_exit()
         std::cerr << "All Instructions must exist within a function" << std::endl;
         return false;
     }
+    
+    if(currentPieces.size() != 1)
+    {
+        std::cerr << "Invalid exit instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createExitInstruction()
+        );
+
     return true;
 }
 

@@ -78,6 +78,11 @@ namespace SOLACE
         constexpr uint8_t REGISTER_14         = 0x0E;
         constexpr uint8_t REGISTER_15         = 0x0F;
 
+        // Similar to registers, these aren't restricted to the 6-bit instruction constraint
+        constexpr uint8_t GLOBAL_STACK        = 0xFF;
+        constexpr uint8_t LOCAL_STACK         = 0xEE;
+        
+
         //  This is a helper method for the sake of debugging. I do not intend on keeping this here in the long run.
         //
         static void displayManifest()

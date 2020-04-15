@@ -35,6 +35,23 @@ namespace SOLACE
             }
         }
 
+        // Get a stack address given the stack type
+        uint8_t getStackAddress(Bytegen::Stacks stack)
+        {
+            switch(stack)
+            {
+                case Bytegen::Stacks::GLOBAL:
+                    return MANIFEST::GLOBAL_STACK;
+                case Bytegen::Stacks::LOCAL:
+                    return MANIFEST::LOCAL_STACK;
+                default:
+                    std::cerr << "Someone tried something silly awful with getStackAddress" << std::endl;
+                    exit(EXIT_FAILURE); 
+                    return 0;
+            }
+            return 0; // Keep the compiler happy
+        }
+
         // Helper for debugging
         void dumpInstruction(Bytegen::Instruction ins)
         {
@@ -338,6 +355,90 @@ namespace SOLACE
         
        // dumpInstruction(ins);
 
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createPushInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createPushInstruction(Stacks stack, uint8_t reg)
+    {
+        Instruction ins;
+        ins.bytes[0] = MANIFEST::INS_PUSH;
+        ins.bytes[1] = getStackAddress(stack);
+        ins.bytes[2] = integerToRegister(reg);
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        //dumpInstruction(ins);
+
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createPopInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createPopInstruction(Stacks stack, uint8_t reg)
+    {
+        Instruction ins;
+        ins.bytes[0] = MANIFEST::INS_POP;
+        ins.bytes[1] = integerToRegister(reg);
+        ins.bytes[2] = getStackAddress(stack);
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        //dumpInstruction(ins);
+        
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createReturnInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createReturnInstruction()
+    {
+        Instruction ins;
+        ins.bytes[0] = MANIFEST::INS_RET;
+        ins.bytes[1] = 0xFF;
+        ins.bytes[2] = 0xFF;
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        //dumpInstruction(ins);
+        
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createExitInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createExitInstruction()
+    {
+        Instruction ins;
+        ins.bytes[0] = MANIFEST::INS_EXIT;
+        ins.bytes[1] = 0xFF;
+        ins.bytes[2] = 0xFF;
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        //dumpInstruction(ins);
+        
         return ins;
     }
 

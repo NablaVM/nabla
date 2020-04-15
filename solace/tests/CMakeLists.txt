@@ -21,8 +21,11 @@ include_directories(../)
 add_executable(nablaInsTest
         arithmaticTests.cpp
         branchTests.cpp
+        exitTests.cpp
         jumpTests.cpp
         movTests.cpp
+        pushpopTests.cpp
+        returnTests.cpp
         main.cpp
 )
 

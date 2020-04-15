@@ -79,6 +79,15 @@ namespace SOLACE
         };
 
         //!
+        //! \brief Types of stacks 
+        //!
+        enum class Stacks
+        {
+            GLOBAL,
+            LOCAL
+        };
+
+        //!
         //! \brief Create a bytegen
         //!
         Bytegen();
@@ -134,6 +143,22 @@ namespace SOLACE
         //! \param reg1  Register 1 (dest)
         //! \param reg2  Register 2 (src)
         Instruction createMovInstruction(uint8_t reg1, uint8_t reg2);
+
+        //! \brief Create a push instruction
+        //! \param stack The stack to push to
+        //! \param reg   The register that contains data to get
+        Instruction createPushInstruction(Stacks stack, uint8_t reg);
+
+        //! \brief Create a pop instruction
+        //! \param stack The stack to pop from
+        //! \param reg   The register to put the data
+        Instruction createPopInstruction(Stacks stack, uint8_t reg);
+
+        //! \brief Create return instruction
+        Instruction createReturnInstruction();
+
+        //! \brief Create exit instruction
+        Instruction createExitInstruction();
 
     private:
 
