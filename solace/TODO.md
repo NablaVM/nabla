@@ -1,4 +1,6 @@
 
+------- Investigate potential endianess issues that could creep-up in solace parser
+
 Currently arithmatic operations are being generated, and so are function start/stop/accumulate stuff
 
 

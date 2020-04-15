@@ -1,33 +1,33 @@
 /*
-    Argument          Parsed            Generated
-    ----------------------------------------------
-        add             X                   X
-        sub             X                   X
-        mul             X                   X
-        div             X                   X
-        add.d           X                   X
-        sub.d           X                   X
-        mul.d           X                   X
-        div.d           X                   X
-        bgt             X                   X
-        bgte            X                   X
-        blt             X                   X
-        blte            X                   X
-        beq             X                   X
-        bne             X                   X
-        bgt.d           X                   X
-        bgte.d          X                   X
-        blt.d           X                   X
-        blte.d          X                   X
-        beq.d           X                   X
-        bne.d           X                   X
-        mov             X
+    Argument          Parsed            Generated           Tested
+    -----------------------------------------------------------------
+        add             X                   X                  X
+        sub             X                   X                  X 
+        mul             X                   X                  X
+        div             X                   X                  X
+        add.d           X                   X                  X
+        sub.d           X                   X                  X
+        mul.d           X                   X                  X
+        div.d           X                   X                  X
+        bgt             X                   X                  X
+        bgte            X                   X                  X
+        blt             X                   X                  X
+        blte            X                   X                  X
+        beq             X                   X                  X
+        bne             X                   X                  X
+        bgt.d           X                   X                  X
+        bgte.d          X                   X                  X
+        blt.d           X                   X                  X
+        blte.d          X                   X                  X
+        beq.d           X                   X                  X
+        bne.d           X                   X                  X
+        mov             X                   X                  X
         lda             X
         ldb             X
         stb             X
         push            X
         pop             X
-        jmp 
+        jmp             X                   X                  X
         call
         ret 
         exit    
@@ -659,6 +659,8 @@ inline static bool arithmatic_instruction(Bytegen::ArithmaticTypes type)
         return false;
     }
 
+    if(isParserVerbose) { std::cout << "Arithmatic Instruction : " << currentLine << std::endl; }
+
     bool isArg2Register = true;
     bool isArg3Register = true;
 
@@ -686,7 +688,7 @@ inline static bool arithmatic_instruction(Bytegen::ArithmaticTypes type)
         }
         else if(isDirectNumerical(currentPieces[2]))
         {
-            //std::cout << "Direct Numerical : " << currentPieces[2] << std::endl;
+            if(isParserVerbose){ std::cout << "Direct Numerical : " << currentPieces[2] << std::endl; }
 
             if(!isDirectNumericalInRange(currentPieces[2]))
             {
@@ -945,8 +947,16 @@ bool instruction_mov()
         return false;
     }
 
-    // Both are confirmed registers!
+    if(isParserVerbose) { std::cout << "Creating mov instruction : " << currentLine << std::endl; }
 
+    // Both are confirmed registers!
+    uint8_t reg1 = getNumberFromNumericalOrRegister(currentPieces[1]);
+    uint8_t reg2 = getNumberFromNumericalOrRegister(currentPieces[2]);
+
+    // Generate the bytes and add to the current function
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createMovInstruction(reg1, reg2)
+        );
     return true;
 }
 
@@ -1513,6 +1523,33 @@ bool instruction_jmp()
         std::cerr << "All Instructions must exist within a function" << std::endl;
         return false;
     }
+
+    if(!currentPieces.size() == 2)
+    {
+        std::cerr << "Invalid jump instruction : " << currentLine << std::endl;
+        return false;
+    }
+    
+    // Same as branch.. sue me.
+    if(!isBranchableLabel(currentPieces[1]))
+    {
+        std::cerr << "Jump argument 1 must be a label, got : " << currentPieces[1] <<  std::endl;
+        return false;
+    }
+
+    if(!isLabelInCurrentFunction(currentPieces[1]))
+    {
+        std::cerr << "Jumps must jump to existing labels. - We hope to extend this functionality later" << std::endl;
+        return false;
+    }
+
+    if(isParserVerbose) { std::cout << "Creating jmp instruction to : " << currentPieces[1] << std::endl; }
+
+    uint32_t labelValue = currentFunction.labels[currentPieces[1]];
+
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createJumpInstruction(labelValue)
+        );
     return true;
 }
 
@@ -1642,7 +1679,7 @@ bool instruction_directive()
     // ----------------------------------------------------------------------
     else if (std::regex_match(currentPieces[0], std::regex("^\\.file$")))
     {
-        if(isParserVerbose){ std::cout << "\tfile: " << currentLine[1] << std::endl; }
+        if(isParserVerbose){ std::cout << "\tfile: " << currentPieces[1] << std::endl; }
     }
     // ----------------------------------------------------------------------
     //  Create a .string constant
@@ -1805,7 +1842,6 @@ bool instruction_directive()
             return true;
         }
 
-#warning This hasn't been tested. 
         parseFile(currentPieces[1]);
 
         finalPayload.filesParsed.push_back(currentPieces[1]);
@@ -1900,11 +1936,11 @@ bool instruction_end_function()
                                                                        currentFunction.instructions.size(), 
                                                                        functionAddress);
 
-
-#warning Remove this after debugging
-
-    std::cout << "Created function : " << currentFunction.name << " at address " << (int)functionAddress
-              << " with " << currentFunction.instructions.size() << " bytes " << std::endl;
+    if(isParserVerbose)
+    {
+         std::cout << "Created function : " << currentFunction.name << " at address " << (int)functionAddress
+                   << " with " << currentFunction.instructions.size() << " bytes " << std::endl;
+    }
 
 
     addBytegenInstructionToPayload(funcCreate);

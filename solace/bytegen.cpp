@@ -250,8 +250,6 @@ namespace SOLACE
                 return ins; // Keep that compiler happy.
         }
 
-#warning Remove this output after debugging
-
      //   std::cout << "Arg1: " << arg1 << " Arg2: " << arg2 << " Arg3: " << arg3 << std::endl;
      //   dumpInstruction(ins);
 
@@ -294,6 +292,51 @@ namespace SOLACE
         ins.bytes[7] = 0xFF;
 
         //dumpInstruction(ins);
+
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createJumpInstruction
+    // ------------------------------------------------------------------------
+    
+    Bytegen::Instruction Bytegen::createJumpInstruction(uint32_t location)
+    {
+        Instruction ins;
+
+        ins.bytes[0] = MANIFEST::INS_JUMP;
+        ins.bytes[1] = (location & 0xFF000000) >> 24 ;
+        ins.bytes[2] = (location & 0x00FF0000) >> 16 ;
+        ins.bytes[3] = (location & 0x0000FF00) >> 8  ;
+        ins.bytes[4] = (location & 0x000000FF) >> 0  ;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+        
+        //dumpInstruction(ins);
+
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createMovInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createMovInstruction(uint8_t reg1, uint8_t reg2)
+    {
+        
+        Instruction ins;
+
+        ins.bytes[0] = MANIFEST::INS_MOV;
+        ins.bytes[1] = integerToRegister(reg1) ;
+        ins.bytes[2] = integerToRegister(reg2) ;
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+        
+       // dumpInstruction(ins);
 
         return ins;
     }

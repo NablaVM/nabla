@@ -125,6 +125,15 @@ namespace SOLACE
         //! \param reg2  Register 2
         //! \param location Location within function to branch to
         Instruction createBranchInstruction(BranchTypes type, uint8_t reg1, uint8_t reg2, uint32_t location);
+        
+        //! \brief Create a jump instruction
+        //! \param location  Location (adddress) to jump to
+        Instruction createJumpInstruction(uint32_t location);
+
+        //! \brief Create a move instruction
+        //! \param reg1  Register 1 (dest)
+        //! \param reg2  Register 2 (src)
+        Instruction createMovInstruction(uint8_t reg1, uint8_t reg2);
 
     private:
 
