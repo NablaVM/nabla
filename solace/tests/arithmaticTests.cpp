@@ -22,6 +22,35 @@ namespace
         std::uniform_int_distribution<> dis(low, high);
         return dis(gen);
     }
+
+    // Just in case the register addresses need to change, we don't want to have to change
+    // the tests to accomodate
+    uint8_t integerToRegister(int16_t reg)
+    {
+        switch(reg)
+        {
+            case 0 : return SOLACE::MANIFEST::REGISTER_0 ;
+            case 1 : return SOLACE::MANIFEST::REGISTER_1 ;
+            case 2 : return SOLACE::MANIFEST::REGISTER_2 ;
+            case 3 : return SOLACE::MANIFEST::REGISTER_3 ;
+            case 4 : return SOLACE::MANIFEST::REGISTER_4 ;
+            case 5 : return SOLACE::MANIFEST::REGISTER_5 ;
+            case 6 : return SOLACE::MANIFEST::REGISTER_6 ;
+            case 7 : return SOLACE::MANIFEST::REGISTER_7 ;
+            case 8 : return SOLACE::MANIFEST::REGISTER_8 ;
+            case 9 : return SOLACE::MANIFEST::REGISTER_9 ;
+            case 10: return SOLACE::MANIFEST::REGISTER_10;
+            case 11: return SOLACE::MANIFEST::REGISTER_11;
+            case 12: return SOLACE::MANIFEST::REGISTER_12;
+            case 13: return SOLACE::MANIFEST::REGISTER_13;
+            case 14: return SOLACE::MANIFEST::REGISTER_14;
+            case 15: return SOLACE::MANIFEST::REGISTER_15;
+            default: 
+                std::cerr << "Someone tried something silly with : " << reg  << ". IN THE ARITH TEST!" << std::endl;
+                exit(EXIT_FAILURE); 
+                break;
+        }
+    }
 }
 
 TEST_GROUP(ArithmaticTests)
@@ -37,12 +66,11 @@ TEST_GROUP(ArithmaticTests)
 TEST(ArithmaticTests, AllArithmatics)
 {
     int setupMod = 0;
-    int16_t destReg = 0;
 
     for(int16_t j = 0; j < 1000; j++)
     {
         setupMod++;
-        destReg++;
+        int16_t destReg = integerToRegister(getRandom16(0,15));
 
         int16_t arg1;
         int16_t arg2;
@@ -53,7 +81,7 @@ TEST(ArithmaticTests, AllArithmatics)
 
         SOLACE::Bytegen::Instruction expectedIns;
 
-        if(setupMod > 4 ) { setupMod = 0; }
+        if(setupMod > 4 ) { setupMod = 1; }
 
         if(setupMod == 1)
         { 
@@ -61,7 +89,7 @@ TEST(ArithmaticTests, AllArithmatics)
             arg1 = getRandom16(0, 60000);   // NUM
             arg2 = getRandom16(0, 60000);   // NUM
 
-            expectedIns.bytes[1] = destReg;
+            expectedIns.bytes[1] = integerToRegister(destReg);
             uint16_t num = static_cast<uint16_t>(arg1);
 
             expectedIns.bytes[2] = ( (num & 0xFF00) >> 8 ) ;
@@ -82,12 +110,12 @@ TEST(ArithmaticTests, AllArithmatics)
             arg1 = getRandom16(0, 60000);   // NUM
             arg2 = getRandom16(0, 15);      // REG
 
-            expectedIns.bytes[1] = destReg;
+            expectedIns.bytes[1] = integerToRegister(destReg);
 
             uint16_t num = static_cast<uint16_t>(arg1);
             expectedIns.bytes[2] = ( (num & 0xFF00) >> 8 ) ;
             expectedIns.bytes[3] = ( (num & 0x00FF) >> 0 ) ;
-            expectedIns.bytes[4] = arg2;
+            expectedIns.bytes[4] = integerToRegister(arg2);
             expectedIns.bytes[5] = 0xFF;
             expectedIns.bytes[6] = 0xFF;
             expectedIns.bytes[7] = 0xFF;
@@ -99,8 +127,8 @@ TEST(ArithmaticTests, AllArithmatics)
             arg1 = getRandom16(0, 15);      // REG
             arg2 = getRandom16(0, 60000);   // NUM
 
-            expectedIns.bytes[1] = destReg;
-            expectedIns.bytes[2] = arg1;
+            expectedIns.bytes[1] = integerToRegister(destReg);
+            expectedIns.bytes[2] = integerToRegister(arg1);
             uint16_t num = static_cast<uint16_t>(arg2);
             expectedIns.bytes[3] = ( (num & 0xFF00) >> 8 ) ;
             expectedIns.bytes[4] = ( (num & 0x00FF) >> 0 ) ;
@@ -115,10 +143,9 @@ TEST(ArithmaticTests, AllArithmatics)
             arg1 = getRandom16(0, 15);      // REG
             arg2 = getRandom16(0, 15);      // REG
 
-            expectedIns.bytes[1] = destReg;
-            
-            expectedIns.bytes[2] = arg1;
-            expectedIns.bytes[3] = arg2;
+            expectedIns.bytes[1] = integerToRegister(destReg);
+            expectedIns.bytes[2] = integerToRegister(arg1);
+            expectedIns.bytes[3] = integerToRegister(arg2);
             expectedIns.bytes[4] = 0xFF;
             expectedIns.bytes[5] = 0xFF;
             expectedIns.bytes[6] = 0xFF;
@@ -140,8 +167,6 @@ TEST(ArithmaticTests, AllArithmatics)
             default:     FAIL("Something bad happened");  break; // Keep that compiler happy.
         }
 
-        if(destReg == 16) { destReg = 0; }
-
         SOLACE::Bytegen::Instruction ins = byteGen.createArithmaticInstruction(
             type,
             setup,
@@ -151,13 +176,13 @@ TEST(ArithmaticTests, AllArithmatics)
         );
 
         // Build expected ins
-        CHECK_EQUAL_TEXT(expectedIns.bytes[0], expectedIns.bytes[0], "Opcode fail");
-        CHECK_EQUAL_TEXT(expectedIns.bytes[1], expectedIns.bytes[1], "Dest   fail");
-        CHECK_EQUAL_TEXT(expectedIns.bytes[2], expectedIns.bytes[2], "Byte 2 fail");
-        CHECK_EQUAL_TEXT(expectedIns.bytes[3], expectedIns.bytes[3], "Byte 3 fail");
-        CHECK_EQUAL_TEXT(expectedIns.bytes[4], expectedIns.bytes[4], "Byte 4 fail");
-        CHECK_EQUAL_TEXT(expectedIns.bytes[5], expectedIns.bytes[5], "Byte 5 fail");
-        CHECK_EQUAL_TEXT(expectedIns.bytes[6], expectedIns.bytes[6], "Byte 6 fail");
-        CHECK_EQUAL_TEXT(expectedIns.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
+        CHECK_EQUAL_TEXT(expectedIns.bytes[0], ins.bytes[0], "Opcode fail");
+        CHECK_EQUAL_TEXT(expectedIns.bytes[1], ins.bytes[1], "Dest   fail");
+        CHECK_EQUAL_TEXT(expectedIns.bytes[2], ins.bytes[2], "Byte 2 fail");
+        CHECK_EQUAL_TEXT(expectedIns.bytes[3], ins.bytes[3], "Byte 3 fail");
+        CHECK_EQUAL_TEXT(expectedIns.bytes[4], ins.bytes[4], "Byte 4 fail");
+        CHECK_EQUAL_TEXT(expectedIns.bytes[5], ins.bytes[5], "Byte 5 fail");
+        CHECK_EQUAL_TEXT(expectedIns.bytes[6], ins.bytes[6], "Byte 6 fail");
+        CHECK_EQUAL_TEXT(expectedIns.bytes[7], ins.bytes[7], "Byte 7 fail");
     }
 }
