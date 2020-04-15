@@ -80,7 +80,7 @@ namespace SOLACE
 
         //  This is a helper method for the sake of debugging. I do not intend on keeping this here in the long run.
         //
-        void displayManifest()
+        static void displayManifest()
         {
             std::cout << "INS_ADD             =" << std::hex << (int)INS_ADD             << " \t| " << std::bitset<8>(INS_ADD            ) << std::endl;
             std::cout << "INS_SUB             =" << std::hex << (int)INS_SUB             << " \t| " << std::bitset<8>(INS_SUB            ) << std::endl;

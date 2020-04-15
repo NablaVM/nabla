@@ -29,7 +29,7 @@ namespace SOLACE
                 case 14: return MANIFEST::REGISTER_14;
                 case 15: return MANIFEST::REGISTER_15;
                 default: 
-                    std::cerr << "Someone tried something silly" << std::endl;
+                    std::cerr << "Someone tried something silly with : " << reg  << std::endl;
                     exit(EXIT_FAILURE); 
                     break;
             }
@@ -158,14 +158,14 @@ namespace SOLACE
 
         switch(type)
         {
-            case Bytegen::ArithmaticTypes::ADD : std::cout << "Bytegen::createArithmatic::ADD  :: "; op = MANIFEST::INS_ADD ; break;
-            case Bytegen::ArithmaticTypes::ADDD: std::cout << "Bytegen::createArithmatic::ADDD :: "; op = MANIFEST::INS_ADDD; break; 
-            case Bytegen::ArithmaticTypes::MUL : std::cout << "Bytegen::createArithmatic::MUL  :: "; op = MANIFEST::INS_MUL ; break;
-            case Bytegen::ArithmaticTypes::MULD: std::cout << "Bytegen::createArithmatic::MULD :: "; op = MANIFEST::INS_MULD; break; 
-            case Bytegen::ArithmaticTypes::DIV : std::cout << "Bytegen::createArithmatic::DIV  :: "; op = MANIFEST::INS_DIV ; break;
-            case Bytegen::ArithmaticTypes::DIVD: std::cout << "Bytegen::createArithmatic::DIVD :: "; op = MANIFEST::INS_DIVD; break; 
-            case Bytegen::ArithmaticTypes::SUB : std::cout << "Bytegen::createArithmatic::SUB  :: "; op = MANIFEST::INS_SUB ; break;
-            case Bytegen::ArithmaticTypes::SUBD: std::cout << "Bytegen::createArithmatic::SUBD :: "; op = MANIFEST::INS_SUBD; break; 
+            case Bytegen::ArithmaticTypes::ADD : op = MANIFEST::INS_ADD ; break;
+            case Bytegen::ArithmaticTypes::ADDD: op = MANIFEST::INS_ADDD; break; 
+            case Bytegen::ArithmaticTypes::MUL : op = MANIFEST::INS_MUL ; break;
+            case Bytegen::ArithmaticTypes::MULD: op = MANIFEST::INS_MULD; break; 
+            case Bytegen::ArithmaticTypes::DIV : op = MANIFEST::INS_DIV ; break;
+            case Bytegen::ArithmaticTypes::DIVD: op = MANIFEST::INS_DIVD; break; 
+            case Bytegen::ArithmaticTypes::SUB : op = MANIFEST::INS_SUB ; break;
+            case Bytegen::ArithmaticTypes::SUBD: op = MANIFEST::INS_SUBD; break; 
             default:      exit(EXIT_FAILURE);  return ins; // Keep that compiler happy.
         }
 
@@ -174,7 +174,6 @@ namespace SOLACE
         {
             case Bytegen::ArithmaticSetup::REG_REG: 
             {
-                std::cout << " :: REG_REG "; 
                 ins.bytes[0] = (op);
                 ins.bytes[1] = (integerToRegister(arg1));
                 ins.bytes[2] = (integerToRegister(arg2));
@@ -188,7 +187,6 @@ namespace SOLACE
 
             case Bytegen::ArithmaticSetup::NUM_REG: 
             {
-                std::cout << " :: NUM_REG "; 
                 op = op | 0x02; 
                 ins.bytes[0] = (op);
                 ins.bytes[1] = (integerToRegister(arg1));
@@ -209,7 +207,6 @@ namespace SOLACE
 
             case Bytegen::ArithmaticSetup::REG_NUM: 
             {
-                std::cout << " :: REG_NUM "; 
                 op = op | 0x01; 
                 ins.bytes[0] = (op);
                 ins.bytes[1] = (integerToRegister(arg1));
@@ -229,7 +226,6 @@ namespace SOLACE
 
             case Bytegen::ArithmaticSetup::NUM_NUM: 
             {
-                std::cout << " :: NUM_NUM "; 
                 op = op | 0x03; 
                 ins.bytes[0] = (op);
                 ins.bytes[1] = (integerToRegister(arg1));
@@ -256,8 +252,8 @@ namespace SOLACE
 
 #warning Remove this output after debugging
 
-        std::cout << "Arg1: " << arg1 << " Arg2: " << arg2 << " Arg3: " << arg3 << std::endl;
-        dumpInstruction(ins);
+     //   std::cout << "Arg1: " << arg1 << " Arg2: " << arg2 << " Arg3: " << arg3 << std::endl;
+     //   dumpInstruction(ins);
 
         return ins;
     }
@@ -297,7 +293,7 @@ namespace SOLACE
         ins.bytes[6] = (location & 0x000000FF) >> 0  ;
         ins.bytes[7] = 0xFF;
 
-        dumpInstruction(ins);
+        //dumpInstruction(ins);
 
         return ins;
     }

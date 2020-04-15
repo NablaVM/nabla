@@ -11,6 +11,11 @@
 
 #include <iostream>
 
+namespace
+{
+    constexpr bool DEFAULT_VERBOSE = true;
+}
+
 int main(int argc, char ** argv)
 {
     if(argc == 1)
@@ -27,7 +32,7 @@ int main(int argc, char ** argv)
 
     std::vector<uint8_t> bytes;
 
-    if(!SOLACE::ParseAsm(argv[1], bytes))
+    if(!SOLACE::ParseAsm(argv[1], bytes, DEFAULT_VERBOSE))
     {
         std::cerr << "Failed to parse asm. Goodbye." << std::endl;
         return 1;

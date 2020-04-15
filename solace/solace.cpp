@@ -218,6 +218,8 @@ namespace
     FunctionInformation currentFunction;
 
     bool isSystemBuildingFunction;
+
+    bool isParserVerbose;
 }
 
 // -----------------------------------------------
@@ -344,8 +346,11 @@ inline static bool parseFile(std::string file)
 //
 // -----------------------------------------------
 
-bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes)
+bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes, bool verbose)
 {
+    // Set verbosity
+    isParserVerbose = verbose;
+
     // Mark the entry point as undefined to start
     finalPayload.entryPoint = UNDEFINED_ENTRY_POINT;
 
@@ -703,11 +708,11 @@ inline static bool arithmatic_instruction(Bytegen::ArithmaticTypes type)
 
         if(isRegister(currentPieces[3]))
         {
-            //std::cout << "Register : " << currentPieces[3] << std::endl;
+            if(isParserVerbose){ std::cout << "Register : " << currentPieces[3] << std::endl; }
         }
         else if(isDirectNumerical(currentPieces[3]))
         {
-            //std::cout << "Direct Numerical : " << currentPieces[3] << std::endl;
+            if(isParserVerbose){ std::cout << "Direct Numerical : " << currentPieces[3] << std::endl; }
 
             if(!isDirectNumericalInRange(currentPieces[3]))
             {
@@ -735,7 +740,7 @@ inline static bool arithmatic_instruction(Bytegen::ArithmaticTypes type)
         // Check if is register
         if(isRegister(currentPieces[1]))
         {
-            //std::cout << convertArithToString(type) << "::arg1::register::" << currentPieces[1] << std::endl;
+            if(isParserVerbose){ std::cout << convertArithToString(type) << "::arg1::register::" << currentPieces[1] << std::endl; }
         }
         else
         {
@@ -749,7 +754,7 @@ inline static bool arithmatic_instruction(Bytegen::ArithmaticTypes type)
 
         if(isRegister(currentPieces[2]))
         {
-            //std::cout << "Double Register : " << currentPieces[2] << std::endl;
+            if(isParserVerbose){ std::cout << "Double Register : " << currentPieces[2] << std::endl; }
         }
         else
         {
@@ -763,7 +768,7 @@ inline static bool arithmatic_instruction(Bytegen::ArithmaticTypes type)
 
         if(isRegister(currentPieces[3]))
         {
-            //std::cout << "Register : " << currentPieces[3] << std::endl;
+            if(isParserVerbose){ std::cout << "Register : " << currentPieces[3] << std::endl; }
         }
         else
         {
@@ -922,8 +927,6 @@ bool instruction_mov()
         return false;
     }
 
-    std::cout << "mov : " << currentLine << std::endl;
-
     if(currentPieces.size() != 3)
     {
         std::cerr << "Invalid 'mov' instruction : " << currentLine << std::endl;
@@ -958,8 +961,6 @@ bool instruction_lda()
         std::cerr << "All Instructions must exist within a function" << std::endl;
         return false;
     }
-
-    std::cout << "lda : " << currentLine << std::endl;
     
     if(currentPieces.size() != 3)
     {
@@ -979,33 +980,33 @@ bool instruction_lda()
     {
         std::string constantName = currentPieces[2].substr(1, currentPieces[2].size());
 
-        std::cout << "Argument 2 is referenced constant : " << constantName;
+        if(isParserVerbose){ std::cout << "Argument 2 is referenced constant : " << constantName; }
 
         // Is it an int ?
         if(isConstIntInPayload(constantName))
         {
-            std::cout << " -> constant_int " << std::endl;
+            if(isParserVerbose){ std::cout << " -> constant_int " << std::endl; }
 
         }
 
         // Is it a double ?
         else if (isConstDoubleInPayload(constantName))
         {
-            std::cout << " -> constant_double " << std::endl;
+            if(isParserVerbose){ std::cout << " -> constant_double " << std::endl; }
 
         }
         
         // Is it a string ?
         else if (isConstStringInPayload(constantName))
         {
-            std::cout << " -> constant_string " << std::endl;
+           if(isParserVerbose){  std::cout << " -> constant_string " << std::endl; }
 
         }
 
         // IT ISN'T ANYTHING ! UGH!
         else
         {
-            std::cout << " ERROR - Unable to locate given constant" << std::endl;
+            if(isParserVerbose){  std::cout << " ERROR - Unable to locate given constant" << std::endl; }
             return false;
         }
     }
@@ -1013,19 +1014,17 @@ bool instruction_lda()
     // Check if its a global stack pointer
     else if (isOffsetGlobalStackpointer(currentPieces[2]))
     {
-        std::cout << "Argument 2 -> global_stack_pointer " << std::endl;
-
+       if(isParserVerbose){  std::cout << "Argument 2 -> global_stack_pointer " << std::endl; }
     }
 
     // Check if its a local stack pointer
     else if (isOffsetLocalStackpointer(currentPieces[2]))
     {
-        std::cout << "Argument 2 -> local_stack_pointer " << std::endl;
-
+        if(isParserVerbose){ std::cout << "Argument 2 -> local_stack_pointer " << std::endl; }
     }
     else
     {
-        std::cout << "'lda' argument 2 not matched" << std::endl;
+        std::cerr << "'lda' argument 2 not matched" << std::endl;
         return false;
     }
 
@@ -1055,11 +1054,11 @@ bool instruction_stb()
     // Check argument 1 
     if(isOffsetGlobalStackpointer(currentPieces[1]))
     {
-        std::cout << "Argument 1 is global spo : " << currentPieces[1] << std::endl;
+        if(isParserVerbose){ std::cout << "Argument 1 is global spo : " << currentPieces[1] << std::endl; }
     }
     else if (isOffsetLocalStackpointer(currentPieces[1]))
     {
-        std::cout << "Argument 1 is local spo : " << currentPieces[1] << std::endl;
+        if(isParserVerbose){ std::cout << "Argument 1 is local spo : " << currentPieces[1] << std::endl; }
     }
     else
     {
@@ -1104,8 +1103,7 @@ bool instruction_ldb()
 
     if(isRegister(currentPieces[2]))
     {
-        std::cout << "Argument 2 is register : " << currentPieces[2] << std::endl;
-
+        if(isParserVerbose){ std::cout << "Argument 2 is register : " << currentPieces[2] << std::endl; }
     }
 
     // Check if its a referenced constant, and if it is try to find it
@@ -1113,33 +1111,30 @@ bool instruction_ldb()
     {
         std::string constantName = currentPieces[2].substr(1, currentPieces[2].size());
 
-        std::cout << "Argument 2 is referenced constant : " << constantName;
+        if(isParserVerbose){ std::cout << "Argument 2 is referenced constant : " << constantName; }
 
         // Is it an int ?
         if(isConstIntInPayload(constantName))
         {
-            std::cout << " -> constant_int " << std::endl;
-
+            if(isParserVerbose){ std::cout << " -> constant_int " << std::endl; }
         }
 
         // Is it a double ?
         else if (isConstDoubleInPayload(constantName))
         {
-            std::cout << " -> constant_double " << std::endl;
-
+            if(isParserVerbose){ std::cout << " -> constant_double " << std::endl; }
         }
         
         // Is it a string ?
         else if (isConstStringInPayload(constantName))
         {
-            std::cout << " -> constant_string " << std::endl;
-
+            if(isParserVerbose){ std::cout << " -> constant_string " << std::endl; }
         }
 
         // IT ISN'T ANYTHING ! UGH!
         else
         {
-            std::cout << " ERROR - Unable to locate given constant" << std::endl;
+            std::cerr << "Unable to locate given constant" << std::endl;
             return false;
         }
     }
@@ -1147,19 +1142,17 @@ bool instruction_ldb()
     // Check if its a global stack pointer
     else if (isOffsetGlobalStackpointer(currentPieces[2]))
     {
-        std::cout << "Argument 2 -> global_stack_pointer " << std::endl;
-
+        if(isParserVerbose){ std::cout << "Argument 2 -> global_stack_pointer " << std::endl; }
     }
 
     // Check if its a local stack pointer
     else if (isOffsetLocalStackpointer(currentPieces[2]))
     {
-        std::cout << "Argument 2 -> local_stack_pointer " << std::endl;
-
+       if(isParserVerbose){  std::cout << "Argument 2 -> local_stack_pointer " << std::endl; }
     }
     else
     {
-        std::cout << "'ldb' argument 2 must be constant or stack offset" << std::endl;
+        std::cerr << "'ldb' argument 2 must be constant or stack offset" << std::endl;
         return false;
     }
 
@@ -1178,8 +1171,6 @@ bool instruction_push()
         return false;
     }
 
-    std::cout << "push : " << currentLine << std::endl;
-
     if(!currentPieces.size() == 3)
     {
         std::cerr << "Invalid 'push' instruction : " << currentLine << std::endl;
@@ -1189,11 +1180,11 @@ bool instruction_push()
     // Argument 2
     if(isDirectLocalStackPointer(currentPieces[1]))
     {
-        std::cout << "Argument 1 is a local stack pointer " << std::endl;
+        if(isParserVerbose){ std::cout << "Argument 1 is a local stack pointer " << std::endl; }
     }
     else if (isDirectGlobalStackPointer(currentPieces[1]))
     {
-        std::cout << "Argument 1 is a global stack pointer " << std::endl;
+        if(isParserVerbose){ std::cout << "Argument 1 is a global stack pointer " << std::endl; }
     }
     else
     {
@@ -1205,6 +1196,7 @@ bool instruction_push()
     if(!isRegister(currentPieces[2]))
     {
         std::cout << "'push' instruction argument 2 must be a register" << std::endl;
+        return false;
     }
 
     return true;
@@ -1222,8 +1214,6 @@ bool instruction_pop()
         return false;
     }
 
-    std::cout << "pop : " << currentLine << std::endl;
-
     if(!currentPieces.size() == 3)
     {
         std::cerr << "Invalid 'pop' instruction : " << currentLine << std::endl;
@@ -1233,11 +1223,11 @@ bool instruction_pop()
     // Argument 2
     if(isDirectLocalStackPointer(currentPieces[1]))
     {
-        std::cout << "Argument 1 is a local stack pointer " << std::endl;
+        if(isParserVerbose){ std::cout << "Argument 1 is a local stack pointer " << std::endl; }
     }
     else if (isDirectGlobalStackPointer(currentPieces[1]))
     {
-        std::cout << "Argument 1 is a global stack pointer " << std::endl;
+        if(isParserVerbose){ std::cout << "Argument 1 is a global stack pointer " << std::endl; }
     }
     else
     {
@@ -1248,7 +1238,8 @@ bool instruction_pop()
     // Argument 2
     if(!isRegister(currentPieces[2]))
     {
-        std::cout << "'pop' instruction argument 2 must be a register" << std::endl;
+        std::cerr << "'pop' instruction argument 2 must be a register" << std::endl;
+        return false;
     }
 
     return true;
@@ -1286,8 +1277,6 @@ inline bool branch_instruction(Bytegen::BranchTypes type)
         return false;
     }
 
-    std::cout << "Branch : " << convertBranchToString(type) << ": " << currentLine << std::endl;
-
     if(!isRegister(currentPieces[1]))
     {
         std::cerr << "branch argument 1 must be a register" << std::endl;
@@ -1312,6 +1301,14 @@ inline bool branch_instruction(Bytegen::BranchTypes type)
         return false;
     }
 
+    uint32_t labelValue = currentFunction.labels[currentPieces[3]];
+
+    if(isParserVerbose) { std::cout << currentPieces[0] << " Arg1: " 
+                          << currentPieces[1]           << " Arg2: "
+                          << currentPieces[2]           << " Label: "
+                          << currentPieces[3]           << " Label Address: "
+                          << labelValue <<  std::endl; }
+
     // We are expecting registers as regex magic has already deemed them fit to be registers.
     // The following method simply peels off the 'r' so we are left with the integer 
     uint8_t reg1 = getNumberFromNumericalOrRegister(currentPieces[1]);
@@ -1319,7 +1316,7 @@ inline bool branch_instruction(Bytegen::BranchTypes type)
 
     // Generate the bytes and add to the current function
     addBytegenInstructionToCurrentFunction(
-        nablaByteGen.createBranchInstruction(type, reg1, reg2, currentFunction.labels[currentPieces[3]])
+        nablaByteGen.createBranchInstruction(type, reg1, reg2, labelValue)
         );
 
     return true;
@@ -1516,9 +1513,6 @@ bool instruction_jmp()
         std::cerr << "All Instructions must exist within a function" << std::endl;
         return false;
     }
-
-    std::cout << "jmp : " << currentLine << std::endl;
-
     return true;
 }
 
@@ -1533,8 +1527,6 @@ bool instruction_call()
         std::cerr << "All Instructions must exist within a function" << std::endl;
         return false;
     }
-
-    std::cout << "call : " << currentLine << std::endl;
 
     // Put return address in sys0
     return true;
@@ -1551,8 +1543,6 @@ bool instruction_return()
         std::cerr << "All Instructions must exist within a function" << std::endl;
         return false;
     }
-
-    std::cout << "return : " << currentLine << std::endl;
 
     // Pull address from sys1
     return true;
@@ -1601,8 +1591,6 @@ bool instruction_exit()
         std::cerr << "All Instructions must exist within a function" << std::endl;
         return false;
     }
-
-    std::cout << "exit : " << currentLine << std::endl;
     return true;
 }
 
@@ -1618,8 +1606,6 @@ bool instruction_directive()
         return false;
     }
 
-    std::cout << "Directive: " << currentLine << std::endl;
-
     if(currentPieces.size() < 2)
     {
         std::cerr << "Unknown potential directive : " << currentLine << std::endl;
@@ -1631,7 +1617,7 @@ bool instruction_directive()
     // ----------------------------------------------------------------------
     if(std::regex_match(currentPieces[0], std::regex("^\\.init$")))
     {
-        std::cout << "\tinit: " << currentLine << std::endl;
+        if(isParserVerbose){ std::cout << "\tinit: " << currentLine << std::endl; }
 
         if(!std::regex_match(currentPieces[1], std::regex("^[a-zA-Z0-9_]+$")))
         {
@@ -1656,14 +1642,14 @@ bool instruction_directive()
     // ----------------------------------------------------------------------
     else if (std::regex_match(currentPieces[0], std::regex("^\\.file$")))
     {
-        std::cout << "\tfile: " << currentLine[1] << std::endl;
+        if(isParserVerbose){ std::cout << "\tfile: " << currentLine[1] << std::endl; }
     }
     // ----------------------------------------------------------------------
     //  Create a .string constant
     // ----------------------------------------------------------------------
     else if (std::regex_match(currentPieces[0], std::regex("^\\.string$"))) 
     {
-        std::cout << "\tstring: " << currentLine << std::endl;
+        if(isParserVerbose){ std::cout << "\tstring: " << currentLine << std::endl; }
 
         // Make sure everything is there
         if(currentPieces.size() < 3)
@@ -1728,7 +1714,7 @@ bool instruction_directive()
     // ----------------------------------------------------------------------
     else if (std::regex_match(currentPieces[0], std::regex("^\\.int$"))) 
     {
-        std::cout << "\tint: " << currentLine << std::endl;
+        if(isParserVerbose){ std::cout << "\tint: " << currentLine << std::endl; }
 
         // Make sure everything is there
         if(currentPieces.size() < 3)
@@ -1769,7 +1755,7 @@ bool instruction_directive()
     // ----------------------------------------------------------------------
     else if (std::regex_match(currentPieces[0], std::regex("^\\.double$"))) 
     {
-        std::cout << "\tdouble: " << currentLine << std::endl;
+        if(isParserVerbose){ std::cout << "\tdouble: " << currentLine << std::endl; }
 
         // Make sure everything is there
         if(currentPieces.size() < 3)
@@ -1810,7 +1796,7 @@ bool instruction_directive()
     // ----------------------------------------------------------------------
     else if (std::regex_match(currentPieces[0], std::regex("^\\.include$"))) 
     {
-        std::cout << "\tinclude: " << currentLine << std::endl;
+        if(isParserVerbose){ std::cout << "\tinclude: " << currentLine << std::endl; }
 
         // Check if it has been parsed before
         if(wasFileParsed(currentPieces[1]))

@@ -15,12 +15,16 @@ endif()
 
 link_directories(${CPPUTEST_LIBRARIES})
 
-add_executable(nablaCompilerTests
-        ParserTest.cpp
+include_directories(../)
+
+
+add_executable(nablaInsTest
+        arithmaticTests.cpp
         main.cpp
 )
-target_link_libraries(nablaCompilerTests 
-                      ${NABLA_COMPILER_SOURCES}
+
+target_link_libraries(nablaInsTest 
+                      ${SOLACE_COMPILER_SOURCES}
                       ${CPPUTEST_LDFLAGS})
 
-add_custom_command(TARGET nablaCompilerTests COMMAND ./nablaCompilerTests POST_BUILD)
+add_custom_command(TARGET nablaInsTest COMMAND ./nablaInsTest POST_BUILD)
