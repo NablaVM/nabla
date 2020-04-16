@@ -417,7 +417,7 @@ namespace SOLACE
         ins.bytes[6] = integerToRegister(reg);
         ins.bytes[7] = 0xFF;
 
-        dumpInstruction(ins);
+        //dumpInstruction(ins);
 
         return ins;
     }

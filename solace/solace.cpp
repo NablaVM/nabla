@@ -34,6 +34,15 @@
         label           X                   NA
 
 
+    NOTES:
+            Need to figure out how we are going to lay out constants in the file, and in memory
+            this needs to be figured out before we can continue with lda and ldb. That way we can
+            determine how we want to reference their address
+
+            Once that is complete, then the call needs to be figured out. Do we allow prototyping of
+            functions. MAYBE WITH SOMETHING LIKE ' .promise ' ? :D I think maybe.
+            
+
 
     This parser is a bit long and in need of explanation. The basic gist is this :
 
@@ -126,9 +135,8 @@ namespace
 
     struct Payload
     {
-        std::map<std::string, std::vector<uint8_t> > const_ints;     // Constant integers
-        std::map<std::string, std::vector<uint8_t> > const_doubles;  // Constant doubles
-        std::map<std::string, std::vector<uint8_t> > const_strings;  // Constant strings
+        std::map<std::string, std::vector<uint8_t> > constants;      // Constants
+
         std::map<std::string, uint32_t>              functions;      // Functions
 
         std::vector<std::string> filesParsed;   // Files that have been parsed
@@ -559,30 +567,23 @@ inline static bool isString(std::string piece)
 }
 
 // -----------------------------------------------
-//
+// Check if something is stored as a constant or not
 // -----------------------------------------------
 
-inline static bool isConstIntInPayload(std::string name)
+inline static bool isConstInPayload(std::string name)
 {
-    return (finalPayload.const_ints.find(name) != finalPayload.const_ints.end());
+    return (finalPayload.constants.find(name) != finalPayload.constants.end());
 }
 
 // -----------------------------------------------
-//
+//  getConstIndex doesn't care if something exists or not. Do that yourself.
 // -----------------------------------------------
 
-inline static bool isConstDoubleInPayload(std::string name)
+inline static uint32_t getConstIndex(std::string name)
 {
-    return (finalPayload.const_doubles.find(name) != finalPayload.const_doubles.end());
-}
+    std::map<std::string, std::vector<uint8_t> >::iterator iter = finalPayload.constants.find(name);
 
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-inline static bool isConstStringInPayload(std::string name)
-{
-    return (finalPayload.const_strings.find(name) != finalPayload.const_strings.end());
+    return std::distance(finalPayload.constants.begin(), iter);
 }
 
 // -----------------------------------------------
@@ -1000,24 +1001,9 @@ bool instruction_lda()
 
         if(isParserVerbose){ std::cout << "Argument 2 is referenced constant : " << constantName; }
 
-        // Is it an int ?
-        if(isConstIntInPayload(constantName))
+        if(isConstInPayload(constantName))
         {
-            if(isParserVerbose){ std::cout << " -> constant_int " << std::endl; }
-
-        }
-
-        // Is it a double ?
-        else if (isConstDoubleInPayload(constantName))
-        {
-            if(isParserVerbose){ std::cout << " -> constant_double " << std::endl; }
-
-        }
-        
-        // Is it a string ?
-        else if (isConstStringInPayload(constantName))
-        {
-           if(isParserVerbose){  std::cout << " -> constant_string " << std::endl; }
+            if(isParserVerbose){ std::cout << " -> constant confirmed " << std::endl; }
 
         }
 
@@ -1151,19 +1137,19 @@ bool instruction_ldb()
         if(isParserVerbose){ std::cout << "Argument 2 is referenced constant : " << constantName; }
 
         // Is it an int ?
-        if(isConstIntInPayload(constantName))
+        if(isConstInPayload(constantName))
         {
             if(isParserVerbose){ std::cout << " -> constant_int " << std::endl; }
         }
 
         // Is it a double ?
-        else if (isConstDoubleInPayload(constantName))
+        else if (isConstInPayload(constantName))
         {
             if(isParserVerbose){ std::cout << " -> constant_double " << std::endl; }
         }
         
         // Is it a string ?
-        else if (isConstStringInPayload(constantName))
+        else if (isConstInPayload(constantName))
         {
             if(isParserVerbose){ std::cout << " -> constant_string " << std::endl; }
         }
@@ -1809,19 +1795,19 @@ bool instruction_directive()
         }
 
         // Ensure that we haven't had it defined yet
-        if(isConstStringInPayload(currentPieces[1]))
+        if(isConstInPayload(currentPieces[1]))
         {
             std::cerr << "Constant .string " << currentPieces[1] << " previously defined with value."<< std::endl;
             return false;
         }
 
         // Get the destination vector ready
-        finalPayload.const_strings[currentPieces[1]] = std::vector<uint8_t>();
+        finalPayload.constants[currentPieces[1]] = std::vector<uint8_t>();
 
         // Put the chars in the array
         for(auto& i : str)
         {
-            finalPayload.const_strings[currentPieces[1]].push_back(static_cast<uint8_t>(i));
+            finalPayload.constants[currentPieces[1]].push_back(static_cast<uint8_t>(i));
         }
     }
 
@@ -1854,7 +1840,7 @@ bool instruction_directive()
         }
 
         // Ensure that we haven't had it defined yet
-        if(isConstIntInPayload(currentPieces[1]))
+        if(isConstInPayload(currentPieces[1]))
         {
             std::cerr << "Constant .int " << currentPieces[1] << " previously defined" << std::endl;
             return false;
@@ -1864,7 +1850,7 @@ bool instruction_directive()
         int64_t givenInt = std::stoi(currentPieces[2]);
 
         // Store it
-        finalPayload.const_ints[currentPieces[1]] = nablaByteGen.createConstantInt(static_cast<uint32_t>(givenInt));
+        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantInt(static_cast<uint32_t>(givenInt));
     }
     // ----------------------------------------------------------------------
     //  Create a .double constant
@@ -1895,7 +1881,7 @@ bool instruction_directive()
         }
 
         // Ensure that we haven't had it defined yet
-        if(isConstDoubleInPayload(currentPieces[1]))
+        if(isConstInPayload(currentPieces[1]))
         {
             std::cerr << "Constant .double " << currentPieces[1] << " previously defined" << std::endl;
             return false;
@@ -1905,7 +1891,7 @@ bool instruction_directive()
         double givenDouble = std::stod(currentPieces[2]);
 
         // Store it
-        finalPayload.const_doubles[currentPieces[1]] = nablaByteGen.createConstantDouble(givenDouble);
+        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantDouble(givenDouble);
     }
     // ----------------------------------------------------------------------
     //  Include a file
