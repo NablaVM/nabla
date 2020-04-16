@@ -2,6 +2,8 @@
 
 #include "InsManifest.hpp"
 
+#include<ieee754.h>
+
 namespace SOLACE
 {
     namespace
@@ -77,6 +79,15 @@ namespace SOLACE
         //MANIFEST::displayManifest();
 
     }
+
+    // ------------------------------------------------------------------------
+    // getCurrentFunctionCouner
+    // ------------------------------------------------------------------------
+    
+    uint32_t Bytegen::getCurrentFunctionCouner() const
+    {
+        return functionCounter;
+    }
     
     // ------------------------------------------------------------------------
     // createFunctionStart
@@ -114,10 +125,18 @@ namespace SOLACE
 
         std::cout << "Bytegen::createConstantString(" << val << ")" << std::endl;
         
-        result.push_back( MANIFEST::CONST_STR      );
-        for(auto& v : val)
+        result.push_back( MANIFEST::CONST_STR );
+
+        // If the string size is greater than max, then we will lop-off any extra.
+        uint8_t strSize = ( (val.size() > 255) ? 255 : val.size() );
+
+        // Add the size
+        result.push_back(strSize);
+
+        // Ensure we only place the values we accounted for
+        for(uint8_t i = 0; i < strSize; i++)
         {
-            result.push_back(static_cast<uint8_t>(v));
+            result.push_back(static_cast<uint8_t>(val[i]));
         }
 
         return result;
@@ -127,17 +146,54 @@ namespace SOLACE
     // createConstantInt
     // ------------------------------------------------------------------------
     
-    std::vector<uint8_t> Bytegen::createConstantInt   (uint32_t val)
+    std::vector<uint8_t> Bytegen::createConstantInt   (uint64_t val, Integers integerType)
     {
         std::vector<uint8_t> result;
 
-        std::cout << "Bytegen::createConstantInt(" << val << ")" << std::endl;
+        /*
+            I'm sure there is a more clever way to do this, but right now I'm aiming for correct over clever.
+            This can be revisited in the future.
+        */
+        switch(integerType)
+        {
+            case Integers::EIGHT:
+            {
+                result.push_back( MANIFEST::CONST_INT  |  0x0 );
+                result.push_back( (val & 0x000000FF) >> 0  );
+                break;
+            }
+            case Integers::SIXTEEN:
+            {
+                result.push_back( MANIFEST::CONST_INT  |  0x1 );
+                result.push_back( (val & 0x0000FF00) >> 8  );
+                result.push_back( (val & 0x000000FF) >> 0  );
+                break;
+            }
+            case Integers::THIRTY_TWO:
+            {
+                result.push_back( MANIFEST::CONST_INT  |  0x2 );
+                result.push_back( (val & 0xFF000000) >> 24 );
+                result.push_back( (val & 0x00FF0000) >> 16 );
+                result.push_back( (val & 0x0000FF00) >> 8  );
+                result.push_back( (val & 0x000000FF) >> 0  );
+                break;
+            }
+            case Integers::SIXTY_FOUR:
+            {
+                result.push_back( MANIFEST::CONST_INT  |  0x3 );
+                result.push_back( (val & 0xFF00000000000000) >> 56 );
+                result.push_back( (val & 0x00FF000000000000) >> 48 );
+                result.push_back( (val & 0x0000FF0000000000) >> 40 );
+                result.push_back( (val & 0x000000FF00000000) >> 32 );
+                result.push_back( (val & 0x00000000FF000000) >> 24 );
+                result.push_back( (val & 0x0000000000FF0000) >> 16 );
+                result.push_back( (val & 0x000000000000FF00) >> 8  );
+                result.push_back( (val & 0x00000000000000FF) >> 0  );
+                break;
+            }
+        }
 
-        result.push_back( MANIFEST::CONST_INT      );
-        result.push_back( (val & 0xFF000000) >> 24 );
-        result.push_back( (val & 0x00FF0000) >> 16 );
-        result.push_back( (val & 0x0000FF00) >> 8  );
-        result.push_back( (val & 0x000000FF) >> 0  );
+        std::cout << "Bytegen::createConstantInt(" << val << ")" << std::endl;
 
         return result;
     }
@@ -152,13 +208,24 @@ namespace SOLACE
 
         std::cout << "Bytegen::createConstantDouble(" << dval << ")" << std::endl;
 
-        uint32_t val = static_cast<uint32_t>(dval + 0.5);
+        ieee754_double ied;
+
+        ied.d = dval;
+
+        uint64_t packed = ied.ieee.negative  | 
+                          ied.ieee.exponent  |
+                          ied.ieee.mantissa0 |
+                          ied.ieee.mantissa1;
 
         result.push_back( MANIFEST::CONST_DBL      );
-        result.push_back( (val & 0xFF000000) >> 24 );
-        result.push_back( (val & 0x00FF0000) >> 16 );
-        result.push_back( (val & 0x0000FF00) >> 8  );
-        result.push_back( (val & 0x000000FF) >> 0  );
+        result.push_back( (packed & 0xFF00000000000000) >> 56 );
+        result.push_back( (packed & 0x00FF000000000000) >> 48 );
+        result.push_back( (packed & 0x0000FF0000000000) >> 40 );
+        result.push_back( (packed & 0x000000FF00000000) >> 32 );
+        result.push_back( (packed & 0x00000000FF000000) >> 24 );
+        result.push_back( (packed & 0x0000000000FF0000) >> 16 );
+        result.push_back( (packed & 0x000000000000FF00) >> 8  );
+        result.push_back( (packed & 0x00000000000000FF) >> 0  );
 
         return result;
     }
@@ -461,6 +528,54 @@ namespace SOLACE
 
         //dumpInstruction(ins);
         
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createCallInstruction
+    // ------------------------------------------------------------------------
+
+    std::vector<Bytegen::Instruction> Bytegen::createCallInstruction(uint32_t funcFrom, uint32_t ret, uint32_t address)
+    {
+        std::vector<Instruction> ins;
+
+        Instruction cssf;
+        cssf.bytes[0] = MANIFEST::INS_CS_SF;
+        cssf.bytes[1] = (funcFrom & 0xFF000000) >> 24;
+        cssf.bytes[2] = (funcFrom & 0x00FF0000) >> 16;
+        cssf.bytes[3] = (funcFrom & 0x0000FF00) >> 8 ;
+        cssf.bytes[4] = (funcFrom & 0x000000FF) >> 0 ;
+        cssf.bytes[5] = 0xFF;
+        cssf.bytes[6] = 0xFF;
+        cssf.bytes[7] = 0xFF;
+
+        ins.push_back(cssf);
+
+        Instruction cssr;
+        cssr.bytes[0] = MANIFEST::INS_CS_SR;
+        cssr.bytes[1] = (ret & 0xFF000000) >> 24;
+        cssr.bytes[2] = (ret & 0x00FF0000) >> 16;
+        cssr.bytes[3] = (ret & 0x0000FF00) >> 8 ;
+        cssr.bytes[4] = (ret & 0x000000FF) >> 0 ;
+        cssr.bytes[5] = 0xFF;
+        cssr.bytes[6] = 0xFF;
+        cssr.bytes[7] = 0xFF;
+
+        ins.push_back(cssr);
+
+        Instruction call;
+
+        call.bytes[0] = MANIFEST::INS_CALL;
+        call.bytes[1] = (address & 0xFF000000) >> 24;
+        call.bytes[2] = (address & 0x00FF0000) >> 16;
+        call.bytes[3] = (address & 0x0000FF00) >> 8 ;
+        call.bytes[4] = (address & 0x000000FF) >> 0 ;
+        call.bytes[5] = 0xFF;
+        call.bytes[6] = 0xFF;
+        call.bytes[7] = 0xFF;
+
+        ins.push_back(call);
+
         return ins;
     }
 

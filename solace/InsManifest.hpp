@@ -81,6 +81,10 @@ namespace SOLACE
         // Similar to registers, these aren't restricted to the 6-bit instruction constraint
         constexpr uint8_t GLOBAL_STACK        = 0xFF;
         constexpr uint8_t LOCAL_STACK         = 0xEE;
+
+        // Forbidden Instructions
+        constexpr uint8_t INS_CS_SF               = 0x68;   // Store function
+        constexpr uint8_t INS_CS_SR               = 0x6C;   // Store region
         
 
         //  This is a helper method for the sake of debugging. I do not intend on keeping this here in the long run.
@@ -161,10 +165,10 @@ namespace SOLACE
     5c	| 01011100
     60	| 01100000
     64	| 01100100
+    [ BELOW ARE CURRENT INSTRUCTIONS ]
     68	| 01101000
     6c	| 01101100
 
-    [ BELOW ARE CURRENT INSTRUCTIONS ]
     70	| 01110000
     74	| 01110100
     78	| 01111000

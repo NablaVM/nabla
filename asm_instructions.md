@@ -307,10 +307,10 @@ Constant creation instructions dont follow standard instruction layout which is 
 
 **.int**
 
-id bits: 00 - 8-bit  int [1 byte]
-id bits: 01 - 16-bit int [2 bytes]
-id bits: 10 - 32-bit int [4 bytes]
-id bits: 11 - 64-bit int [8 bytes]
+id bits: 00 - 8-bit  int [1 byte  following ins byte]
+id bits: 01 - 16-bit int [2 bytes following ins byte]
+id bits: 10 - 32-bit int [4 bytes following ins byte]
+id bits: 11 - 64-bit int [8 bytes following ins byte]
 
     INS    ID   [ --- INTEGER BYTES ---- ]
     111111 00 | 1111 1111 .... | 1111 1111
@@ -319,17 +319,17 @@ id bits: 11 - 64-bit int [8 bytes]
 
 id bits ignored
 
-The current maximum is 256 bytes for a string
+The current maximum is 255 bytes for a string
 
-    INS    ID    BYTES      [ ------- STR BYTES ------ ]
+    INS    ID    SIZE      [ ------- STR BYTES ------ ]
     111111 00 | 1111 1111 | 1111 1111 | .... | 1111 1111
 
 **.double**
 
-id bits ignored 
+id bits ignored, size is 9 bytes fixed
 
-    INS    ID   [ ------------------------------- DOUBLE DATA -------------------------------- ]
-    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+    INS    ID   [ -------------------------------------- DOUBLE DATA -------------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 
 ## The stack
@@ -347,3 +347,28 @@ A stack accessed by 'gs' for 'global stack' that accesses the stack used across 
 ### System stack
 
 Not able to be accessed by software directly. The system stack is pushed and popped by calls and returns.
+
+
+
+## Forbidden Instructions 
+
+There are instructions that exist that are required by the system that the user does not need to worry about, but they need to be
+documented for the sake of the implementation.
+
+**callstack_store_function**
+
+Tell the system to put a function address in the call stack
+
+      INS      [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
+    11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+
+**callstack_store_roi**
+
+Tell the system to put a function location in the call stack
+
+      INS      [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
+    11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+These instructions are used in the back-end to make calls and returns work. When a call is written by a user, these are generated
+by the byte gen to tell the system to put the function and region the call came from such-that returns can identify where to go to

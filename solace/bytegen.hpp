@@ -88,9 +88,24 @@ namespace SOLACE
         };
 
         //!
+        //! \brief Integer sizes (signed or unsigned)
+        //!
+        enum class Integers
+        {
+            EIGHT,
+            SIXTEEN,
+            THIRTY_TWO,
+            SIXTY_FOUR,
+        };
+
+        //!
         //! \brief Create a bytegen
         //!
         Bytegen();
+
+        //!  \brief Get the current function counter (good for call instruction creation)
+        //!  \retval Returns the address that will be assigned to the next createFunctionStart.
+        uint32_t getCurrentFunctionCouner() const;
 
         //!  \brief Create a function start
         //!  \param[in]  name The name of the function - For logging
@@ -110,8 +125,9 @@ namespace SOLACE
         
         //! \brief Create a constant int
         //! \param val The value to create a constant from 
+        //! \param integerType The type of integer to create
         //! \returns Vector of bytes that represent a constant (not ins as constants can be variable length)
-        std::vector<uint8_t> createConstantInt(uint32_t val);
+        std::vector<uint8_t> createConstantInt(uint64_t val, Integers integerType);
         
         //! \brief Create a constant double 
         //! \param val The value to create a constant from 
@@ -162,6 +178,13 @@ namespace SOLACE
 
         //! \brief Create return instruction
         Instruction createReturnInstruction();
+
+        //! \brief Create a call instruction
+        //! \param funcFrom Address of function that is calling
+        //! \param ret Where to return to
+        //! \param address The address of the function to call
+        //! \returns Multiple instructions must be created for calls to occur
+        std::vector<Instruction> createCallInstruction(uint32_t funcFrom, uint32_t ret, uint32_t address);
 
         //! \brief Create exit instruction
         Instruction createExitInstruction();

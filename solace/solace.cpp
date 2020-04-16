@@ -1,3 +1,8 @@
+
+
+#warning ldb and lda need to be revisited so we can differenciate constants and stack pointers.
+#warning maybe they need to be renamed and reconfigured to ldc and 
+
 /*
     Argument          Parsed            Generated           Tested
     -----------------------------------------------------------------
@@ -28,7 +33,7 @@
         push            X                   X                  X
         pop             X                   X                  X
         jmp             X                   X                  X
-        call
+        call            X                   X                  X
         ret             X                   X                  X
         exit            X                   X                  X
         label           X                   NA
@@ -41,7 +46,11 @@
 
             Once that is complete, then the call needs to be figured out. Do we allow prototyping of
             functions. MAYBE WITH SOMETHING LIKE ' .promise ' ? :D I think maybe.
-            
+
+    Planned updates:
+            Things that I would like to do in the future for specific types have a large comment in them
+            describing the update along with a 'DEVELOPMENT_NOTE' tag so it can be found easily.
+            Once solace and byte gen get working these should be put onto a project board
 
 
     This parser is a bit long and in need of explanation. The basic gist is this :
@@ -127,7 +136,7 @@ bool instruction_end_function();
 
 namespace 
 {
-    constexpr int      MAXIMUM_STRING_ALLOWED   = 256;
+    constexpr int      MAXIMUM_STRING_ALLOWED   = 255;
     constexpr uint64_t MAXIMUM_STACK_OFFSET     = 4294967295;
     constexpr uint16_t INPLACE_NUM_RANGE        = 32767;
 
@@ -1036,7 +1045,7 @@ bool instruction_lda()
 }
 
 // -----------------------------------------------
-// Parsed, not complete
+// 
 // -----------------------------------------------
 
 bool instruction_stb()
@@ -1183,7 +1192,7 @@ bool instruction_ldb()
 }
 
 // -----------------------------------------------
-// Parsed, not complete
+// 
 // -----------------------------------------------
 
 bool instruction_push()
@@ -1240,7 +1249,7 @@ bool instruction_push()
 }
 
 // -----------------------------------------------
-// Parsed, not complete
+// 
 // -----------------------------------------------
 
 bool instruction_pop()
@@ -1606,7 +1615,32 @@ bool instruction_call()
         return false;
     }
 
-    // Put return address in sys0
+    if(currentPieces.size() != 2)
+    {
+        std::cerr << "Invalid call instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    if(!isFunctionInPayload(currentPieces[1]))
+    {
+        std::cerr << "Function [" << currentPieces[1] << "] has not been declared" << std::endl;
+        return false;
+    }
+
+    uint32_t currentAddress = nablaByteGen.getCurrentFunctionCouner();
+    uint32_t returnArea     = (currentFunction.instructions.size()/8) + 1;
+    uint32_t destination    = finalPayload.functions[currentPieces[1]];
+
+    std::vector<Bytegen::Instruction> ins = nablaByteGen.createCallInstruction(
+        currentAddress,
+        returnArea,
+        destination
+    );
+
+    for(auto &i : ins)
+    {
+        addBytegenInstructionToCurrentFunction(i);
+    }
     return true;
 }
 
@@ -1714,6 +1748,29 @@ bool instruction_directive()
         return false;
     }
 
+    /*
+        DEVELOPMENT_NOTE
+    
+            Consider adding the following :
+
+                .float 
+
+                .prototype
+
+                .int8
+
+                .int16
+
+                .int32
+
+                .int64
+
+            Right now constant strings are limited to 255 chars long. Which is like.. fine.. but
+            we could totally do something like .long_string and set a larger size indication field.
+
+            Of course, any of these additions would need to be written-out in the instruction manual first    
+    */
+
     // ----------------------------------------------------------------------
     //  Set entry point
     // ----------------------------------------------------------------------
@@ -1801,14 +1858,8 @@ bool instruction_directive()
             return false;
         }
 
-        // Get the destination vector ready
-        finalPayload.constants[currentPieces[1]] = std::vector<uint8_t>();
-
-        // Put the chars in the array
-        for(auto& i : str)
-        {
-            finalPayload.constants[currentPieces[1]].push_back(static_cast<uint8_t>(i));
-        }
+        // Store it
+        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantString(currentPieces[1]);
     }
 
     // ----------------------------------------------------------------------
@@ -1816,6 +1867,17 @@ bool instruction_directive()
     // ----------------------------------------------------------------------
     else if (std::regex_match(currentPieces[0], std::regex("^\\.int$"))) 
     {
+        /*
+            DEVELOPMENT_NOTE: 
+
+            Right now constant ints are being set to 32-bit integers by default. 
+            In the future modifying the directive list would be the best way to determine the
+            difference between int 32, 16, 8, and 4. 
+        
+            This is an optimization that I would like to make after things have been prototyped out
+            to ensure we aren't wasting bytes of memory for no reason.
+        */
+
         if(isParserVerbose){ std::cout << "\tint: " << currentLine << std::endl; }
 
         // Make sure everything is there
@@ -1847,10 +1909,16 @@ bool instruction_directive()
         }
 
         // Get the int
-        int64_t givenInt = std::stoi(currentPieces[2]);
+        int32_t givenInt = std::stoi(currentPieces[2]);
 
-        // Store it
-        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantInt(static_cast<uint32_t>(givenInt));
+        // This can handle more than 32, but given the directives, 32 is all we are supporting for now
+        // there is/was a development note listed at the top of this function that states that new directives
+        // should be added to explicitly state .int8, int16, int32, .int64 , etc
+
+        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantInt(
+            static_cast<uint64_t>(givenInt), 
+            Bytegen::Integers::THIRTY_TWO       
+        );
     }
     // ----------------------------------------------------------------------
     //  Create a .double constant
