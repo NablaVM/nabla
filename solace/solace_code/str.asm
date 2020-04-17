@@ -5,6 +5,6 @@
 
 <main:
 
-    ldb r0 &MY_STR ; Copy string to register (8 bytes of it at least)
+    ldb r0 $0(gs) ; Load 8 bytes of string into r0
 
 >

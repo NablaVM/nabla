@@ -2,7 +2,7 @@
 .init main
 
 .double MY_DBL 43.22
-.int    MY_INT 45
+.int8    MY_INT 45
 
 <main:
 

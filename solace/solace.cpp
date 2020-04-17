@@ -75,6 +75,7 @@
 #include <regex>
 #include <functional>
 #include <map>
+#include <unordered_map>
 
 namespace SOLACE
 {
@@ -129,7 +130,7 @@ namespace
 
     struct Payload
     {
-        std::map<std::string, std::vector<uint8_t> > constants;      // Constants
+        std::unordered_map<std::string, std::vector<uint8_t> > constants;      // Constants
 
         std::map<std::string, uint32_t>              functions;      // Functions
 
@@ -162,7 +163,7 @@ namespace
     std::vector<MatchCall> parserMethods = {
         
         // Directives
-        MatchCall{ std::regex("^\\.[a-z]+$") , instruction_directive },
+        MatchCall{ std::regex("^\\.[a-z0-9]+(8|16|32|64)?$") , instruction_directive },
 
         // Arithmatic
         MatchCall{ std::regex("^add$")       , instruction_add       },
@@ -295,6 +296,73 @@ inline static std::string ltrim (std::string &line)
 //
 // -----------------------------------------------
 
+inline static bool isFunctionInPayload(std::string name)
+{
+    return (finalPayload.functions.find(name) != finalPayload.functions.end());
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool finalizePayload(std::vector<uint8_t> & finalBytes)
+{
+    if(isParserVerbose) 
+    { 
+        std::cout << std::endl 
+                  << "-----------------------------------" 
+                  << std::endl << "Finalizing payload" 
+                  << std::endl
+                  << "\tFiles parsed ......... " << finalPayload.filesParsed.size() << std::endl
+                  << "\tFunctions created .... " << finalPayload.functions.size() << std::endl
+                  << "\tTotal bytes .......... " << finalPayload.bytes.size() << std::endl
+                  << "-----------------------------------" 
+                  << std::endl;
+    }
+
+    // Final checks
+    if(!isFunctionInPayload(finalPayload.entryPoint))
+    {
+        std::cerr << "Entry point not defined" << std::endl;
+        return false;
+    }
+
+    /*
+        Load all of the constants
+    */
+    if(isParserVerbose) { std::cout << "Loading " << finalPayload.constants.size() << " constants" << std::endl; }
+
+    for(auto &c : finalPayload.constants)
+    {
+        if(isParserVerbose) 
+        { 
+            std::cout << "\tConstant: " << c.first << " [" << c.second.size() << "] bytes..." << std::endl;
+        }
+
+        for(auto &b : c.second)
+        {
+            finalBytes.push_back(b);
+        }
+    }
+
+    if(isParserVerbose) { std::cout << "Complete" << std::endl; }
+
+    /*
+        Load all of the bytes
+    */
+    if(isParserVerbose) { std::cout << "Loading instruction set... "; }
+    for(auto& b : finalPayload.bytes)
+    {
+        finalBytes.push_back(b);
+    }
+    std::cout << "complete" << std::endl;
+
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
 inline static bool parseFile(std::string file)
 {
     std::ifstream ifs(file);
@@ -372,9 +440,9 @@ bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes, bool verbose)
         return false;
     }
 
-    bytes = finalPayload.bytes;
-
-    return true;
+    // Finalize the payload, and set the bytes so the caller has something they
+    // can play with
+    return finalizePayload(bytes);
 }
 
 // -----------------------------------------------
@@ -575,7 +643,7 @@ inline static bool isConstInPayload(std::string name)
 
 inline static uint32_t getConstIndex(std::string name)
 {
-    std::map<std::string, std::vector<uint8_t> >::iterator iter = finalPayload.constants.find(name);
+    std::unordered_map<std::string, std::vector<uint8_t> >::iterator iter = finalPayload.constants.find(name);
 
     return std::distance(finalPayload.constants.begin(), iter);
 }
@@ -587,15 +655,6 @@ inline static uint32_t getConstIndex(std::string name)
 inline static bool isLabelInCurrentFunction(std::string name)
 {
     return (currentFunction.labels.find(name) != currentFunction.labels.end());
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-inline static bool isFunctionInPayload(std::string name)
-{
-    return (finalPayload.functions.find(name) != finalPayload.functions.end());
 }
 
 // -----------------------------------------------
@@ -1650,14 +1709,6 @@ bool instruction_directive()
 
                 .prototype
 
-                .int8
-
-                .int16
-
-                .int32
-
-                .int64
-
             Right now constant strings are limited to 255 chars long. Which is like.. fine.. but
             we could totally do something like .long_string and set a larger size indication field.
 
@@ -1758,19 +1809,9 @@ bool instruction_directive()
     // ----------------------------------------------------------------------
     //  Create a .int constant
     // ----------------------------------------------------------------------
-    else if (std::regex_match(currentPieces[0], std::regex("^\\.int$"))) 
+    else if (std::regex_match(currentPieces[0], std::regex("^\\.int8$"))  || std::regex_match(currentPieces[0], std::regex("^\\.int16$")) ||
+             std::regex_match(currentPieces[0], std::regex("^\\.int32$")) || std::regex_match(currentPieces[0], std::regex("^\\.int64$"))) 
     {
-        /*
-            DEVELOPMENT_NOTE: 
-
-            Right now constant ints are being set to 32-bit integers by default. 
-            In the future modifying the directive list would be the best way to determine the
-            difference between int 32, 16, 8, and 4. 
-        
-            This is an optimization that I would like to make after things have been prototyped out
-            to ensure we aren't wasting bytes of memory for no reason.
-        */
-
         if(isParserVerbose){ std::cout << "\tint: " << currentLine << std::endl; }
 
         // Make sure everything is there
@@ -1802,15 +1843,21 @@ bool instruction_directive()
         }
 
         // Get the int
-        int32_t givenInt = std::stoi(currentPieces[2]);
+        uint64_t givenInt = std::stoll(currentPieces[2]);
 
-        // This can handle more than 32, but given the directives, 32 is all we are supporting for now
-        // there is/was a development note listed at the top of this function that states that new directives
-        // should be added to explicitly state .int8, int16, int32, .int64 , etc
+        Bytegen::Integers integerType;
+        if(currentPieces[0] == ".int8")     { integerType = Bytegen::Integers::EIGHT; }
+        else if(currentPieces[0] == ".int16"){ integerType = Bytegen::Integers::SIXTEEN; }
+        else if(currentPieces[0] == ".int32"){ integerType = Bytegen::Integers::THIRTY_TWO; }
+        else if(currentPieces[0] == ".int64"){ integerType = Bytegen::Integers::SIXTY_FOUR; }
+        else {
+            std::cerr << "Unknown interger type that was matched : " << currentLine << std::endl;
+            return false;
+        }
 
         finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantInt(
-            static_cast<uint64_t>(givenInt), 
-            Bytegen::Integers::THIRTY_TWO       
+            givenInt, 
+            integerType      
         );
     }
     // ----------------------------------------------------------------------
@@ -1968,7 +2015,6 @@ bool instruction_end_function()
                    << " with " << currentFunction.instructions.size() << " bytes " << std::endl;
     }
 
-
     addBytegenInstructionToPayload(funcCreate);
 
     for(auto & ins : currentFunction.instructions )
@@ -1979,6 +2025,8 @@ bool instruction_end_function()
     Bytegen::Instruction funcEnd = nablaByteGen.createFunctionEnd();
 
     addBytegenInstructionToPayload(funcEnd);
+
+    finalPayload.functions[currentFunction.name] = functionAddress;
 
     isSystemBuildingFunction = false;
     currentFunction.name = "UNDEFINED";

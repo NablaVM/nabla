@@ -25,11 +25,14 @@ To access a function, a 'call' must occur, you can not jump to a function. Furth
 ### Pseudo Ops
 |  Directive 	|   Argument	|   Description                                 |
 |---	        |---	        |---	                                        |
-|   .file	    |  "file name"  |   emit filename FILE_LOCAL to symbol table	|
+|   .file	    |  "file name"  |   To help debugging, not required         	|
 |   .init	    |  entry_label 	|   emit entry_label APP_ENTRY to symbol table 	|
-|   .string	    |  "string"     |   emit "string" ID to string table	        |
-|   .int	    |     42        |   emit 42 ID to integer table	                |
-|   .double	    |   3.14 	    |   emit 3.14 ID to double table            	|
+|   .string	    |  "string"     |   emit "string" to global stack    	        |
+|   .int8	    |     42        |   emit intN to global stack	                |
+|   .int16	    |     42        |   emit intN to global stack	                |
+|   .int32	    |     42        |   emit intN to global stack	                |
+|   .int64	    |     42        |   emit intN to global stack	                |
+|   .double	    |   3.14 	    |   emit 3.14 to global stack                	|
 |   .include	|  "file.asm" 	|   add "file,asm" to source                   	|
 
 ### In-place numerical values

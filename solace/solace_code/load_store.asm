@@ -3,25 +3,7 @@
 
 .string MY_STR "This is a string"
 .double MY_DBL 43.22
-.int    MY_INT 45
-
-<main:
-
-    ldb r0 &MY_STR
-    ldb r1 &MY_INT
-    ldb r2 &MY_DBL
-    ldb r3 $10(gs)
-    ldb r3 $2147483646(ls)
-    ldb r15 r0
->
-
-<lda:
-    lda r0 &MY_STR
-    lda r1 &MY_INT
-    lda r2 &MY_DBL
-    lda r3 $10(gs)
-    lda r3 $2147483646(ls)
->
+.int64    MY_INT 45
 
 <mov:
     mov r0 r1
@@ -39,6 +21,12 @@
 >
 
 <pop:
-    pop gs r0 
-    pop ls r1
+    pop r0 gs  
+    pop r1 ls 
+>
+
+<main:
+
+    ldb r3 $10(gs)
+    ldb r3 $2147483646(ls)
 >

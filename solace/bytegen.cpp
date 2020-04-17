@@ -193,8 +193,6 @@ namespace SOLACE
             }
         }
 
-        std::cout << "Bytegen::createConstantInt(" << val << ")" << std::endl;
-
         return result;
     }
 
@@ -205,8 +203,6 @@ namespace SOLACE
     std::vector<uint8_t> Bytegen::createConstantDouble(double dval)
     {
         std::vector<uint8_t> result;
-
-        std::cout << "Bytegen::createConstantDouble(" << dval << ")" << std::endl;
 
         ieee754_double ied;
 
