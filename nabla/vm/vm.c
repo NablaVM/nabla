@@ -1,6 +1,6 @@
-#include "vm.h"
-#include "vmrc.h"
-#include "VmInstructions.h"
+#include "vm.h"     // Vm header
+#include "vmrc.h"   // Return codes
+#include "vmins.h"  // Instructions
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -10,6 +10,14 @@
 struct VM
 {
     uint8_t id;
+
+    uint8_t registers[16];
+
+    NablaStack globalStack;
+
+    NablaStack localStack;
+
+    NablaStack callStack;
 };
 
 typedef struct VM NVM;
@@ -23,6 +31,10 @@ NVM * vm_new()
     NVM * vm = (NVM*)malloc(sizeof(NVM));
 
     vm->id = 1;
+
+    vm->globalStack = stack_new();
+    vm->localStack = stack_new();
+    vm->callStack = stack_new();
 
     return vm;
 }
