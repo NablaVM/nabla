@@ -22,6 +22,11 @@ uint64_t stack_get_capacity(NablaStack stack);
 //! \returns Number of elements (size) in stack
 uint64_t stack_get_size(NablaStack stack);
 
+//! \brief Check if the stack is empty
+//! \param stack The stack
+//! \returns 1 If empty, 0 otherwise
+uint8_t stack_is_empty(NablaStack stack);
+
 //! \brief Get the element at the given position
 //! \param[in] The position to get from the stack without popping
 //! \param[in] The stack
@@ -34,6 +39,11 @@ uint8_t stack_value_at(uint64_t pos, NablaStack stack, int* result);
 //! \param[in] stack The stack to grow
 //! \param[out] result The result code of the operation
 void stack_grow(uint64_t size, NablaStack stack, int* result);
+
+//! \brief Shrink spare capacity to size of elements
+//! \param[in] stack The stack
+//! \param[out] result The result code of the operation
+void stack_shrink_to_fit(NablaStack stack, int* result);
 
 //! \brief Push value onto stack
 //! \param[in] val The value to push onto the stack
