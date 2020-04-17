@@ -110,7 +110,7 @@ namespace SOLACE
 
     Bytegen::Instruction Bytegen::createFunctionEnd()
     {
-        std::cout << "Bytegen::createFunctionEnd()" << std::endl;
+        //std::cout << "Bytegen::createFunctionEnd()" << std::endl;
 
         return Instruction{ MANIFEST::INS_FUNCTION_END, 0, 0, 0, 0, 0, 0, 0 };
     }
@@ -123,7 +123,7 @@ namespace SOLACE
     {
         std::vector<uint8_t> result;
 
-        std::cout << "Bytegen::createConstantString(" << val << ")" << std::endl;
+        //std::cout << "Bytegen::createConstantString(" << val << ")" << std::endl;
         
         result.push_back( MANIFEST::CONST_STR );
 
@@ -330,7 +330,7 @@ namespace SOLACE
                 return ins; // Keep that compiler happy.
         }
 
-     //   std::cout << "Arg1: " << arg1 << " Arg2: " << arg2 << " Arg3: " << arg3 << std::endl;
+     //   //std::cout << "Arg1: " << arg1 << " Arg2: " << arg2 << " Arg3: " << arg3 << std::endl;
      //   dumpInstruction(ins);
 
         return ins;

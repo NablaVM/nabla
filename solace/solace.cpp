@@ -128,9 +128,17 @@ namespace
 
     Bytegen nablaByteGen;
 
+    struct constantdata
+    {
+        std::string name;
+        std::vector<uint8_t> data;
+    };
+
     struct Payload
     {
-        std::unordered_map<std::string, std::vector<uint8_t> > constants;      // Constants
+        //std::unordered_map<std::string, std::vector<uint8_t> > constants;      // Constants
+
+        std::vector<constantdata> constants;
 
         std::map<std::string, uint32_t>              functions;      // Functions
 
@@ -336,10 +344,10 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     {
         if(isParserVerbose) 
         { 
-            std::cout << "\tConstant: " << c.first << " [" << c.second.size() << "] bytes..." << std::endl;
+            std::cout << "\tConstant: " << c.name << " [" << c.data.size() << "] bytes..." << std::endl;
         }
 
-        for(auto &b : c.second)
+        for(auto &b : c.data)
         {
             finalBytes.push_back(b);
         }
@@ -357,6 +365,7 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     }
     std::cout << "complete" << std::endl;
 
+    return true;
 }
 
 // -----------------------------------------------
@@ -634,7 +643,14 @@ inline static bool isString(std::string piece)
 
 inline static bool isConstInPayload(std::string name)
 {
-    return (finalPayload.constants.find(name) != finalPayload.constants.end());
+    for(auto &c : finalPayload.constants)
+    {
+        if(name == c.name)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 // -----------------------------------------------
@@ -643,9 +659,16 @@ inline static bool isConstInPayload(std::string name)
 
 inline static uint32_t getConstIndex(std::string name)
 {
-    std::unordered_map<std::string, std::vector<uint8_t> >::iterator iter = finalPayload.constants.find(name);
-
-    return std::distance(finalPayload.constants.begin(), iter);
+    uint32_t i = 0;
+    for(auto &c : finalPayload.constants)
+    {
+        if(name == c.name)
+        {
+            return i;
+        }
+        i++;
+    }
+    return i;
 }
 
 // -----------------------------------------------
@@ -1803,7 +1826,9 @@ bool instruction_directive()
         }
 
         // Store it
-        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantString(currentPieces[1]);
+        finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantString(currentPieces[1])});
+
+
     }
 
     // ----------------------------------------------------------------------
@@ -1855,10 +1880,10 @@ bool instruction_directive()
             return false;
         }
 
-        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantInt(
+        finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantInt(
             givenInt, 
             integerType      
-        );
+        )});
     }
     // ----------------------------------------------------------------------
     //  Create a .double constant
@@ -1899,7 +1924,7 @@ bool instruction_directive()
         double givenDouble = std::stod(currentPieces[2]);
 
         // Store it
-        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantDouble(givenDouble);
+        finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantDouble(givenDouble)});
     }
     // ----------------------------------------------------------------------
     //  Include a file
