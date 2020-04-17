@@ -171,10 +171,16 @@ namespace SOLACE
         Instruction createPopInstruction(Stacks stack, uint8_t reg);
 
         //! \brief Create a pop instruction
-        //! \param stack The stack put data in
+        //! \param stack The stack to put data in
         //! \param location The location in the stack to put the data
-        //! \param reg   The register to put the data
+        //! \param reg   The register to get the data
         Instruction createStbInstruction(Stacks stack, uint32_t location, uint8_t reg);
+
+        //! \brief Create a pop instruction
+        //! \param stack The stack to get data from
+        //! \param location The location in the stack to get the data
+        //! \param reg   The register to put the data
+        Instruction createLdbInstruction(Stacks stack, uint32_t location, uint8_t reg);
 
         //! \brief Create return instruction
         Instruction createReturnInstruction();

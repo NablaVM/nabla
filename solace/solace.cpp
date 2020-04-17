@@ -1,8 +1,3 @@
-
-
-#warning ldb and lda need to be revisited so we can differenciate constants and stack pointers.
-#warning maybe they need to be renamed and reconfigured to ldc and 
-
 /*
     Argument          Parsed            Generated           Tested
     -----------------------------------------------------------------
@@ -27,8 +22,7 @@
         beq.d           X                   X                  X
         bne.d           X                   X                  X
         mov             X                   X                  X
-        lda             X
-        ldb             X
+        ldb             X                   X                  X
         stb             X                   X                  X
         push            X                   X                  X
         pop             X                   X                  X
@@ -36,16 +30,7 @@
         call            X                   X                  X
         ret             X                   X                  X
         exit            X                   X                  X
-        label           X                   NA
-
-
-    NOTES:
-            Need to figure out how we are going to lay out constants in the file, and in memory
-            this needs to be figured out before we can continue with lda and ldb. That way we can
-            determine how we want to reference their address
-
-            Once that is complete, then the call needs to be figured out. Do we allow prototyping of
-            functions. MAYBE WITH SOMETHING LIKE ' .promise ' ? :D I think maybe.
+        label           X                   NA                 NA
 
     Planned updates:
             Things that I would like to do in the future for specific types have a large comment in them
@@ -72,9 +57,10 @@
 
         For items that might not exist at the time of parsing (call <function>, jmp <label>, and [branch_command] <label> ) things get a little tricky. 
 
+            Right now we ignore functions that aren't created yet. There is no prototyping yet. If something is called it has to have been defined
 
-
-
+            Labels determine where they are by how many instructions are currently aggregated into the current function. There is no actual
+            'instruction' for label. We determine the index of the label, and tell the byte generator to take us to that spot.
 */
 
 #include "solace.hpp"
@@ -103,7 +89,6 @@ bool instruction_divd();
 bool instruction_muld();
 
 bool instruction_mov();
-bool instruction_lda();
 bool instruction_stb();
 bool instruction_ldb();
 bool instruction_push();
@@ -149,10 +134,9 @@ namespace
         std::map<std::string, uint32_t>              functions;      // Functions
 
         std::vector<std::string> filesParsed;   // Files that have been parsed
-
+        std::vector<uint8_t> bytes;             // Resulting byte data
         std::string entryPoint;                 // Application entry point
 
-        std::vector<uint8_t> bytes;             // Resulting byte data
     };
 
     // The final payload
@@ -177,6 +161,9 @@ namespace
 
     std::vector<MatchCall> parserMethods = {
         
+        // Directives
+        MatchCall{ std::regex("^\\.[a-z]+$") , instruction_directive },
+
         // Arithmatic
         MatchCall{ std::regex("^add$")       , instruction_add       },
         MatchCall{ std::regex("^sub$")       , instruction_sub       },
@@ -194,7 +181,6 @@ namespace
         MatchCall{ std::regex("^blte$")      , instruction_blte      },
         MatchCall{ std::regex("^beq$")       , instruction_beq       },
         MatchCall{ std::regex("^bne$")       , instruction_bne       },
-        
         MatchCall{ std::regex("^bgt\\.d$")   , instruction_bgtd      },
         MatchCall{ std::regex("^blt\\.d$")   , instruction_bltd      },
         MatchCall{ std::regex("^bgte\\.d$")  , instruction_bgted     },
@@ -202,14 +188,14 @@ namespace
         MatchCall{ std::regex("^beq\\.d$")   , instruction_beqd      },
         MatchCall{ std::regex("^bne\\.d$")   , instruction_bned      },
 
+        // Data transit
         MatchCall{ std::regex("^mov$")       , instruction_mov       },
-        MatchCall{ std::regex("^lda$")       , instruction_lda       },
         MatchCall{ std::regex("^ldb$")       , instruction_ldb       },
         MatchCall{ std::regex("^stb$")       , instruction_stb       },
-        
         MatchCall{ std::regex("^push$")      , instruction_push      },
         MatchCall{ std::regex("^pop$")       , instruction_pop      },
 
+        // Function movement
         MatchCall{ std::regex("^jmp$")       , instruction_jmp       },
         MatchCall{ std::regex("^call$")      , instruction_call      },
         MatchCall{ std::regex("^ret$")       , instruction_return    },
@@ -217,11 +203,10 @@ namespace
         MatchCall{ std::regex("^[a-zA-Z0-9_]+:$") , instruction_create_label },
 
         MatchCall{ std::regex("^exit$")      , instruction_exit      },
-        MatchCall{ std::regex("^\\.[a-z]+$") , instruction_directive },
-        MatchCall{ std::regex("^\\<[a-zA-Z0-9_]+:$") , instruction_create_function },
-        MatchCall{ std::regex("^\\>$") , instruction_end_function },
 
-        
+        // Function creation
+        MatchCall{ std::regex("^\\<[a-zA-Z0-9_]+:$") , instruction_create_function },
+        MatchCall{ std::regex("^\\>$")       , instruction_end_function }
     };
 
     // A temporary function instruction accumulator
@@ -979,72 +964,6 @@ bool instruction_mov()
 }
 
 // -----------------------------------------------
-// Parsed, not complete
-// -----------------------------------------------
-
-bool instruction_lda()
-{
-    if(!isSystemBuildingFunction)
-    {
-        std::cerr << "All Instructions must exist within a function" << std::endl;
-        return false;
-    }
-    
-    if(currentPieces.size() != 3)
-    {
-        std::cerr << "Invalid 'lda' instruction : " << currentLine << std::endl;
-        return false;
-    }
-
-    // Check if arg1 is a register
-    if(!isRegister(currentPieces[1]))
-    {
-        std::cerr << "Error: First argument of 'lda' must be a register, but [" << currentPieces[1] << "] was given" << std::endl;
-        return false;
-    }
-
-    // Check if arg2 is a register
-    if (isReferencedConstant(currentPieces[2]))
-    {
-        std::string constantName = currentPieces[2].substr(1, currentPieces[2].size());
-
-        if(isParserVerbose){ std::cout << "Argument 2 is referenced constant : " << constantName; }
-
-        if(isConstInPayload(constantName))
-        {
-            if(isParserVerbose){ std::cout << " -> constant confirmed " << std::endl; }
-
-        }
-
-        // IT ISN'T ANYTHING ! UGH!
-        else
-        {
-            if(isParserVerbose){  std::cout << " ERROR - Unable to locate given constant" << std::endl; }
-            return false;
-        }
-    }
-
-    // Check if its a global stack pointer
-    else if (isOffsetGlobalStackpointer(currentPieces[2]))
-    {
-       if(isParserVerbose){  std::cout << "Argument 2 -> global_stack_pointer " << std::endl; }
-    }
-
-    // Check if its a local stack pointer
-    else if (isOffsetLocalStackpointer(currentPieces[2]))
-    {
-        if(isParserVerbose){ std::cout << "Argument 2 -> local_stack_pointer " << std::endl; }
-    }
-    else
-    {
-        std::cerr << "'lda' argument 2 not matched" << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-// -----------------------------------------------
 // 
 // -----------------------------------------------
 
@@ -1108,7 +1027,7 @@ bool instruction_stb()
 }
 
 // -----------------------------------------------
-// Parsed, not complete
+// 
 // -----------------------------------------------
 
 bool instruction_ldb()
@@ -1129,64 +1048,38 @@ bool instruction_ldb()
 
     if(!isRegister(currentPieces[1]))
     {
-        std::cerr << "Error: First argument of 'ldb' must be a register, but [" << currentPieces[1] << "] was given" << std::endl;
+        std::cerr << "Error: First argument of 'ldb' must be a register, got :" << currentPieces[1] << std::endl;
         return false;
     }
 
-    if(isRegister(currentPieces[2]))
-    {
-        if(isParserVerbose){ std::cout << "Argument 2 is register : " << currentPieces[2] << std::endl; }
-    }
-
-    // Check if its a referenced constant, and if it is try to find it
-    else if (isReferencedConstant(currentPieces[2]))
-    {
-        std::string constantName = currentPieces[2].substr(1, currentPieces[2].size());
-
-        if(isParserVerbose){ std::cout << "Argument 2 is referenced constant : " << constantName; }
-
-        // Is it an int ?
-        if(isConstInPayload(constantName))
-        {
-            if(isParserVerbose){ std::cout << " -> constant_int " << std::endl; }
-        }
-
-        // Is it a double ?
-        else if (isConstInPayload(constantName))
-        {
-            if(isParserVerbose){ std::cout << " -> constant_double " << std::endl; }
-        }
-        
-        // Is it a string ?
-        else if (isConstInPayload(constantName))
-        {
-            if(isParserVerbose){ std::cout << " -> constant_string " << std::endl; }
-        }
-
-        // IT ISN'T ANYTHING ! UGH!
-        else
-        {
-            std::cerr << "Unable to locate given constant" << std::endl;
-            return false;
-        }
-    }
-
+    Bytegen::Stacks stackType;
     // Check if its a global stack pointer
-    else if (isOffsetGlobalStackpointer(currentPieces[2]))
+    if (isOffsetGlobalStackpointer(currentPieces[2]))
     {
-        if(isParserVerbose){ std::cout << "Argument 2 -> global_stack_pointer " << std::endl; }
+        if(isParserVerbose){ std::cout << "Argument 2 -> global_stack_pointer_offset " << std::endl; }
+    
+        stackType = Bytegen::Stacks::GLOBAL;
     }
 
     // Check if its a local stack pointer
     else if (isOffsetLocalStackpointer(currentPieces[2]))
     {
-       if(isParserVerbose){  std::cout << "Argument 2 -> local_stack_pointer " << std::endl; }
+        if(isParserVerbose){  std::cout << "Argument 2 -> local_stack_pointer_offset " << std::endl; }
+        
+        stackType = Bytegen::Stacks::LOCAL;
     }
     else
     {
-        std::cerr << "'ldb' argument 2 must be constant or stack offset" << std::endl;
+        std::cerr << "'ldb' argument 2 must be stack offset, got : " << currentPieces[2] << std::endl;
         return false;
     }
+
+    uint32_t location = getOffsetFromStackOffset(currentPieces[2]);
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[1]);
+
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createLdbInstruction(stackType, location, reg)
+        );
 
     return true;
 }

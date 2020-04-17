@@ -16,15 +16,6 @@ An address is comprised of 4 bytes, giving us 2^32 possible addresses.
 
 Everything after a stray ';' on a line will be treated as a comment
 
-## Read-only system registers
-
-Prefixed with 'sys' there are 2 system registers [sys0, sys1]
-These registers are read-only to the application. They are used by the system for storing return addresses
-and performing system functions.
-Each register is 4 bytes.
-
-[8 bytes in total]
-
 ## Functions
 
 Functions begin with a '<' followed by a name and a ':'. Functions are each given their own operational stack. This allows for the separation of functional memory. Standard function's stack will be emptied upon the return from that function. Every program function can access the following: its own stack, the global stack, and the system registers.
@@ -47,22 +38,17 @@ For arithmatic operations a drop-in numerical value can be given to an instructi
 with a '$'. These numerical drop-ins are unsigned and encoded directly into the instruction. The valid range for an in-place value
 is the maximum number able to be stored by 2 bytes (2^16) 
 
-### Directive references
+### Constants
 
-Constant ints strings and doubles defined by their corresponding directive will yeild their address when placed within an instruction
-by prefixing them with a '&'. Since they are addresses, they must be loaded into a register prior to performing an arithmatic operation.
-This can be done using the 'ldb' command, which will drop their value into a register.
+Upon startup all constants listed will be loaded directly into the global stack. These constants will be loaded in the order by which they 
+are defined in the file. Ints and dobuel
 
 ## Instructions
 Abbreviations : 
 | Abbreviation | Meaning                                |
 |---           |---                                     |
 |      r       | register                               |
-|     sys      | system register                        |
 |     *n       | in-place numerical value               |
-|     *i       | constant int ref    (address)          |
-|     *s       | constant string ref (address)          |
-|     *d       | constant double ref (address)          |
 |     sp       | stack pointer   (ls, gs)               |
 |     *sp      | stack pointer offset  ($N(ls), $N(gs)) |
 
@@ -104,14 +90,13 @@ If 'd' is specified and the value in a given register is not a floating point, t
 Currently branches must branch to existing labels, that is, labels that come before them within the function.
 
 ## Loading / Storing Instructions
-|  Instruction     |  Arg1     |  Arg2                   |  Description                                 |
-|---               |---        |---                      |---                                           |
-|      mov         |    r      |   r                     |  Move data from Arg2 into Arg1               |
-|      lda         |    r      |   *i, *s, *d, *sp       |  Load address of Arg2 into Arg1              |
-|      ldb         |    r      |   r, *i, *s, *sp, *d    |  Load data from Arg2 (address) into Arg1     |
-|      stb         |   *sp     |   r                     |  Store Arg2 data at Arg1 (arg1=addr)         |
-|      push        |    sp     |   r                     |  Data from Arg2 into Arg1                    |
-|      pop         |    sp     |   r                     |  Data from Arg2 into Arg1                    |
+|  Instruction     |  Arg1     |  Arg2    |  Description                                 |
+|---               |---        |---       |---                                           |
+|      mov         |    r      |   r      |  Move data from Arg2 into Arg1               |
+|      ldb         |    r      |   *sp    |  Load data from Arg2 (address) into Arg1     |
+|      stb         |   *sp     |   r      |  Store Arg2 data at Arg1 (arg1=addr)         |
+|      push        |    sp     |   r      |  Data from Arg2 into Arg1                    |
+|      pop         |    sp     |   r      |  Data from Arg2 into Arg1                    |
 
 
 **DEVELOPMENT NOTE:** Consider adding in-place int and double placement in PUSH, as-well-as *i, *s, and *d
@@ -218,40 +203,27 @@ The first 6 bytes represent the specific instruction (mov / movd / etc)
 Since not all load / store operations are the same their bit fields differ slightly by specific instruction.
 For all instructions except ldw/ldwd the ID bits don't matter. 
 
-**mov**
+**mov** - Move
 
     INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**lda**
-
-    INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ----- UNUSED ---- ]
-    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
-
-**stb**
+**stb** - Store bytes
 
     INS    ID    STACK       [ ---------------   ADDRESS  ---------------]   REGISTER    UNUSED
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**ldb**
+**ldb** - Load bytes
 
-Id bits:
-00 - Byte 3 is a register (presumably with an address in it)
-
-    INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
+    INS    ID   REGISTER      STACK     [ ---------------   ADDRESS  ---------------]    UNUSED
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-01 - Byte 3-6 is an address encoded into the instruction
-
-    INS    ID   REGISTER    [ ---------------   ADDRESS  ---------------]   [ ---- UNUSED ----- ]
-    111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
-
-**push**
+**push** - Push
 
     INS    ID      STACK     REGISTER   [ ------------------- UNUSED -------------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**pop**
+**pop** - Pop
 
     INS    ID   REGISTER      STACK     [ --------------------   UNUSED  ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
@@ -259,14 +231,14 @@ Id bits:
 
 ### Jump / return operation
 
-**jump**
+**jmp** - Jump
 
 The jump operation is straight forward. The only data in the jump is the address to jump to.
 
     INS    ID   [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**call**
+**call** - Call
 
 Upon executing the call instruction, the address immediatly after call's address will be stored in
 the system stack. 
@@ -274,7 +246,7 @@ the system stack.
     INS    ID   [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**return**
+**ret** - Return
 
 The return address will be on the top of the system stack. Executing return will return to whatever
 address is on the top of the system stack, and then pop it. 

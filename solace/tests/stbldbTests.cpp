@@ -62,7 +62,7 @@ namespace
             case SOLACE::Bytegen::Stacks::LOCAL:
                 return SOLACE::MANIFEST::LOCAL_STACK;
             default:
-                std::cerr << "Someone tried something silly awful with getStackAddress in StbTests" << std::endl;
+                std::cerr << "Someone tried something silly awful with getStackAddress in StbLdbTests" << std::endl;
                 exit(EXIT_FAILURE); 
                 return 0;
         }
@@ -70,7 +70,7 @@ namespace
     }
 }
 
-TEST_GROUP(StbTests)
+TEST_GROUP(StbLdbTests)
 {   
     SOLACE::Bytegen byteGen;
     
@@ -80,7 +80,7 @@ TEST_GROUP(StbTests)
 // 
 // ---------------------------------------------------------------
 
-TEST(StbTests, Stb)
+TEST(StbLdbTests, Stb)
 {
     for(int16_t j = 0; j < 50; j++)
     {
@@ -115,4 +115,49 @@ TEST(StbTests, Stb)
         CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Register fail");
         CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
     }
+
+    
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(StbLdbTests, Ldb)
+{
+    for(int16_t j = 0; j < 50; j++)
+    {
+        SOLACE::Bytegen::Instruction expectedIns;
+
+        SOLACE::Bytegen::Stacks stackType = (j % 2 == 0) ? SOLACE::Bytegen::Stacks::GLOBAL : SOLACE::Bytegen::Stacks::LOCAL;
+
+        uint32_t location = getRandom32(0, 0xFFFFFFF);
+
+        expectedIns.bytes[0] = SOLACE::MANIFEST::INS_LDB;
+        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 15));
+        expectedIns.bytes[2] = getStackAddress(stackType);
+        expectedIns.bytes[3] = (location & 0xFF000000) >> 24 ;
+        expectedIns.bytes[4] = (location & 0x00FF0000) >> 16 ;
+        expectedIns.bytes[5] = (location & 0x0000FF00) >> 8  ;
+        expectedIns.bytes[6] = (location & 0x000000FF) >> 0  ;
+        expectedIns.bytes[7] = 0xFF;
+        
+        SOLACE::Bytegen::Instruction ins = byteGen.createLdbInstruction(
+            stackType,
+            location,
+            expectedIns.bytes[1]
+        );
+
+        // Build expected ins
+        CHECK_EQUAL_TEXT(ins.bytes[0], expectedIns.bytes[0], "Opcode fail");
+        CHECK_EQUAL_TEXT(ins.bytes[1], expectedIns.bytes[1], "Incorrect Register");
+        CHECK_EQUAL_TEXT(ins.bytes[2], expectedIns.bytes[2], "Incorrect stack");
+        CHECK_EQUAL_TEXT(ins.bytes[3], expectedIns.bytes[3], "Byte 3 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[4], expectedIns.bytes[4], "Byte 4 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[5], expectedIns.bytes[5], "Byte 5 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Byte 6 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
+    }
+
+    
 }
