@@ -20,7 +20,7 @@ struct Stack
     uint8_t  empty : 1;     // Marker if its 'empty'
     uint64_t top;           // top of stack
     uint64_t capacity;      // num reserved elementss
-    uint8_t *elements;      // Actual elements
+    uint64_t *elements;      // Actual elements
 };
 
 typedef struct Stack NStack;
@@ -35,7 +35,7 @@ NStack * stack_new(uint64_t capacity)
 
     NStack * stack = (NStack*)malloc(sizeof(NStack));
 
-    stack->elements = (uint8_t *)malloc(sizeof(uint8_t) * capacity);
+    stack->elements = (uint64_t *)malloc(sizeof(uint64_t) * capacity);
 
     assert(stack->elements);
 
@@ -83,7 +83,7 @@ uint8_t stack_is_empty(NStack * stack)
 //
 // -----------------------------------------------------
 
-uint8_t stack_value_at(uint64_t pos, NStack * stack, int* result)
+uint64_t stack_value_at(uint64_t pos, NStack * stack, int* result)
 {
     assert(stack);
     assert(result);
@@ -106,61 +106,11 @@ uint8_t stack_value_at(uint64_t pos, NStack * stack, int* result)
     return stack->elements[pos];
 }
 
-
 // -----------------------------------------------------
 //
 // -----------------------------------------------------
 
-void stack_grow(uint64_t size, NStack * stack, int* result)
-{
-    assert(stack);
-    assert(result);
-
-    uint8_t * tmp =  (uint8_t*)realloc(stack->elements, (sizeof(uint8_t) * stack->capacity) + size);
-
-    if(tmp == NULL) { free(tmp); *result = STACK_ERROR_MEM_REALLOC_FAIL; return; }
-
-    stack->elements = tmp;
-    stack->capacity = stack->capacity + size;
-
-    tmp = NULL;
-
-    *result = STACK_OKAY;
-}
-
-// -----------------------------------------------------
-//
-// -----------------------------------------------------
-
-void stack_shrink_to_fit(NStack * stack, int* result)
-{
-    assert(stack);
-    assert(result);
-
-    uint64_t new_size = 1;
-
-    if(stack->empty == 0)
-    {
-        new_size = stack->top;
-    } 
-
-    uint8_t * tmp = (uint8_t*)realloc(stack->elements, (sizeof(uint8_t) * new_size));
-
-    if(tmp == NULL) { free(tmp); *result = STACK_ERROR_MEM_REALLOC_FAIL; return; }
-
-    stack->elements = tmp;
-    stack->capacity = new_size;
-
-    tmp = NULL;
-
-    *result = STACK_OKAY;
-}
-
-// -----------------------------------------------------
-//
-// -----------------------------------------------------
-
-void stack_push(uint8_t val, NStack * stack, int* result)
+void stack_push(uint64_t val, NStack * stack, int* result)
 {
     assert(stack);
     assert(result);
@@ -168,12 +118,8 @@ void stack_push(uint8_t val, NStack * stack, int* result)
     // If we need to grow to support the push, then grow
     if(stack->capacity == stack->top)
     {
-        int grow_result;
-
-        stack_grow(1, stack, &grow_result);
-
-        // If grow fails, indicate as such
-        if(grow_result != STACK_OKAY) { *result = grow_result; return; }
+        *result = STACK_FULL;
+        return;
     }
 
     if(stack->empty == 1)
@@ -206,7 +152,7 @@ uint8_t stack_pop(NStack * stack, int* result)
         return 0;
     }
 
-    uint8_t value = stack->elements[stack->top];
+    uint64_t val = stack->elements[stack->top];
 
     if(stack->top == 0)
     {
@@ -219,5 +165,5 @@ uint8_t stack_pop(NStack * stack, int* result)
 
     *result = STACK_OKAY;
 
-    return value;
+    return val;
 }

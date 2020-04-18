@@ -6,6 +6,6 @@
 
 #define STACK_ERROR_IDX_OUT_OF_RANGE -10
 
-#define STACK_ERROR_MEM_REALLOC_FAIL   -20
+#define STACK_FULL   -20
 
 #endif

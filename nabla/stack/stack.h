@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-
 //! \brief A stack
 typedef struct Stack * NablaStack;
 
@@ -32,30 +31,19 @@ uint8_t stack_is_empty(NablaStack stack);
 //! \param[in] The stack
 //! \param[out] result The result code of the operation
 //! \returns Size of the stack
-uint8_t stack_value_at(uint64_t pos, NablaStack stack, int* result);
-
-//! \brief Allocate extra space
-//! \param[in] size The number of elements to reserve on-top of current size
-//! \param[in] stack The stack to grow
-//! \param[out] result The result code of the operation
-void stack_grow(uint64_t size, NablaStack stack, int* result);
-
-//! \brief Shrink spare capacity to size of elements
-//! \param[in] stack The stack
-//! \param[out] result The result code of the operation
-void stack_shrink_to_fit(NablaStack stack, int* result);
+uint64_t stack_value_at(uint64_t pos, NablaStack stack, int* result);
 
 //! \brief Push value onto stack
 //! \param[in] val The value to push onto the stack
 //! \param[in] stack The stack to push to
 //! \param[out] result The result code of the operation
-void stack_push(uint8_t val, NablaStack stack, int* result);
+void stack_push(uint64_t val, NablaStack stack, int* result);
 
 //! \brief Pop value off of stack
 //! \param[in] stack The stack to pop from
 //! \param[out] result The result code of the operation
 //! \retval Value at stack top
-uint8_t stack_pop(NablaStack stack, int* result);
+uint64_t stack_pop(NablaStack stack, int* result);
 
 
 #endif
