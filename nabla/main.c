@@ -13,7 +13,7 @@ int main(int argc, char**argv)
     }
 
     // Assume that what the user gave us was a file
-    FILE * file_in = fopen(argv[1], "r");
+    FILE * file_in = fopen(argv[1], "rb");
 
     // Create the virutal machine
     NablaVirtualMachine virtualMachine  = vm_new();
@@ -35,6 +35,11 @@ int main(int argc, char**argv)
 
         case VM_ERROR_FILE_OPEN:    
             perror("There was an error opening the bytecode file"); 
+            exit(EXIT_FAILURE);
+            break;
+
+        case VM_ERROR_FAILED_TO_LOAD_CONSTANTS:    
+            perror("There was an error loading constants from the bytecode file"); 
             exit(EXIT_FAILURE);
             break;
 
