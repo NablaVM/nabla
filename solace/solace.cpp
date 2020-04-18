@@ -1826,7 +1826,7 @@ bool instruction_directive()
         }
 
         // Store it
-        finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantString(currentPieces[1])});
+        finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantString(currentPieces[2])});
 
 
     }
