@@ -10,6 +10,82 @@ The vm-loading code needs to be put somewhere.. like a vm-loader maybe? The only
 
 Consider adding bytes at the top of the file to indicate how much data is constants so they can
 be more explicitly loaded i.e load that whole chunk THEN start looking for function start, rather than
-check opcodes and byte to see if its a constant or start of function. This will mean updating solace as-well-as the loader code. - I suspect we might get weird behaviour in edgecases otherwise
+check opcodes and byte to see if its a constant or start of function. This will mean updating solace as-well-as the loader code. - I suspect we might get weird behaviour in edge cases otherwise
 
 --Remove '"' from string constants in solace... i thought i did that, but apparently not... 
+
+## After above, but sooner than later 
+
+Write simple util to dump nabla binaries so we can debug easier as things get rolling
+
+This tool will eventually become the decompiler, but at first it really just needs to dump shit out
+
+## Later
+
+VM Tests. WOOOHOO 
+
+
+
+Test tf out of the loader to make sure that sillyness doesn't creep in
+
+Update asm_instructions - There should be a nice table of ALL instructions, and their hex representation.
+A showing of who uses id bits, etc
+
+Update language documentation. Explain how the binary file should be loaded. Explain some of the instructions that aren't used by people, but are used by the loader, etc
+
+< constant starts >
+.int8 
+.int8
+..
+..
+.string
+..
+< constant end >
+< function start>
+ins
+ins
+..
+ins
+..
+< function end >
+< function start>
+ins
+ins
+..
+ins
+..
+< function end >
+< function start>
+ins
+ins
+..
+ins
+..
+< function end >
+
+# Much later
+
+After _EVERYTHING_ above is done and **all** instructions in existence are tested in vm tests, then more instructions can be introduced. Primarily we need to be able to grab specific bytes out of registers, and be able to shift values that are in registers
+
+Think about these:
+    rmod r0 r1 (ub | umb | lmb | lb) ; get upper byte, upper middle, lower middle, lower byte of r1 and store it in r0
+
+    lshft r0 r0 $2 ; left shift r0 by 2 and store it in r0
+    rshft r0 r0 $2 ; right shift r0 by 2 and store it in r0
+
+    not r0 r0 r1 
+    and r0 r0 r1 ; and r0 and r1
+    or 
+    xor
+
+
+## External modifications
+
+Make some sort of interface to the vm so other programs can get information about whats going on
+access registers, read global stack, etc
+
+It might be neat to add built-in libraries to handle stdio etc that can be side-loaded. As-in communicates with user functions via registers and global stack, but not directly invokable. If they were, it would fuck with how function addresses are determined by solace. If that could be totally separated so functionality could be added / removes  without a total recompile that would be cool. 
+    This might be able to be done with 'interrupts' or 'signals' -- WAY DOWN THE LINE
+
+User adds 'signal handlers' functions, and 'emitter' instructions so they can interract with modules without knowing where they are, and ensuring that a change in the mod doesn't demand a recompile of the main program.
+
