@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#define NABLA_VM_BYTES_PER_INSTRUCTION 8
+
 //  The virtual machine
 //
 struct VM
@@ -39,14 +41,16 @@ NVM * vm_new()
     return vm;
 }
 
-// -----------------------------------------------------
-//
-// -----------------------------------------------------
+/*
+    ---------------------------------------------------------------------------------
+
+                                VM LOADING FUCNTIONS 
+
+    ---------------------------------------------------------------------------------
+*/
 
 void load_numerical_constant(NVM* vm, FILE* file, uint8_t nBytes, int *result)
 {
-    printf("constant_smart_load\n");
-
     /*
         To populate the stack frame we go from n-1 to and including 0
         This will allow us to populate a stack frame uint64_t properly
@@ -101,6 +105,8 @@ void load_numerical_constant(NVM* vm, FILE* file, uint8_t nBytes, int *result)
     }
 
     *result = 0;
+
+    printf("numerical constant loaded : %lu\n", stackValue);
 }
 
 // -----------------------------------------------------
@@ -130,6 +136,8 @@ void load_string_constant(NVM* vm, FILE* file, int *result)
 
         stackValue |= (uint64_t)currentChunk << (shifter * 8);
 
+        printf("%c", (char)currentChunk);
+
         shifter--;
 
         // If we are below 0 that means this stack value is full
@@ -153,6 +161,8 @@ void load_string_constant(NVM* vm, FILE* file, int *result)
     }
 
     *result = 0;
+
+    printf("\n");
 }
 
 // -----------------------------------------------------
@@ -195,6 +205,65 @@ int load_constant(NVM* vm, FILE * file, int currentByte)
     return 0;
 }
 
+int load_function(NVM* vm, FILE* file)
+{
+    printf("load_function\n");
+
+    // When called the func_create ins already eaten.
+    // Now we need to eat 7 to figure out how many instructions to pull in
+    // Once complete, we eat all of thos instructions, shoving them in the function frame
+    // After all instructions eaten, push teh function frame to whatever storage gets created for functions
+
+    uint64_t insBytes = 0;
+    for(int n = 6; n >= 0; n--)   
+    {
+        uint8_t currentByte = 0;
+        if(1 == fread(&currentByte, 1, 1, file))
+        {
+            insBytes |= (uint64_t)currentByte << (n * 8);
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+    // All instructions are 8 bytes, so the number of instructions
+    // is the bytes divided by 8
+    uint64_t insCount = insBytes/NABLA_VM_BYTES_PER_INSTRUCTION;
+
+    printf("There are : %lu instructions in the function\n", insCount);
+
+    // Read all of the instructions from the file
+    for(uint64_t ins = 0; ins < insCount; ins++)
+    {
+        uint64_t currentIns = 0;
+        for(int n = 7; n >= 0; n--)   
+        {
+            uint8_t currentByte = 0;
+            if(1 == fread(&currentByte, 1, 1, file))
+            {
+                currentIns |= (uint64_t)currentByte << (n * 8);
+
+                printf("0x%X ", currentByte);
+            }
+            else
+            {
+                return -1;
+            }
+        }
+        printf("\n");
+        // Store the instruction here
+        //
+        //
+
+        #warning This is where work needs to continue. Create something to holster functions, then put all currentIns here
+        
+    }
+
+    return 0;
+}
+
 // -----------------------------------------------------
 //
 // -----------------------------------------------------
@@ -212,19 +281,73 @@ int vm_load_file(FILE* file, NVM * vm)
 
     uint8_t currentByte;
 
+    enum LoadStatus
+    {
+        CONSTANTS,
+        EXPECT_FUCNTION
+    };
+
+    enum LoadStatus currentStatus = CONSTANTS;
 
     while (  fread(&currentByte, 1, 1, file)  )  
     {
-        uint8_t op = (currentByte & 0xFC);
-
-        if(op == CONST_INT || op == CONST_DBL || op == CONST_STR)
+        // Start off assuming that we are getting constants
+        // The way that the solace parser works is it stuffs all constants first 
+        // in the order that they are defined in the asm file 
+        if(currentStatus == CONSTANTS)
         {
-            uint8_t intType = (currentByte & 0x03);
+            // Chop off the bottom 2 bits to see what operation is indicated
+            uint8_t op = (currentByte & 0xFC);
 
-            if( 0 != load_constant(vm, file, currentByte) )
+            // If the instruction is to load a constant, call the constant loaders that will
+            // consume that constant up-until the next instruction
+            if(op == CONST_INT || op == CONST_DBL || op == CONST_STR)
             {
-                return VM_ERROR_FAILED_TO_LOAD_CONSTANTS;
+                if( 0 != load_constant(vm, file, currentByte) )
+                {
+                    return VM_ERROR_FAILED_TO_LOAD_CONSTANTS;
+                }
             }
+            // Since constants are loose-leaf in the binary, we need to check
+            // if the next instruction is a function creation to get us out of 
+            // loading constants
+            // We use currentByte here, not op
+            else  if(currentByte == INS_FUNCTION_CREATE)
+            {
+                currentStatus = EXPECT_FUCNTION;
+
+                if(0 != load_function(vm, file)) { return VM_ERROR_FAILED_TO_LOAD_FUCNTION; }
+
+            }
+        }
+
+        // Now we are expecting to read in either function starts, or function ends.
+        // If we see a start, we send off the file to have the instructions pulled out
+        // Function ends aren't part of the encoded instruction count in the function
+        // creation instruction so we catch that here 
+        else if (currentStatus == EXPECT_FUCNTION)
+        {
+            if(currentByte == INS_FUNCTION_END)
+            {
+                // We don't do anything here right now, but we might in 
+                // the future, and this helps with debugging
+                printf("Caught end of function\n");
+            }
+            if(currentByte == INS_FUNCTION_CREATE)
+            {
+                if(0 != load_function(vm, file))
+                { 
+                    return VM_ERROR_FAILED_TO_LOAD_FUCNTION; 
+                }
+            }
+        }
+
+        // Really, everything should have been gobbled up by now. If not
+        // there might be an error. So we indicate that something is happening
+        // and we don't know what it is but we don't like it!
+        else
+        {
+            return VM_ERROR_UNHANDLED_INSTRUCTION;
         }
     } 
 

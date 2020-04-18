@@ -695,9 +695,14 @@ inline static bool wasFileParsed(std::string name)
 
 inline static void addBytegenInstructionToPayload(Bytegen::Instruction ins)
 {
-    finalPayload.bytes.push_back(ins.bytes[0]); finalPayload.bytes.push_back(ins.bytes[1]); finalPayload.bytes.push_back(ins.bytes[2]);
-    finalPayload.bytes.push_back(ins.bytes[3]); finalPayload.bytes.push_back(ins.bytes[4]); finalPayload.bytes.push_back(ins.bytes[5]);
-    finalPayload.bytes.push_back(ins.bytes[6]); finalPayload.bytes.push_back(ins.bytes[7]);
+    finalPayload.bytes.push_back(ins.bytes[0]); 
+    finalPayload.bytes.push_back(ins.bytes[1]); 
+    finalPayload.bytes.push_back(ins.bytes[2]);
+    finalPayload.bytes.push_back(ins.bytes[3]); 
+    finalPayload.bytes.push_back(ins.bytes[4]); 
+    finalPayload.bytes.push_back(ins.bytes[5]);
+    finalPayload.bytes.push_back(ins.bytes[6]); 
+    finalPayload.bytes.push_back(ins.bytes[7]);
 }
 
 // -----------------------------------------------
@@ -706,10 +711,14 @@ inline static void addBytegenInstructionToPayload(Bytegen::Instruction ins)
 
 inline static void addBytegenInstructionToCurrentFunction(Bytegen::Instruction ins)
 {
-    currentFunction.instructions.push_back(ins.bytes[0]); currentFunction.instructions.push_back(ins.bytes[4]);
-    currentFunction.instructions.push_back(ins.bytes[1]); currentFunction.instructions.push_back(ins.bytes[5]);
-    currentFunction.instructions.push_back(ins.bytes[2]); currentFunction.instructions.push_back(ins.bytes[6]);
-    currentFunction.instructions.push_back(ins.bytes[3]); currentFunction.instructions.push_back(ins.bytes[7]);
+    currentFunction.instructions.push_back(ins.bytes[0]); 
+    currentFunction.instructions.push_back(ins.bytes[1]);
+    currentFunction.instructions.push_back(ins.bytes[2]); 
+    currentFunction.instructions.push_back(ins.bytes[3]);
+    currentFunction.instructions.push_back(ins.bytes[4]); 
+    currentFunction.instructions.push_back(ins.bytes[5]);
+    currentFunction.instructions.push_back(ins.bytes[6]); 
+    currentFunction.instructions.push_back(ins.bytes[7]);
 }
 
 // -----------------------------------------------
@@ -2031,9 +2040,8 @@ bool instruction_end_function()
     uint32_t functionAddress = 0;
 
     Bytegen::Instruction funcCreate = nablaByteGen.createFunctionStart(currentFunction.name, 
-                                                                       currentFunction.instructions.size(), 
+                                                                       (uint64_t)currentFunction.instructions.size(), 
                                                                        functionAddress);
-
     if(isParserVerbose)
     {
          std::cout << "Created function : " << currentFunction.name << " at address " << (int)functionAddress

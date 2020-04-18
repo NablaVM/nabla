@@ -107,7 +107,7 @@ namespace SOLACE
         //!  \retval Returns the address that will be assigned to the next createFunctionStart.
         uint32_t getCurrentFunctionCouner() const;
 
-        //!  \brief Create a function start
+        //!  \brief Create a function start - Allows for 2^48 instructions
         //!  \param[in]  name The name of the function - For logging
         //!  \param[in]  numInstructions The number of instructions in function
         //!  \param[out] address The address given to the function

@@ -12,5 +12,10 @@
 
 <main:
 
+    ldb r1 $0(gs) ; Should be 96
+    ldb r2 $1(gs) ; Should be 42
+    ldb r3 $2(gs) ; Should be 55
+    ldb r4 $3(gs) ; Should be 568888
+
     exit
 >

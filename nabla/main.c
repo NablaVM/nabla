@@ -43,6 +43,13 @@ int main(int argc, char**argv)
             exit(EXIT_FAILURE);
             break;
 
+        case VM_ERROR_UNHANDLED_INSTRUCTION:   
+            perror("The loader came across something it didn't understand and threw a fit"); 
+            exit(EXIT_FAILURE);
+            break;
+
+
+
         default:
             // Everything is okay!
             break;

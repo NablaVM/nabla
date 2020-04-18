@@ -99,6 +99,15 @@ namespace SOLACE
 
         address = functionCounter;
 
+        ins.bytes[0] = MANIFEST::INS_FUNCTION_CREATE;
+        ins.bytes[1] = (numInstructions & 0x00FF000000000000) >> 48 ;
+        ins.bytes[2] = (numInstructions & 0x0000FF0000000000) >> 40 ;
+        ins.bytes[3] = (numInstructions & 0x000000FF00000000) >> 32 ;
+        ins.bytes[4] = (numInstructions & 0x00000000FF000000) >> 24 ;
+        ins.bytes[5] = (numInstructions & 0x0000000000FF0000) >> 16 ;
+        ins.bytes[6] = (numInstructions & 0x000000000000FF00) >> 8  ;
+        ins.bytes[7] = (numInstructions & 0x00000000000000FF) >> 0  ;
+
         functionCounter++;
 
         return ins;

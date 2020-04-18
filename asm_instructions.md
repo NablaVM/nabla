@@ -266,7 +266,7 @@ a return will occur.
 Function start / end are special instructions that are scanned for upon initial program load
 to tell the VM how to structure its self. 
 
-**function start**
+**function start** - Currently allows 2^48 instructions per function
 
     INS    ID   [ --------------------- NUM INSTRUCTIONS IN FUNC ------------------------------ ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
