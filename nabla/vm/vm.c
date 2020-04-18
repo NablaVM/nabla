@@ -8,37 +8,123 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define NABLA_VM_BYTES_PER_INSTRUCTION 8
+static uint8_t  FILE_GLOBAL_INVOKED_VM_COUNT = 0;
+static uint8_t  FILE_GLOBAL_IS_VM_LOADED     = 0;
+static uint8_t  FILE_GLOBAL_IS_VM_RUNNING    = 0;
+
+//  A function of instructions
+//
+struct FUNC
+{
+    uint64_t ip;             // Instruction pointer
+    NablaStack instructions; // Instructions
+    NablaStack localStack;   // Local stack for storage
+};
+typedef struct FUNC NFUNC;
 
 //  The virtual machine
 //
 struct VM
 {
-    uint8_t id;
+    uint8_t id;             // Specific vm id
 
-    uint8_t registers[16];
+    uint64_t fp;            // Function pointer
 
-    NablaStack globalStack;
+    uint64_t entryAddress;  // Entry function address listed in binary
 
-    NablaStack callStack;
+    uint8_t registers[16];  // VM Registers
+
+    NablaStack globalStack; // Shared 'global' stack
+
+    NablaStack callStack;   // Call stack
+
+    NFUNC * functions; 
 };
-
 typedef struct VM NVM;
+
+/*
+    ---------------------------------------------------------------------------------
+
+                                VM OPERATIONS
+
+    ---------------------------------------------------------------------------------
+*/
+
+NVM * vm_new()
+{
+    // We make this assertion so if someone tries to be clever they have to 
+    assert(NABLA_SETTINGS_BYTES_PER_INS == 8);
+
+    NVM * vm = (NVM*)malloc(sizeof(NVM));
+
+    assert(vm);
+
+    vm->globalStack = stack_new(NABLA_SETTINGS_GLOBAL_STACK_SIZE);
+    vm->callStack   = stack_new(NABLA_SETTINGS_CALL_STACK_SIZE);
+
+    assert(vm->globalStack);
+    assert(vm->callStack);
+
+    vm->functions = (NFUNC *)malloc(NABLA_SETTINGS_MAX_FUNCTIONS * sizeof(NFUNC));
+
+    assert(vm->functions);
+
+    FILE_GLOBAL_INVOKED_VM_COUNT++;
+
+    vm->id = FILE_GLOBAL_INVOKED_VM_COUNT;
+
+    vm->fp = 0; // Function pointer= 0;
+
+    //  Setup function structures
+    //
+    for(int i = 0; i < NABLA_SETTINGS_MAX_FUNCTIONS; i++)
+    {
+        // Create storage for instructions
+        vm->functions[i].instructions = stack_new(NABLA_SETTINGS_MAX_IN_PER_FUCNTION);
+
+        // Create the function's local stack
+        vm->functions[i].localStack   = stack_new(NABLA_SETTINGS_LOCAL_STACK_SIZE);
+
+        // Make sure its all allocated
+        assert(vm->functions[i].instructions);
+        assert(vm->functions[i].localStack);
+
+        // Set the instruction pointer 
+        vm->functions[i].ip = 0;
+    }
+
+    return vm;
+}
 
 // -----------------------------------------------------
 //
 // -----------------------------------------------------
 
-NVM * vm_new()
+int vm_run(NablaVirtualMachine vm)
 {
-    NVM * vm = (NVM*)malloc(sizeof(NVM));
+    // Ensure vm is okay, check that its loaded, and not running
+    assert(vm);
+    if(0 == FILE_GLOBAL_IS_VM_LOADED)  {  return VM_RUN_ERROR_VM_NOT_LOADED;      }
+    if(1 == FILE_GLOBAL_IS_VM_RUNNING) {  return VM_RUN_ERROR_VM_ALREADY_RUNNING; }
 
-    vm->id = 1;
+    // Indicate that it is now running
+    FILE_GLOBAL_IS_VM_RUNNING = 1;
 
-    vm->globalStack = stack_new(NABLA_SETTINGS_GLOBAL_STACK_SIZE);
-    vm->callStack   = stack_new(NABLA_SETTINGS_CALL_STACK_SIZE);
 
-    return vm;
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+    printf("Running VM\n");
+#endif
+
+    // Set function pointer to the entry function
+    vm->fp = vm->entryAddress;
+
+
+
+#warning This is where we continue the good work. Need to start executing function instuctions!
+
+
+
+    return 0;
 }
 
 /*
@@ -106,7 +192,9 @@ void load_numerical_constant(NVM* vm, FILE* file, uint8_t nBytes, int *result)
 
     *result = 0;
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("numerical constant loaded : %lu\n", stackValue);
+#endif
 }
 
 // -----------------------------------------------------
@@ -136,8 +224,9 @@ void load_string_constant(NVM* vm, FILE* file, int *result)
 
         stackValue |= (uint64_t)currentChunk << (shifter * 8);
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
         printf("%c", (char)currentChunk);
-
+#endif
         shifter--;
 
         // If we are below 0 that means this stack value is full
@@ -162,7 +251,9 @@ void load_string_constant(NVM* vm, FILE* file, int *result)
 
     *result = 0;
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("\n");
+#endif
 }
 
 // -----------------------------------------------------
@@ -185,16 +276,16 @@ int load_constant(NVM* vm, FILE * file, int currentByte)
         if(result != 0) { return -1; }
     }
 
-    if(op == CONST_DBL)
+    if(currentByte == CONST_DBL)
     {
         // Load 8 bytes
         int result = 0;
-        if(id == 3) { /* .int64 */ load_numerical_constant(vm, file, 8, &result); }
+        load_numerical_constant(vm, file, 8, &result);
 
         if(result != 0) { return -1; }
     }
 
-    if(op == CONST_STR)
+    if(currentByte == CONST_STR)
     {
         int result = 0;
         load_string_constant(vm, file, &result);
@@ -205,9 +296,38 @@ int load_constant(NVM* vm, FILE * file, int currentByte)
     return 0;
 }
 
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
+int load_end_of_binary(NVM* vm, FILE * file)
+{
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+    printf("load_end_of_binary\n");
+#endif
+
+    // Need to eat the entire eof instruction
+    for(int c = 0; c < 7; c++)   
+    {
+        uint8_t tmp = 0;
+        if(1 != fread(&tmp, 1, 1, file))
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
 int load_function(NVM* vm, FILE* file)
 {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("load_function\n");
+#endif
 
     // When called the func_create ins already eaten.
     // Now we need to eat 7 to figure out how many instructions to pull in
@@ -230,9 +350,11 @@ int load_function(NVM* vm, FILE* file)
 
     // All instructions are 8 bytes, so the number of instructions
     // is the bytes divided by 8
-    uint64_t insCount = insBytes/NABLA_VM_BYTES_PER_INSTRUCTION;
+    uint64_t insCount = insBytes/NABLA_SETTINGS_BYTES_PER_INS;
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("There are : %lu instructions in the function\n", insCount);
+#endif
 
     // Read all of the instructions from the file
     for(uint64_t ins = 0; ins < insCount; ins++)
@@ -245,21 +367,32 @@ int load_function(NVM* vm, FILE* file)
             {
                 currentIns |= (uint64_t)currentByte << (n * 8);
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("0x%X ", currentByte);
+#endif
             }
             else
             {
                 return -1;
             }
         }
-        printf("\n");
-        // Store the instruction here
-        //
-        //
 
-        #warning This is where work needs to continue. Create something to holster functions, then put all currentIns here
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+        printf("\n");
+#endif
         
+        int pushResult;
+        stack_push(currentIns, vm->functions[vm->fp].instructions, &pushResult);
+
+        if(pushResult != STACK_OKAY)
+        {
+            return -1;
+        }        
     }
+
+    // Now that the instructions are loaded, we increase the function pointer as we are using it to access
+    // the function storage for loading
+    vm->fp++;
 
     return 0;
 }
@@ -270,8 +403,13 @@ int load_function(NVM* vm, FILE* file)
 
 int vm_load_file(FILE* file, NVM * vm)
 {
-    if(vm == NULL) { return VM_ERROR_NULL_VM; }
-    if(file == NULL){ return VM_ERROR_FILE_OPEN; }
+    if(vm == NULL) { return VM_LOAD_ERROR_NULL_VM; }
+    if(file == NULL){ return VM_LOAD_ERROR_FILE_OPEN; }
+
+    if(FILE_GLOBAL_IS_VM_LOADED == 1)
+    {
+        return VM_LOAD_ERROR_ALREADY_LOADED;
+    }
 
     // Read in constants - Populate into global stack
     // Once complete, read in functions
@@ -283,41 +421,105 @@ int vm_load_file(FILE* file, NVM * vm)
 
     enum LoadStatus
     {
-        CONSTANTS,
-        EXPECT_FUCNTION
+        IDLE,
+        EXPECT_CONSTANT,
+        EXPECT_FUCNTION,
+        STOP_READING
     };
 
-    enum LoadStatus currentStatus = CONSTANTS;
+    enum LoadStatus currentStatus = IDLE;
 
-    while (  fread(&currentByte, 1, 1, file)  )  
+    uint64_t numberOfConstants      = 0;
+    uint64_t expectedEntryAddress   = 0;
+
+    while ( fread(&currentByte, 1, 1, file) && currentStatus != STOP_READING )  
     {
+        // From idle we can switch into expecting constants
+        // or expecting functions. 
+        if(currentStatus == IDLE)
+        {
+            if(currentByte == INS_SEG_CONST)
+            {
+                currentStatus = EXPECT_CONSTANT;
+
+                // Read in constant count. Once we read that many constants in, 
+                // switch over to IDLE
+                for(int n = 7; n >= 0; n--)   
+                {
+                    uint8_t tmp = 0;
+                    if(1 == fread(&tmp, 1, 1, file))
+                    {
+                        numberOfConstants |= (uint64_t)tmp << (n * 8);
+                    }
+                    else
+                    {
+                        return VM_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS;
+                    }
+                }
+            }
+            else if (currentByte == INS_SEG_FUNC)
+            {
+                currentStatus = EXPECT_FUCNTION;
+
+                //  Read in the entry address expected 
+                //
+                for(int n = 7; n >= 0; n--)   
+                {
+                    uint8_t tmp = 0;
+                    if(1 == fread(&tmp, 1, 1, file))
+                    {
+                        expectedEntryAddress |= (uint64_t)tmp << (n * 8);
+                    }
+                    else
+                    {
+                        return VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION;
+                    }
+                }
+            }
+            else
+            {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Unhandled instruction while load-state IDLE\n");
+#endif
+            return VM_LOAD_ERROR_UNHANDLED_INSTRUCTION;
+            }
+        }
+
         // Start off assuming that we are getting constants
         // The way that the solace parser works is it stuffs all constants first 
         // in the order that they are defined in the asm file 
-        if(currentStatus == CONSTANTS)
+        else if(currentStatus == EXPECT_CONSTANT)
         {
+            printf("Expecting %lu constants\n", numberOfConstants);
+
             // Chop off the bottom 2 bits to see what operation is indicated
             uint8_t op = (currentByte & 0xFC);
 
             // If the instruction is to load a constant, call the constant loaders that will
             // consume that constant up-until the next instruction
-            if(op == CONST_INT || op == CONST_DBL || op == CONST_STR)
+            if(op == CONST_INT || currentByte == CONST_DBL || currentByte == CONST_STR)
             {
                 if( 0 != load_constant(vm, file, currentByte) )
                 {
-                    return VM_ERROR_FAILED_TO_LOAD_CONSTANTS;
+                    return VM_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS;
                 }
+
+                // Dec the number of expected constants
+                numberOfConstants--;
             }
-            // Since constants are loose-leaf in the binary, we need to check
-            // if the next instruction is a function creation to get us out of 
-            // loading constants
-            // We use currentByte here, not op
-            else  if(currentByte == INS_FUNCTION_CREATE)
+            else
             {
-                currentStatus = EXPECT_FUCNTION;
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Unhandled instruction while load-state EXPECT_CONSTANT\n");
+#endif
+                return VM_LOAD_ERROR_UNHANDLED_INSTRUCTION;
+            }
 
-                if(0 != load_function(vm, file)) { return VM_ERROR_FAILED_TO_LOAD_FUCNTION; }
-
+            //  All functions have been found, time to switch to IDLE
+            //
+            if(numberOfConstants == 0)
+            {
+                currentStatus = IDLE;
             }
         }
 
@@ -331,25 +533,61 @@ int vm_load_file(FILE* file, NVM * vm)
             {
                 // We don't do anything here right now, but we might in 
                 // the future, and this helps with debugging
+                
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("Caught end of function\n");
+#endif
+                // Need to eat the entire eof instruction
+                for(int c = 0; c < 7; c++)   
+                {
+                    uint8_t tmp = 0;
+                    if(1 != fread(&tmp, 1, 1, file))
+                    {
+                        return VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION;
+                    }
+                }
             }
-            if(currentByte == INS_FUNCTION_CREATE)
+            else if(currentByte == INS_FUNCTION_CREATE)
             {
                 if(0 != load_function(vm, file))
                 { 
-                    return VM_ERROR_FAILED_TO_LOAD_FUCNTION; 
+                    return VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION; 
                 }
             }
-        }
+            else if (currentByte == INS_SEG_BEOF)
+            {
+                if(0 != load_end_of_binary(vm, file))
+                {
+                    return VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION; 
+                }
 
-        // Really, everything should have been gobbled up by now. If not
-        // there might be an error. So we indicate that something is happening
-        // and we don't know what it is but we don't like it!
-        else
-        {
-            return VM_ERROR_UNHANDLED_INSTRUCTION;
+                // Set the state to end. 
+                currentStatus = STOP_READING;
+            }
+            else
+            {
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Unhandled instruction while load-state EXPECT_FUCNTION : %X \n", currentByte);
+#endif
+                return VM_LOAD_ERROR_UNHANDLED_INSTRUCTION;
+            }
         }
     } 
 
+    //  Ensure that we stopped reading because we wanted to
+    //
+    if(currentStatus != STOP_READING)
+    {
+        return VM_LOAD_ERROR_EOB_NOT_FOUND;
+    }
+
+    //  Set the entry address 
+    //
+    vm->entryAddress = expectedEntryAddress;
+
+    //  Indicate that the vm is loaded
+    //
+    FILE_GLOBAL_IS_VM_LOADED = 1;
     return 0;
 }

@@ -10,6 +10,14 @@
 
 .string ayyy "Hey this is a really cool string. The string limit might seem lame, but hey, maybe its okay!"
 
+<dummy:
+    exit
+>
+
+<another:
+    exit
+>
+
 <main:
 
     ldb r1 $0(gs) ; Should be 96

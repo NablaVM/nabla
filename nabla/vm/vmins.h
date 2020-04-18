@@ -56,4 +56,7 @@
     #define LOCAL_STACK         0xEE
     #define INS_CS_SF           0x68
     #define INS_CS_SR           0x6C
+    #define INS_SEG_CONST       0x5C
+    #define INS_SEG_FUNC        0x60
+    #define INS_SEG_BEOF        0x64
 #endif

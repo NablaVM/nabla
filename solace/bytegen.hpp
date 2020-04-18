@@ -195,6 +195,15 @@ namespace SOLACE
         //! \brief Create exit instruction
         Instruction createExitInstruction();
 
+        //! \brief Create segment const instruction
+        std::vector<uint8_t> createSegConstInstruction(uint64_t count);
+
+        //! \brief Create segment func instruction
+        std::vector<uint8_t> createSegFuncInstruction(uint64_t entryAddress);
+
+        //! \brief Create segment binary end of file
+        std::vector<uint8_t> createSegBinEOF();
+
     private:
 
         uint32_t functionCounter;

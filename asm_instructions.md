@@ -337,7 +337,6 @@ Tell the system to put a function address in the call stack
       INS      [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
     11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-
 **callstack_store_roi**
 
 Tell the system to put a function location in the call stack
@@ -347,3 +346,24 @@ Tell the system to put a function location in the call stack
 
 These instructions are used in the back-end to make calls and returns work. When a call is written by a user, these are generated
 by the byte gen to tell the system to put the function and region the call came from such-that returns can identify where to go to
+
+**begin_constant_segment**
+
+Tell the system that the following area is the binary is constants
+
+      INS      [ ---------------------------------- Number of consants ----------------------------------- ]
+    11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**begin_function_segment**
+
+Tell the system that the following are is functions.
+
+      INS      [ ---------------------------------- Entry Function Address ------------------------------- ]
+    11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**binary_end**
+
+Right now the data is unused, but eventualy the unused section will contain a binary checksum
+
+      INS      [ ----------------------------------- Unused ---------------------------------- ]
+    11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111

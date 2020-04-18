@@ -336,6 +336,18 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     }
 
     /*
+        Create the id that indicates the constant segment is starting
+    */
+    std::vector<uint8_t> constantStartIns = nablaByteGen.createSegConstInstruction(
+        (uint64_t) finalPayload.constants.size()
+        );
+
+    for(auto &b : constantStartIns)
+    {
+        finalBytes.push_back(b);
+    }
+
+    /*
         Load all of the constants
     */
     if(isParserVerbose) { std::cout << "Loading " << finalPayload.constants.size() << " constants" << std::endl; }
@@ -356,6 +368,20 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     if(isParserVerbose) { std::cout << "Complete" << std::endl; }
 
     /*
+        Create the id that indicates the function segment is starting
+    */
+    uint64_t entryPointAddress = finalPayload.functions[finalPayload.entryPoint];
+
+    std::vector<uint8_t> funcSegment = nablaByteGen.createSegFuncInstruction(
+        entryPointAddress
+    );
+
+    for(auto &b : funcSegment)
+    {
+        finalBytes.push_back(b);
+    }
+
+    /*
         Load all of the bytes
     */
     if(isParserVerbose) { std::cout << "Loading instruction set... "; }
@@ -364,6 +390,16 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
         finalBytes.push_back(b);
     }
     std::cout << "complete" << std::endl;
+
+    /*
+        Create the id that indicates the end of function
+    */
+    std::vector<uint8_t> binEnd = nablaByteGen.createSegBinEOF();
+
+    for(auto &b : binEnd)
+    {
+        finalBytes.push_back(b);
+    }
 
     return true;
 }

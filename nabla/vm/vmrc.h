@@ -1,12 +1,20 @@
 #ifndef NABLA_VM_RETURN_CODES_H
 #define NABLA_VM_RETURN_CODES_H
 
-#define VM_ERROR_NULL_VM                  -1
-#define VM_ERROR_FILE_OPEN                -10
-#define VM_ERROR_FAILED_TO_LOAD_CONSTANTS -11
-#define VM_ERROR_FAILED_TO_LOAD_FUCNTION  -12
-#define VM_ERROR_UNHANDLED_INSTRUCTION    -13
+/*
+    Potential return values for vm_load_file
+*/
+#define VM_LOAD_ERROR_NULL_VM                  -10
+#define VM_LOAD_ERROR_FILE_OPEN                -11
+#define VM_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS -12
+#define VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION  -13
+#define VM_LOAD_ERROR_UNHANDLED_INSTRUCTION    -14
+#define VM_LOAD_ERROR_ALREADY_LOADED           -15
+#define VM_LOAD_ERROR_EOB_NOT_FOUND            -16
 
-
-#define VM_ERROR_FAILED_TO_ALLOCATE       -20
+/*
+    Potential return values for vm_run
+*/
+#define VM_RUN_ERROR_VM_NOT_LOADED             -50
+#define VM_RUN_ERROR_VM_ALREADY_RUNNING        -51
 #endif
