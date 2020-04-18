@@ -11,3 +11,5 @@ The vm-loading code needs to be put somewhere.. like a vm-loader maybe? The only
 Consider adding bytes at the top of the file to indicate how much data is constants so they can
 be more explicitly loaded i.e load that whole chunk THEN start looking for function start, rather than
 check opcodes and byte to see if its a constant or start of function. This will mean updating solace as-well-as the loader code. - I suspect we might get weird behaviour in edgecases otherwise
+
+--Remove '"' from string constants in solace... i thought i did that, but apparently not... 
