@@ -355,10 +355,10 @@ BT* basetype_add(BT* lhs, BT* rhs, uint8_t* okay)
                 else if (rhs->type >= NABLA_BASE_TYPE_INTEGER_S_8 &&
                          rhs->type <= NABLA_BASE_TYPE_INTEGER_S_64)
                 {
-                    if(rhs->type == NABLA_BASE_TYPE_INTEGER_S_8)       snprintf(lhs_str, 64, "%d" , *(int8_t*) rhs->data);
-                    else if(rhs->type == NABLA_BASE_TYPE_INTEGER_S_16) snprintf(lhs_str, 64, "%d" , *(int16_t*)rhs->data);
-                    else if(rhs->type == NABLA_BASE_TYPE_INTEGER_S_32) snprintf(lhs_str, 64, "%d" , *(int32_t*)rhs->data);
-                    else if(rhs->type == NABLA_BASE_TYPE_INTEGER_S_64) snprintf(lhs_str, 64, "%ld", *(int64_t*)rhs->data);
+                    if(rhs->type == NABLA_BASE_TYPE_INTEGER_S_8)       snprintf(rhs_str, 64, "%d" , *(int8_t*) rhs->data);
+                    else if(rhs->type == NABLA_BASE_TYPE_INTEGER_S_16) snprintf(rhs_str, 64, "%d" , *(int16_t*)rhs->data);
+                    else if(rhs->type == NABLA_BASE_TYPE_INTEGER_S_32) snprintf(rhs_str, 64, "%d" , *(int32_t*)rhs->data);
+                    else if(rhs->type == NABLA_BASE_TYPE_INTEGER_S_64) snprintf(rhs_str, 64, "%ld", *(int64_t*)rhs->data);
                 }
                 else
                 {
