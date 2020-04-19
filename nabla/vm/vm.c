@@ -199,6 +199,10 @@ int vm_run(NVM* vm)
 
 #warning before continuing on here I want to find a way to abstract data types ints / floats / doubles / strs / etc all for stack reg storage and arith operations
 
+#warning I've done that in the /types directory, but now the stack needs to be updated to use those types
+
+#warning The 'registers' could be of those types too, then we would have a nifty way to handle strings ints floats doubles etc, but it might get crazy in here
+
         switch(op)
         {
             case INS_ADD  :
