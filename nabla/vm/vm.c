@@ -197,6 +197,8 @@ int vm_run(NVM* vm)
         int64_t lhs = 0;
         int64_t rhs = 0;
 
+#warning before continuing on here I want to find a way to abstract data types ints / floats / doubles / strs / etc all for stack reg storage and arith operations
+
         switch(op)
         {
             case INS_ADD  :
