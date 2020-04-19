@@ -59,9 +59,9 @@ Abbreviations :
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
 |---              |---        |---            |---           |---                                           |
 |     add         |        r  |    r , *n     |   r , *n     |  Add Arg2 and Arg3, Store in Arg1            |
-|     sub         |        r  |    r , *n     |   r , *n     |  Sub Arg3 from Arg3, Store in Arg1           |
+|     sub         |        r  |    r , *n     |   r , *n     |  Sub Arg3 from Arg2, Store in Arg1           |
 |     mul         |        r  |    r , *n     |   r , *n     |  Mul Arg2 and Arg3, Store in Arg1            |
-|     div         |        r  |    r , *n     |   r , *n     |  Div Arg3 by  Arg2, Store in Arg1            |
+|     div         |        r  |    r , *n     |   r , *n     |  Div Arg2 by  Arg3, Store in Arg1            |
 |     add.d       |        r  |      r        |     r        |  Add (double) Arg2 and Arg3, Store in Arg1   |
 |     sub.d       |        r  |      r        |     r        |  Sub (double) Arg3 from Arg3, Store in Arg1  |
 |     mul.d       |        r  |      r        |     r        |  Mul (double) Arg2 and Arg3, Store in Arg1   |
@@ -175,7 +175,7 @@ with '1' just for the sake of demonstration
     INS    ID   REGISTER    [ ---- INTEGER ---- ]   REGISTER    [ -------- UNUSED --------------]
     111111 10 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-    Case 10:
+    Case 11:
     INS    ID   REGISTER    [ ---- INTEGER ---- ]   [ ---- INTEGER ---- ]   [ ---- UNUSED ---- ]
     111111 11 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
     

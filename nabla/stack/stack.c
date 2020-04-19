@@ -20,7 +20,7 @@ struct Stack
     uint8_t  empty : 1;     // Marker if its 'empty'
     uint64_t top;           // top of stack
     uint64_t capacity;      // num reserved elementss
-    uint64_t *elements;      // Actual elements
+    int64_t *elements;      // Actual elements
 };
 
 typedef struct Stack NStack;
@@ -83,7 +83,7 @@ uint8_t stack_is_empty(NStack * stack)
 //
 // -----------------------------------------------------
 
-uint64_t stack_value_at(uint64_t pos, NStack * stack, int* result)
+int64_t stack_value_at(uint64_t pos, NStack * stack, int* result)
 {
     assert(stack);
     assert(result);
@@ -110,7 +110,7 @@ uint64_t stack_value_at(uint64_t pos, NStack * stack, int* result)
 //
 // -----------------------------------------------------
 
-void stack_push(uint64_t val, NStack * stack, int* result)
+void stack_push(int64_t val, NStack * stack, int* result)
 {
     assert(stack);
     assert(result);
@@ -140,7 +140,7 @@ void stack_push(uint64_t val, NStack * stack, int* result)
 //
 // -----------------------------------------------------
 
-uint8_t stack_pop(NStack * stack, int* result)
+int64_t stack_pop(NStack * stack, int* result)
 {
     assert(stack);
     assert(result);
@@ -152,7 +152,7 @@ uint8_t stack_pop(NStack * stack, int* result)
         return 0;
     }
 
-    uint64_t val = stack->elements[stack->top];
+    int64_t val = stack->elements[stack->top];
 
     if(stack->top == 0)
     {

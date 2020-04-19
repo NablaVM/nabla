@@ -32,7 +32,7 @@ struct VM
 
     uint64_t entryAddress;  // Entry function address listed in binary
 
-    uint8_t registers[16];  // VM Registers
+    int64_t registers[16];  // VM Registers
 
     NablaStack globalStack; // Shared 'global' stack
 
@@ -58,6 +58,11 @@ NVM * vm_new()
     NVM * vm = (NVM*)malloc(sizeof(NVM));
 
     assert(vm);
+
+    for(uint8_t i = 0; i < 16; i++)
+    {
+        vm->registers[i] = 0;
+    }
 
     vm->globalStack = stack_new(NABLA_SETTINGS_GLOBAL_STACK_SIZE);
     vm->callStack   = stack_new(NABLA_SETTINGS_CALL_STACK_SIZE);
@@ -97,10 +102,58 @@ NVM * vm_new()
 }
 
 // -----------------------------------------------------
+//  Extract a byte from a 64-bit instruction
+// -----------------------------------------------------
+
+uint8_t run_extract_one(uint64_t data, uint8_t idx)
+{
+    return (data >> (8*idx)) & 0xff;
+}
+
+// -----------------------------------------------------
+//  Extract 2 bytes from a 64-bit instruction
+// -----------------------------------------------------
+
+uint16_t run_extract_two(uint64_t data, uint8_t idx)
+{
+    assert(idx > 0);
+    return (data >> (8*(idx-1))) & 0xffff;
+}
+
+// -----------------------------------------------------
+//  Build lhs and rhs values for an arithmatic operation
+// -----------------------------------------------------
+
+void run_get_arith_lhs_rhs(NVM * vm, uint8_t id, uint64_t ins, int64_t * lhs, int64_t * rhs)
+{
+    if(id == 0)
+    {
+        *lhs =   vm->registers[run_extract_one(ins, 5)];
+        *rhs =   vm->registers[run_extract_one(ins, 4)];
+    }
+    else if (id == 1)
+    {
+        *lhs =  vm->registers[run_extract_one(ins, 5)];
+        *rhs =  run_extract_two(ins, 4);
+    }
+    else if (id == 2)
+    {
+        *lhs =  run_extract_two(ins, 5);
+        *rhs =  vm->registers[run_extract_one(ins, 3)];
+    }
+    else if (id == 3)
+    {
+        *lhs =  run_extract_two(ins, 5);
+        *rhs =  run_extract_two(ins, 3);
+    }
+}
+
+
+// -----------------------------------------------------
 //
 // -----------------------------------------------------
 
-int vm_run(NablaVirtualMachine vm)
+int vm_run(NVM* vm)
 {
     // Ensure vm is okay, check that its loaded, and not running
     assert(vm);
@@ -118,11 +171,204 @@ int vm_run(NablaVirtualMachine vm)
     // Set function pointer to the entry function
     vm->fp = vm->entryAddress;
 
+    NFUNC * currentFunction = &vm->functions[vm->fp];
+    currentFunction->ip = 0;
+
+    while(FILE_GLOBAL_IS_VM_RUNNING)
+    {
+        int res = 0;
+        uint64_t ins = stack_value_at(currentFunction->ip, currentFunction->instructions, &res);
+
+        if(res != STACK_OKAY)
+        {
+            printf("DEBUG: INSTRUCTION NOT FOUND FROM IP");
+            return VM_RUN_ERROR_INSTRUCTION_NOT_FOUND;
+        }
+
+        uint8_t operation =  run_extract_one(ins, 7);
+        uint8_t op = (operation & 0xFC);
+        uint8_t id = (operation & 0x03);
 
 
-#warning This is where we continue the good work. Need to start executing function instuctions!
+        printf("Operation  :  %u\n", operation);
+        printf("op         :  %u\n", op);
+        printf("id         :  %u\n", id);
 
+        int64_t lhs = 0;
+        int64_t rhs = 0;
 
+        switch(op)
+        {
+            case INS_ADD  :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                assert(dest < 16);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = lhs+rhs;
+
+                printf("result: %ld\n", vm->registers[dest]);
+                break;
+            }          
+            case INS_SUB  :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                assert(dest < 16);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = lhs-rhs;
+
+                printf("result: %ld\n", vm->registers[dest]);
+
+                if ( vm->registers[dest] >> 63 & 1) printf ("value is negative\n");
+                break;
+            }          
+            case INS_MUL  :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                assert(dest < 16);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = lhs*rhs;
+
+                printf("result: %ld\n", vm->registers[dest]);
+                break;
+            }          
+            case INS_DIV  :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                assert(dest < 16);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+
+                if(rhs == 0){ vm->registers[dest] = 0; }
+                else { vm->registers[dest] = lhs/rhs; }
+                
+                printf("result: %ld\n", vm->registers[dest]);
+                break;
+            }          
+            case INS_ADDD :
+            {
+                break;
+            }          
+            case INS_SUBD :
+            {
+                break;
+            }          
+            case INS_MULD :
+            {
+                break;
+            }          
+            case INS_DIVD :
+            {
+                break;
+            }          
+            case INS_BGT  :
+            {
+                break;
+            }          
+            case INS_BGTE :
+            {
+                break;
+            }          
+            case INS_BLT  :
+            {
+                break;
+            }          
+            case INS_BLTE :
+            {
+                break;
+            }          
+            case INS_BEQ  :
+            {
+                break;
+            }          
+            case INS_BNE  :
+            {
+                break;
+            }          
+            case INS_BGTD :
+            {
+                break;
+            }          
+            case INS_BGTED:
+            {
+                break;
+            }          
+            case INS_BLTD :
+            {
+                break;
+            }          
+            case INS_BLTED:
+            {
+                break;
+            }          
+            case INS_BEQD :
+            {
+                break;
+            }          
+            case INS_BNED :
+            {
+                break;
+            }          
+            case INS_MOV  :
+            {
+                break;
+            }          
+            case INS_LDA  :
+            {
+                break;
+            }          
+            case INS_LDB  :
+            {
+                break;
+            }          
+            case INS_STB  :
+            {
+                break;
+            }          
+            case INS_PUSH :
+            {
+                break;
+            }          
+            case INS_POP  :
+            {
+                break;
+            }          
+            case INS_JUMP :
+            {
+                break;
+            }          
+            case INS_CALL :
+            {
+                break;
+            }          
+            case INS_RET  :
+            {
+                break;
+            }          
+            case INS_EXIT :
+            {
+                FILE_GLOBAL_IS_VM_RUNNING = 0;
+                return 0;
+            }         
+            default:
+            {
+                uint64_t stackEnd = stack_get_size(currentFunction->instructions);
+                if(currentFunction->ip == stackEnd)
+                {
+                    //  This will need to be updated in the future to check the call stack and check
+                    //  for return instructions. If there isn't any THEN this should happen. For now, we die
+                    //
+                    FILE_GLOBAL_IS_VM_RUNNING = 0;
+                    return 0;
+                }
+
+                return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+                break; 
+            }
+        }
+
+        //  Increase the instruction pointer
+        //
+        currentFunction->ip++;
+    }
 
     return 0;
 }
@@ -581,6 +827,8 @@ int vm_load_file(FILE* file, NVM * vm)
     {
         return VM_LOAD_ERROR_EOB_NOT_FOUND;
     }
+
+    assert(expectedEntryAddress <= NABLA_SETTINGS_MAX_FUNCTIONS);
 
     //  Set the entry address 
     //

@@ -30,12 +30,7 @@
     #define INS_CALL            0xE8
     #define INS_RET             0xEC
     #define INS_EXIT            0xF0
-    #define INS_FUNCTION_CREATE 0xF4
-    #define INS_FUNCTION_END    0xF8
     #define NINS_LABEL          0xFC
-    #define CONST_INT           0x70 
-    #define CONST_DBL           0x74
-    #define CONST_STR           0x78
     #define REGISTER_0          0x00
     #define REGISTER_1          0x01
     #define REGISTER_2          0x02
@@ -59,4 +54,9 @@
     #define INS_SEG_CONST       0x5C
     #define INS_SEG_FUNC        0x60
     #define INS_SEG_BEOF        0x64
+    #define INS_FUNCTION_CREATE 0xF4
+    #define INS_FUNCTION_END    0xF8
+    #define CONST_INT           0x70 
+    #define CONST_DBL           0x74
+    #define CONST_STR           0x78
 #endif

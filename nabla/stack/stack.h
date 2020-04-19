@@ -31,19 +31,19 @@ uint8_t stack_is_empty(NablaStack stack);
 //! \param[in] The stack
 //! \param[out] result The result code of the operation
 //! \returns Size of the stack
-uint64_t stack_value_at(uint64_t pos, NablaStack stack, int* result);
+int64_t stack_value_at(uint64_t pos, NablaStack stack, int* result);
 
 //! \brief Push value onto stack
 //! \param[in] val The value to push onto the stack
 //! \param[in] stack The stack to push to
 //! \param[out] result The result code of the operation
-void stack_push(uint64_t val, NablaStack stack, int* result);
+void stack_push(int64_t val, NablaStack stack, int* result);
 
 //! \brief Pop value off of stack
 //! \param[in] stack The stack to pop from
 //! \param[out] result The result code of the operation
 //! \retval Value at stack top
-uint64_t stack_pop(NablaStack stack, int* result);
+int64_t stack_pop(NablaStack stack, int* result);
 
 
 #endif

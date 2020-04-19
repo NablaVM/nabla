@@ -17,4 +17,8 @@
 */
 #define VM_RUN_ERROR_VM_NOT_LOADED             -50
 #define VM_RUN_ERROR_VM_ALREADY_RUNNING        -51
+
+#define VM_RUN_ERROR_INSTRUCTION_NOT_FOUND     -100
+#define VM_RUN_ERROR_UNKNOWN_INSTRUCTION       -101
+
 #endif
