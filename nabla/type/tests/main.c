@@ -136,6 +136,63 @@ void check_adds()
     assert(0 == strcmp(expected_res, (char*)basetype_get_data_ptr(expect_str)));
 }
 
+void check_subs()
+{
+    uint8_t okay = 0;
+    assert( *(uint8_t* )basetype_get_data_ptr( basetype_sub(basetype_new_uint8  (36), basetype_new_uint8  (10), &okay)  ) == 26);
+    assert( *(uint16_t*)basetype_get_data_ptr( basetype_sub(basetype_new_uint16 (36), basetype_new_uint16 (10), &okay)  ) == 26);
+    assert( *(uint32_t*)basetype_get_data_ptr( basetype_sub(basetype_new_uint32 (36), basetype_new_uint32 (10), &okay)  ) == 26);
+    assert( *(uint64_t*)basetype_get_data_ptr( basetype_sub(basetype_new_uint64 (36), basetype_new_uint64 (10), &okay)  ) == 26);
+
+    assert( *(int8_t* )basetype_get_data_ptr( basetype_sub(basetype_new_int8  (36),  basetype_new_int8  (-10), &okay)  ) ==  46);
+    assert( *(int16_t*)basetype_get_data_ptr( basetype_sub(basetype_new_int16 (-36), basetype_new_int16 (10),  &okay)  ) == -46);
+    assert( *(int32_t*)basetype_get_data_ptr( basetype_sub(basetype_new_int32 (-2),  basetype_new_int32 (-4),  &okay)  ) ==  2);
+    assert( *(int64_t*)basetype_get_data_ptr( basetype_sub(basetype_new_int64 (36),  basetype_new_int64 (10),  &okay)  ) ==  26);
+
+    assert( compare_double(*(double*)basetype_get_data_ptr( basetype_sub(basetype_new_double(30.0),  basetype_new_double (10.0),   &okay)  ),  20.0));
+    assert( compare_double(*(double*)basetype_get_data_ptr( basetype_sub(basetype_new_double(30.0),  basetype_new_double (-10.5),  &okay)  ),  40.5));
+    assert( compare_float( *(float* )basetype_get_data_ptr( basetype_sub(basetype_new_float (30.0),  basetype_new_float  (10.0),   &okay)  ),  20.0));
+    assert( compare_float( *(float* )basetype_get_data_ptr( basetype_sub(basetype_new_float (30.0),  basetype_new_float  (-10.5),  &okay)  ),  40.5));
+}
+
+void check_muls()
+{
+    uint8_t okay = 0;
+    assert( *(uint8_t* )basetype_get_data_ptr( basetype_mul(basetype_new_uint8  (3), basetype_new_uint8  (2), &okay)  ) == 6);
+    assert( *(uint16_t*)basetype_get_data_ptr( basetype_mul(basetype_new_uint16 (3), basetype_new_uint16 (2), &okay)  ) == 6);
+    assert( *(uint32_t*)basetype_get_data_ptr( basetype_mul(basetype_new_uint32 (3), basetype_new_uint32 (2), &okay)  ) == 6);
+    assert( *(uint64_t*)basetype_get_data_ptr( basetype_mul(basetype_new_uint64 (3), basetype_new_uint64 (2), &okay)  ) == 6);
+
+    assert( *(int8_t* )basetype_get_data_ptr( basetype_mul(basetype_new_int8  ( 3), basetype_new_int8  (-5), &okay)  ) ==  -15);
+    assert( *(int16_t*)basetype_get_data_ptr( basetype_mul(basetype_new_int16 (-3), basetype_new_int16 (10),  &okay)  ) == -30);
+    assert( *(int32_t*)basetype_get_data_ptr( basetype_mul(basetype_new_int32 (-2), basetype_new_int32 (-4),  &okay)  ) ==  8);
+    assert( *(int64_t*)basetype_get_data_ptr( basetype_mul(basetype_new_int64 ( 3), basetype_new_int64 (10),  &okay)  ) ==  30);
+    
+    assert( compare_double(*(double*)basetype_get_data_ptr( basetype_mul(basetype_new_double(30.0),  basetype_new_double (10.0),   &okay)  ),  300.0));
+    assert( compare_double(*(double*)basetype_get_data_ptr( basetype_mul(basetype_new_double(3.0 ),  basetype_new_double (-10.5),  &okay)  ),  -31.5));
+    assert( compare_float( *(float* )basetype_get_data_ptr( basetype_mul(basetype_new_float (3.0 ),  basetype_new_float  (10.0),   &okay)  ),  30.0));
+    assert( compare_float( *(float* )basetype_get_data_ptr( basetype_mul(basetype_new_float (3.0 ),  basetype_new_float  (-10.5),  &okay)  ),  -31.5));
+}
+
+void check_divs()
+{
+    uint8_t okay = 0;
+    assert( *(uint8_t* )basetype_get_data_ptr( basetype_div(basetype_new_uint8  (10), basetype_new_uint8  (2), &okay)  ) == 5);
+    assert( *(uint16_t*)basetype_get_data_ptr( basetype_div(basetype_new_uint16 (10), basetype_new_uint16 (2), &okay)  ) == 5);
+    assert( *(uint32_t*)basetype_get_data_ptr( basetype_div(basetype_new_uint32 (10), basetype_new_uint32 (2), &okay)  ) == 5);
+    assert( *(uint64_t*)basetype_get_data_ptr( basetype_div(basetype_new_uint64 (10), basetype_new_uint64 (2), &okay)  ) == 5);
+
+    assert( *(int8_t* )basetype_get_data_ptr( basetype_div(basetype_new_int8  (10), basetype_new_int8  (2),  &okay)  ) == 5);
+    assert( *(int16_t*)basetype_get_data_ptr( basetype_div(basetype_new_int16 (10), basetype_new_int16 (2),  &okay)  ) == 5);
+    assert( *(int32_t*)basetype_get_data_ptr( basetype_div(basetype_new_int32 (10), basetype_new_int32 (2),  &okay)  ) == 5);
+    assert( *(int64_t*)basetype_get_data_ptr( basetype_div(basetype_new_int64 (10), basetype_new_int64 (2),  &okay)  ) == 5);
+    
+    assert( compare_double(*(double*)basetype_get_data_ptr( basetype_div(basetype_new_double(30.0),  basetype_new_double (3.0),  &okay)  ),  10.0));
+    assert( compare_double(*(double*)basetype_get_data_ptr( basetype_div(basetype_new_double(4.0 ),  basetype_new_double (2.0),  &okay)  ),   2.0));
+    assert( compare_float( *(float* )basetype_get_data_ptr( basetype_div(basetype_new_float (4.0 ),  basetype_new_float  (2.0),  &okay)  ),   2.0));
+    assert( compare_float( *(float* )basetype_get_data_ptr( basetype_div(basetype_new_float (4.0 ),  basetype_new_float  (2.0),  &okay)  ),   2.0));
+}
+
 void check_promotions()
 {
     uint8_t okay = 0;   // We don't actually check this here, it is assumed its checked prior to this test
@@ -193,6 +250,11 @@ int main(void)
 
     check_adds();
 
+    check_subs();
+
+    check_muls();
+
+    check_divs();
 
     // This one last because we need to ensure everything else is working first
     check_promotions();

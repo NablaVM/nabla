@@ -290,56 +290,16 @@ BT* basetype_add(BT* lhs, BT* rhs, uint8_t* okay)
 
     switch(returnType)
     {
-        case NABLA_BASE_TYPE_INTEGER_U_8 : 
-        {  
-            uint8_t  result =  *(uint8_t*)lhs->data +  *(uint8_t*)rhs->data; 
-            return basetype_new_uint8 (result);
-        } 
-        case NABLA_BASE_TYPE_INTEGER_U_16: 
-        {  
-            uint16_t result = *(uint16_t*)lhs->data + *(uint16_t*)rhs->data; 
-            return basetype_new_uint16(result);
-        } 
-        case NABLA_BASE_TYPE_INTEGER_U_32: 
-        {  
-            uint32_t result = *(uint32_t*)lhs->data + *(uint32_t*)rhs->data; 
-            return basetype_new_uint32(result);
-        } 
-        case NABLA_BASE_TYPE_INTEGER_U_64: 
-        {  
-            uint64_t result = *(uint64_t*)lhs->data + *(uint64_t*)rhs->data; 
-            return basetype_new_uint64(result);
-        } 
-        case NABLA_BASE_TYPE_INTEGER_S_8 : 
-        {  
-            int8_t   result =  *(int8_t*) lhs->data +  *(int8_t*) rhs->data; 
-            return basetype_new_int8  (result);
-        } 
-        case NABLA_BASE_TYPE_INTEGER_S_16: 
-        {  
-            int16_t  result = *(int16_t*) lhs->data + *(int16_t*) rhs->data; 
-            return basetype_new_int16 (result);
-        } 
-        case NABLA_BASE_TYPE_INTEGER_S_32: 
-        {  
-            int32_t  result = *(int32_t*) lhs->data + *(int32_t*) rhs->data; 
-            return basetype_new_int32 (result);
-        } 
-        case NABLA_BASE_TYPE_INTEGER_S_64: 
-        {  
-            int64_t  result = *(int64_t*) lhs->data + *(int64_t*) rhs->data; 
-            return basetype_new_int64 (result);
-        } 
-        case NABLA_BASE_TYPE_FLOATING_S  : 
-        {  
-            float    result = *(float*)   lhs->data + *(float*)   rhs->data; 
-            return basetype_new_float (result);
-        } 
-        case NABLA_BASE_TYPE_FLOATING_D  : 
-        {  
-            double   result = *(double*)  lhs->data + *(double*)  rhs->data; 
-            return basetype_new_double(result);
-        } 
+        case NABLA_BASE_TYPE_INTEGER_U_8 : return basetype_new_uint8 (*(uint8_t*) lhs->data + *(uint8_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_16: return basetype_new_uint16(*(uint16_t*)lhs->data + *(uint16_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_32: return basetype_new_uint32(*(uint32_t*)lhs->data + *(uint32_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_64: return basetype_new_uint64(*(uint64_t*)lhs->data + *(uint64_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_8 : return basetype_new_int8  (*(int8_t*)  lhs->data + *(int8_t*)  rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_16: return basetype_new_int16 (*(int16_t*) lhs->data + *(int16_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_32: return basetype_new_int32 (*(int32_t*) lhs->data + *(int32_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_64: return basetype_new_int64 (*(int64_t*) lhs->data + *(int64_t*) rhs->data);
+        case NABLA_BASE_TYPE_FLOATING_S  : return basetype_new_float (*(float*)   lhs->data + *(float*)   rhs->data);
+        case NABLA_BASE_TYPE_FLOATING_D  : return basetype_new_double(*(double*)  lhs->data + *(double*)  rhs->data);
         case NABLA_BASE_TYPE_STRING      : 
         {
             char * lhs_str;
@@ -444,6 +404,25 @@ BT* basetype_sub(BT* lhs, BT*rhs, uint8_t *okay)
     enum NablaBaseTypes returnType = (lhs->type == rhs->type) ? lhs->type : determine_promotion_of_nabla_base_type(lhs, rhs);
 
     *okay = 1;
+
+    switch(returnType)
+    {
+        case NABLA_BASE_TYPE_INTEGER_U_8 : return basetype_new_uint8 (*(uint8_t*) lhs->data - *(uint8_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_16: return basetype_new_uint16(*(uint16_t*)lhs->data - *(uint16_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_32: return basetype_new_uint32(*(uint32_t*)lhs->data - *(uint32_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_64: return basetype_new_uint64(*(uint64_t*)lhs->data - *(uint64_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_8 : return basetype_new_int8  (*(int8_t*)  lhs->data - *(int8_t*)  rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_16: return basetype_new_int16 (*(int16_t*) lhs->data - *(int16_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_32: return basetype_new_int32 (*(int32_t*) lhs->data - *(int32_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_64: return basetype_new_int64 (*(int64_t*) lhs->data - *(int64_t*) rhs->data);
+        case NABLA_BASE_TYPE_FLOATING_S  : return basetype_new_float (*(float*)   lhs->data - *(float*)   rhs->data);
+        case NABLA_BASE_TYPE_FLOATING_D  : return basetype_new_double(*(double*)  lhs->data - *(double*)  rhs->data);
+        default:
+            // We don't 'do' strings unless its an add
+            *okay = 0;
+            break;
+    }
+    return NULL;
 }
 
 // ------------------------------------------------
@@ -458,6 +437,24 @@ BT* basetype_mul(BT* lhs, BT*rhs, uint8_t *okay)
     enum NablaBaseTypes returnType = (lhs->type == rhs->type) ? lhs->type : determine_promotion_of_nabla_base_type(lhs, rhs);
 
     *okay = 1;
+    switch(returnType)
+    {
+        case NABLA_BASE_TYPE_INTEGER_U_8 : return basetype_new_uint8 (*(uint8_t*) lhs->data * *(uint8_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_16: return basetype_new_uint16(*(uint16_t*)lhs->data * *(uint16_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_32: return basetype_new_uint32(*(uint32_t*)lhs->data * *(uint32_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_64: return basetype_new_uint64(*(uint64_t*)lhs->data * *(uint64_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_8 : return basetype_new_int8  (*(int8_t*)  lhs->data * *(int8_t*)  rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_16: return basetype_new_int16 (*(int16_t*) lhs->data * *(int16_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_32: return basetype_new_int32 (*(int32_t*) lhs->data * *(int32_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_64: return basetype_new_int64 (*(int64_t*) lhs->data * *(int64_t*) rhs->data);
+        case NABLA_BASE_TYPE_FLOATING_S  : return basetype_new_float (*(float*)   lhs->data * *(float*)   rhs->data);
+        case NABLA_BASE_TYPE_FLOATING_D  : return basetype_new_double(*(double*)  lhs->data * *(double*)  rhs->data);
+        default:
+            // We don't 'do' strings unless its an add
+            *okay = 0;
+            break;
+    }
+    return NULL;
 }
 
 // ------------------------------------------------
@@ -472,4 +469,23 @@ BT* basetype_div(BT* lhs, BT*rhs, uint8_t *okay)
     enum NablaBaseTypes returnType = (lhs->type == rhs->type) ? lhs->type : determine_promotion_of_nabla_base_type(lhs, rhs);
 
     *okay = 1;
+    
+    switch(returnType)
+    {
+        case NABLA_BASE_TYPE_INTEGER_U_8 : return basetype_new_uint8 (*(uint8_t*) lhs->data / *(uint8_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_16: return basetype_new_uint16(*(uint16_t*)lhs->data / *(uint16_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_32: return basetype_new_uint32(*(uint32_t*)lhs->data / *(uint32_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_U_64: return basetype_new_uint64(*(uint64_t*)lhs->data / *(uint64_t*)rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_8 : return basetype_new_int8  (*(int8_t*)  lhs->data / *(int8_t*)  rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_16: return basetype_new_int16 (*(int16_t*) lhs->data / *(int16_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_32: return basetype_new_int32 (*(int32_t*) lhs->data / *(int32_t*) rhs->data);
+        case NABLA_BASE_TYPE_INTEGER_S_64: return basetype_new_int64 (*(int64_t*) lhs->data / *(int64_t*) rhs->data);
+        case NABLA_BASE_TYPE_FLOATING_S  : return basetype_new_float (*(float*)   lhs->data / *(float*)   rhs->data);
+        case NABLA_BASE_TYPE_FLOATING_D  : return basetype_new_double(*(double*)  lhs->data / *(double*)  rhs->data);
+        default:
+            // We don't 'do' strings unless its an add
+            *okay = 0;
+            break;
+    }
+    return NULL;
 }
