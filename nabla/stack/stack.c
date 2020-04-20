@@ -118,18 +118,18 @@ void stack_set_value_at(uint64_t pos, uint64_t val, NStack * stack, int* result)
     if(stack->empty)
     {
         *result = STACK_ERROR_IDX_OUT_OF_RANGE;
-        return 0;
+        return;
     }
 
     // Values exist at or below top, so we check range here
     if(stack->top < pos)
     {
         *result = STACK_ERROR_IDX_OUT_OF_RANGE;
-        return 0;
+        return;
     }
 
     stack->elements[pos] = val;
-    
+
     *result = STACK_OKAY;
 }
 
@@ -160,6 +160,7 @@ void stack_push(int64_t val, NStack * stack, int* result)
         stack->elements[stack->top] = val;
     }
 
+    stack->empty = 0;
     *result = STACK_OKAY;
 }
 
@@ -178,7 +179,7 @@ int64_t stack_pop(NStack * stack, int* result)
         *result = STACK_EMPTY;
         return 0;
     }
-
+    
     int64_t val = stack->elements[stack->top];
 
     if(stack->top == 0)
@@ -189,7 +190,6 @@ int64_t stack_pop(NStack * stack, int* result)
     {
         stack->top -= 1;
     }
-
     *result = STACK_OKAY;
 
     return val;

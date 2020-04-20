@@ -7,7 +7,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <ieee754.h>
 
 static uint8_t  FILE_GLOBAL_INVOKED_VM_COUNT = 0;
 static uint8_t  FILE_GLOBAL_IS_VM_LOADED     = 0;
@@ -538,10 +537,38 @@ int vm_run(NVM* vm)
             }          
             case INS_PUSH :
             {
+                uint8_t destStack = run_extract_one(ins, 6);
+                uint8_t sourceReg = run_extract_one(ins, 5);
+
+                int okay = -255;
+                if(destStack == GLOBAL_STACK)
+                {
+                    stack_push(vm->registers[sourceReg], vm->globalStack, &okay);
+                }
+                else if (destStack == LOCAL_STACK )
+                {
+                    stack_push(vm->registers[sourceReg], vm->functions[vm->fp].localStack, &okay);
+                }
+                assert(okay == STACK_OKAY);
+
+                printf("Pushed.\n");
                 break;
             }          
             case INS_POP  :
             {
+                uint8_t destReg     = run_extract_one(ins, 6);
+                uint8_t sourceStack = run_extract_one(ins, 5);
+
+                int okay = -255;
+                if(sourceStack == GLOBAL_STACK)
+                {
+                    vm->registers[destReg] = stack_pop(vm->globalStack, &okay);
+                }
+                else if (sourceStack == LOCAL_STACK )
+                {
+                    vm->registers[destReg] = stack_pop(vm->functions[vm->fp].localStack, &okay);
+                }
+                assert(okay == STACK_OKAY);
                 break;
             }          
             case INS_JUMP :

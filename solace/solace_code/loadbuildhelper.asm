@@ -64,6 +64,15 @@
     ; mul.d r0 r10 r9      ; 15.0
     ; div.d r0 r9 r10      ; 6.66
 
+    ; ldb r1 $0(gs)
+    ; stb $10(gs) r1
+
+    ldb r1 $0(gs)
+    push gs r1
+    push ls r1
+    pop r0 gs
+    pop r0 ls
+
     ; Branch tests 
 
 
@@ -203,10 +212,6 @@
 ;    bne.d r0 r2 testLabel
 ; -------------------------------------------------------
 
-
-     ldb r1 $0(gs)
-
-     stb $10(gs) r1
 
     exit
 >
