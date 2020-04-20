@@ -187,6 +187,17 @@ uint64_t run_convert_double_to_uint64(double val)
     return d.val;
 }
 
+uint8_t run_check_double_equal(double lhs, double rhs)
+{
+    double precision = 0.00001;
+    if (((lhs - precision) < rhs) && 
+        ((lhs + precision) > rhs))
+    {
+        return 1;
+    }
+    return 0;
+}
+
 // -----------------------------------------------------
 //
 // -----------------------------------------------------
@@ -335,9 +346,6 @@ int vm_run(NVM* vm)
                 uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
                                       (uint64_t)run_extract_two(ins, 2);
                 
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Doing branch > to: %lu\n", branchAddr); 
-#endif
                 if(lhs > rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
@@ -349,9 +357,6 @@ int vm_run(NVM* vm)
                 uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
                                       (uint64_t)run_extract_two(ins, 2);
                 
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Doing branch >= to: %lu\n", branchAddr); 
-#endif
                 if(lhs >= rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
@@ -363,9 +368,6 @@ int vm_run(NVM* vm)
                 uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
                                       (uint64_t)run_extract_two(ins, 2);
                 
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Doing branch < to: %lu\n", branchAddr); 
-#endif
                 if(lhs < rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
@@ -377,13 +379,6 @@ int vm_run(NVM* vm)
                 uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
                                       (uint64_t)run_extract_two(ins, 2);
                 
-                printf("lhs: %lu\n", lhs);
-                printf("rhs: %lu\n", rhs);
-                printf("Dest Addr: %lu\n", branchAddr);
-
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Doing branch <= to: %lu\n", branchAddr); 
-#endif
                 if(lhs <= rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
@@ -395,9 +390,6 @@ int vm_run(NVM* vm)
                 uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
                                       (uint64_t)run_extract_two(ins, 2);
 
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Doing branch == to: %lu\n", branchAddr); 
-#endif
                 if(lhs == rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
@@ -409,34 +401,91 @@ int vm_run(NVM* vm)
                 uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
                                       (uint64_t)run_extract_two(ins, 2);
 
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Doing branch != to: %lu\n", branchAddr); 
-#endif
                 if(lhs != rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BGTD :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                double lhs_d = run_convert_to_double(lhs);
+                double rhs_d = run_convert_to_double(rhs);
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+
+                if(lhs_d > rhs_d){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BGTED:
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                double lhs_d = run_convert_to_double(lhs);
+                double rhs_d = run_convert_to_double(rhs);
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+
+                if(lhs_d >= rhs_d){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BLTD :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                double lhs_d = run_convert_to_double(lhs);
+                double rhs_d = run_convert_to_double(rhs);
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+
+                if(lhs_d < rhs_d){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BLTED:
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                double lhs_d = run_convert_to_double(lhs);
+                double rhs_d = run_convert_to_double(rhs);
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+
+                if(lhs_d <= rhs_d){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BEQD :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                double lhs_d = run_convert_to_double(lhs);
+                double rhs_d = run_convert_to_double(rhs);
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+
+                if(run_check_double_equal(lhs_d, rhs_d)){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BNED :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                double lhs_d = run_convert_to_double(lhs);
+                double rhs_d = run_convert_to_double(rhs);
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+
+                if(!run_check_double_equal(lhs_d, rhs_d)){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_MOV  :

@@ -9,7 +9,12 @@
 .double someDouble 45.435
 .double lhsd       10.0
 .double rhsd       1.5
+
+.double branchTestSmall 1.0
+.double branchTestLarge 5.0
+
 .string ayyy "Hey this is a really cool string. The string limit might seem lame, but hey, maybe its okay!"
+
 
 <dummy:
     exit
@@ -129,7 +134,74 @@
 ; ------------------------------------------------------
 
 
-; ----------------------- In progress -----------------------
+; -------------------- BGTD ----------------------------
+;    ldb r0  $7(gs)  ; small  (1.0) 
+;    ldb r1  $8(gs)  ; large  (5.0)
+;
+;testLabel:
+;    add.d r0 r0 r0  ; add 1.0 r0 
+;
+;    bgt.d r1 r0 testLabel
+; -------------------------------------------------------
+
+
+; -------------------- BGTED ----------------------------
+;    ldb r0  $7(gs)  ; small  (1.0) 
+;    ldb r1  $8(gs)  ; large  (5.0)
+;
+;testLabel:
+;    add.d r0 r0 r0  ; add 1.0 r0 
+;
+;    bgte.d r1 r0 testLabel
+; -------------------------------------------------------
+
+
+; -------------------- BLTD ----------------------------
+;    ldb r0  $7(gs)  ; small  (1.0) 
+;    ldb r1  $8(gs)  ; large  (5.0)
+;
+;testLabel:
+;    add.d r0 r0 r0  ; add 1.0 r0 
+;
+;    blt.d r0 r1 testLabel
+; -------------------------------------------------------
+
+
+; -------------------- BLTED ----------------------------
+;    ldb r0  $7(gs)  ; small  (1.0) 
+;    ldb r1  $8(gs)  ; large  (5.0)
+;
+;testLabel:
+;    add.d r0 r0 r0  ; add 1.0 r0 
+;
+;    blte.d r0 r1 testLabel
+; -------------------------------------------------------
+
+
+; -------------------- BEQD ----------------------------
+;    ldb r0  $7(gs)  ; small  (1.0) 
+;    ldb r1  $8(gs)  ; large  (5.0)
+;
+;    add.d r0 r0 r0  ; add 1.0 r0 
+;    add.d r0 r0 r0  ; add 1.0 r0 
+;    add.d r0 r0 r0  ; add 1.0 r0 
+;testLabel:
+;    add.d r0 r0 r0  ; add 1.0 r0 
+;
+;    beq.d r0 r1 testLabel
+; -------------------------------------------------------
+
+
+; -------------------- BNEQ ----------------------------
+;    ldb r0  $7(gs)  ; small  (1.0) 
+;    ldb r1  $7(gs)  ; small  (1.0) 
+;    ldb r2  $8(gs)  ; large  (5.0)
+;
+;testLabel:
+;    add.d r0 r0 r1  ; add 1.0 r0 
+;
+;    bne.d r0 r2 testLabel
+; -------------------------------------------------------
 
     exit
 >
