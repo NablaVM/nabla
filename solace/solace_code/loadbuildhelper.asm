@@ -67,11 +67,22 @@
     ; ldb r1 $0(gs)
     ; stb $10(gs) r1
 
-    ldb r1 $0(gs)
-    push gs r1
-    push ls r1
-    pop r0 gs
-    pop r0 ls
+    ; ldb r1 $0(gs)
+    ; push gs r1
+    ; push ls r1
+    ; pop r0 gs
+    ; pop r0 ls
+
+;    ldb r15 $0(gs)
+;jumpLabel:
+;
+;    add r15 r15 $1
+;
+;    jmp jumpLabel
+    
+    ldb r15 $0(gs)
+
+    mov r0 r15
 
     ; Branch tests 
 

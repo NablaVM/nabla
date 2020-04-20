@@ -489,7 +489,11 @@ int vm_run(NVM* vm)
             }          
             case INS_MOV  :
             {
+                lhs = run_extract_one(ins, 6);
+                rhs = run_extract_one(ins, 5);
 
+                vm->registers[lhs] = vm->registers[rhs];
+                vm->registers[rhs] = 0;
                 break;
             }
             case INS_LDB  :
@@ -573,7 +577,11 @@ int vm_run(NVM* vm)
             }          
             case INS_JUMP :
             {
-                break;
+                uint64_t destAddress = (uint64_t)run_extract_two(ins, 6) << 16| 
+                                       (uint64_t)run_extract_two(ins, 4);
+
+                vm->functions[vm->fp].ip = destAddress; 
+                continue;
             }          
             case INS_CALL :
             {
