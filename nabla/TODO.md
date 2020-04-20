@@ -1,5 +1,9 @@
 # TODO
 
+Add in some hooks for automating some tests with the vm. Given a certain compile option, the vm should
+throw out tokens about what its doing. We could load code that we expect a certain token pattern from
+and ensure that the operations are going as we intend.
+
 
 The vm-loading code needs to be put somewhere.. like a vm-loader maybe? The only 'issue' is then some functionality of the vm that doesn't need to be exposed would be exposed (accessing global stack, etc)
 --Though it might not be a bad idea. Exposing direct access to the stack would make later expansions easier?

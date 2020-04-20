@@ -516,6 +516,24 @@ int vm_run(NVM* vm)
             }          
             case INS_STB  :
             {
+                uint8_t sourceReg =  run_extract_one(ins, 1);
+
+                uint8_t stackDest = run_extract_one(ins, 6);
+
+                uint64_t desAddress = (uint64_t)run_extract_two(ins, 5) << 16| 
+                                      (uint64_t)run_extract_two(ins, 3);
+
+                int okay = -255;
+                if(stackDest == GLOBAL_STACK)
+                {
+                    stack_set_value_at(desAddress, vm->registers[sourceReg], vm->globalStack, &okay);
+                }
+                else if ( stackDest == LOCAL_STACK )
+                {
+                    // If they haven't made the local stack big enough this could fail. Hope they know what they're doing
+                    stack_set_value_at(desAddress, vm->registers[sourceReg], vm->functions[vm->fp].localStack, &okay);
+                }
+                assert(okay == STACK_OKAY);
                 break;
             }          
             case INS_PUSH :

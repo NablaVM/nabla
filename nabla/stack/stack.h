@@ -30,8 +30,15 @@ uint8_t stack_is_empty(NablaStack stack);
 //! \param[in] The position to get from the stack without popping
 //! \param[in] The stack
 //! \param[out] result The result code of the operation
-//! \returns Size of the stack
+//! \returns Value
 int64_t stack_value_at(uint64_t pos, NablaStack stack, int* result);
+
+//! \brief Get the element at the given position
+//! \param[in] The position to put without pushing
+//! \param[in] The value to set
+//! \param[in] The stack
+//! \param[out] result The result code of the operation
+void stack_set_value_at(uint64_t pos, uint64_t val, NablaStack stack, int* result);
 
 //! \brief Push value onto stack
 //! \param[in] val The value to push onto the stack
