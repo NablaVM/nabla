@@ -193,6 +193,20 @@ void check_divs()
     assert( compare_float( *(float* )basetype_get_data_ptr( basetype_div(basetype_new_float (4.0 ),  basetype_new_float  (2.0),  &okay)  ),   2.0));
 }
 
+void check_del()
+{
+    NablaBaseType temp = basetype_new_uint64(64);    
+
+
+    assert(temp);
+
+    printf("%lu\n", *(uint64_t*)basetype_get_data_ptr( temp ) );
+    basetype_del(temp);
+
+    assert(temp == NULL);
+
+}
+
 void check_promotions()
 {
     uint8_t okay = 0;   // We don't actually check this here, it is assumed its checked prior to this test
@@ -255,6 +269,8 @@ int main(void)
     check_muls();
 
     check_divs();
+
+    check_del();
 
     // This one last because we need to ensure everything else is working first
     check_promotions();

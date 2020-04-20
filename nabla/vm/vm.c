@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <ieee754.h>
 
 static uint8_t  FILE_GLOBAL_INVOKED_VM_COUNT = 0;
 static uint8_t  FILE_GLOBAL_IS_VM_LOADED     = 0;
@@ -148,6 +149,51 @@ void run_get_arith_lhs_rhs(NVM * vm, uint8_t id, uint64_t ins, int64_t * lhs, in
     }
 }
 
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
+double run_convert_to_double(int64_t val)
+{
+    // Extract from our value
+    union deval
+    {
+        uint64_t val;
+        double d;
+    };
+
+    union deval d; d.val = (uint64_t)val;
+
+    // Return double
+    return d.d;
+}
+
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
+uint64_t run_convert_double_to_uint64(double val)
+{
+    union ieee754_double ied;
+
+    ied.d = val;
+
+    uint64_t packed = ied.ieee.negative  | 
+                      ied.ieee.exponent  |
+                      ied.ieee.mantissa0 |
+                      ied.ieee.mantissa1;
+
+
+        union testd
+        {
+            uint64_t ui;
+            double   d;
+        };
+
+
+
+    return packed;
+}
 
 // -----------------------------------------------------
 //
@@ -197,12 +243,6 @@ int vm_run(NVM* vm)
         int64_t lhs = 0;
         int64_t rhs = 0;
 
-#warning before continuing on here I want to find a way to abstract data types ints / floats / doubles / strs / etc all for stack reg storage and arith operations
-
-#warning I've done that in the /types directory, but now the stack needs to be updated to use those types
-
-#warning The 'registers' could be of those types too, then we would have a nifty way to handle strings ints floats doubles etc, but it might get crazy in here
-
         switch(op)
         {
             case INS_ADD  :
@@ -223,8 +263,6 @@ int vm_run(NVM* vm)
                 vm->registers[dest] = lhs-rhs;
 
                 printf("result: %ld\n", vm->registers[dest]);
-
-                if ( vm->registers[dest] >> 63 & 1) printf ("value is negative\n");
                 break;
             }          
             case INS_MUL  :
@@ -251,18 +289,45 @@ int vm_run(NVM* vm)
             }          
             case INS_ADDD :
             {
+                uint8_t dest =  run_extract_one(ins, 6);
+                assert(dest < 16);
+
+#warning need to get int64_t -> double && double->int64_t completed, then all double arith can be ironed out
+
+                // Id always 3 for doubles
+                run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
+            
+                printf("INS_ADDD RHS: %lx\n", rhs);
+                printf("INS_ADDD LHS: %lx\n", lhs);
+
+                double r = run_convert_to_double(rhs);
+                double l = run_convert_to_double(lhs);
+
+                printf("The r double : %f\n", r);
+                printf("The l double : %f\n", l);
+
+//                vm->registers[dest] = run_convert_double_to_uint64(
+//
+//                    run_convert_to_double(vm->registers[lhs]) + run_convert_to_double(vm->registers[rhs])
+//                );
+
                 break;
             }          
             case INS_SUBD :
             {
+
+
                 break;
             }          
             case INS_MULD :
             {
+
+
                 break;
             }          
             case INS_DIVD :
             {
+
                 break;
             }          
             case INS_BGT  :
@@ -315,6 +380,7 @@ int vm_run(NVM* vm)
             }          
             case INS_MOV  :
             {
+
                 break;
             }          
             case INS_LDA  :
@@ -323,6 +389,23 @@ int vm_run(NVM* vm)
             }          
             case INS_LDB  :
             {
+                uint8_t dest =  run_extract_one(ins, 6);
+
+                uint8_t stackSouce = run_extract_one(ins, 5);
+
+                uint64_t sourceAddress = (uint16_t)run_extract_two(ins, 4) | 
+                                         (uint16_t)run_extract_two(ins, 2);
+
+                int okay = -255;
+                if(stackSouce == GLOBAL_STACK)
+                {
+                    vm->registers[dest] = stack_value_at(sourceAddress, vm->globalStack, &okay);
+                }
+                else if ( stackSouce == LOCAL_STACK )
+                {
+                    vm->registers[dest] = stack_value_at(sourceAddress, vm->functions[vm->fp].localStack, &okay);
+                }
+                assert(okay == STACK_OKAY);
                 break;
             }          
             case INS_STB  :

@@ -219,10 +219,10 @@ namespace SOLACE
 
         ied.d = dval;
 
-        uint64_t packed = ied.ieee.negative  | 
-                          ied.ieee.exponent  |
-                          ied.ieee.mantissa0 |
-                          ied.ieee.mantissa1;
+        uint64_t packed = (uint64_t)ied.ieee.negative  << 63| 
+                          (uint64_t)ied.ieee.exponent  << 52|
+                          (uint64_t)ied.ieee.mantissa0 << 32|
+                          (uint64_t)ied.ieee.mantissa1 << 0;
 
         result.push_back( MANIFEST::CONST_DBL      );
         result.push_back( (packed & 0xFF00000000000000) >> 56 );

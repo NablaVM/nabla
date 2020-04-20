@@ -249,10 +249,20 @@ NablaBaseType basetype_new_str(char* str)
 
 void * basetype_get_data_ptr(BT* bt)
 {
-    assert(bt);
-    assert(bt->data);
-
+    assert(bt != NULL);
+    assert(bt->data != NULL);
     return bt->data;
+}
+
+// ------------------------------------------------
+//
+// ------------------------------------------------
+
+void basetype_del(BT * bt)
+{
+    assert(bt != NULL);
+    free(bt->data);
+    bt->data = NULL;
 }
 
 // ------------------------------------------------
@@ -261,7 +271,7 @@ void * basetype_get_data_ptr(BT* bt)
 
 enum NablaBaseTypes basetype_get_type(NablaBaseType bt)
 {
-    assert(bt);
+    assert(bt != NULL);
     return bt->type;
 }
 
@@ -281,7 +291,7 @@ enum NablaBaseTypes determine_promotion_of_nabla_base_type(BT * lhs, BT * rhs)
 
 BT* basetype_add(BT* lhs, BT* rhs, uint8_t* okay)
 {
-    assert(lhs); assert(rhs);
+    assert(lhs != NULL); assert(rhs != NULL);
 
     // Determine return type. If they aren't the same type, we need to figure out what the return type will be
     enum NablaBaseTypes returnType = (lhs->type == rhs->type) ? lhs->type : determine_promotion_of_nabla_base_type(lhs, rhs);

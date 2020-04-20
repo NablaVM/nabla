@@ -56,6 +56,8 @@ NablaBaseType basetype_new_double(double value);
 
 NablaBaseType basetype_new_str(char* str);
 
+void basetype_del(NablaBaseType bt);
+
 void * basetype_get_data_ptr(NablaBaseType bt);
 
 enum NablaBaseTypes basetype_get_type(NablaBaseType bt);
