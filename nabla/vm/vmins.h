@@ -21,7 +21,7 @@
     #define INS_BEQD            0xC4
     #define INS_BNED            0xC8 
     #define INS_MOV             0xCC
-    #define INS_LDA             0xD0
+//    #define INS_LDA             0xD0  // No longer in use
     #define INS_LDB             0xD4
     #define INS_STB             0xD8
     #define INS_PUSH            0xDC

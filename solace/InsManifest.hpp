@@ -42,7 +42,7 @@ namespace SOLACE
         constexpr uint8_t INS_BNED            = 0xC8; 
 
         constexpr uint8_t INS_MOV             = 0xCC;
-        constexpr uint8_t INS_LDA             = 0xD0;
+//        constexpr uint8_t INS_LDA             = 0xD0; // No longer in use
         constexpr uint8_t INS_LDB             = 0xD4;
         constexpr uint8_t INS_STB             = 0xD8;
         constexpr uint8_t INS_PUSH            = 0xDC;
@@ -116,7 +116,7 @@ namespace SOLACE
             std::cout << "INS_BEQD            =" << std::hex << (int)INS_BEQD            << " \t| " << std::bitset<8>(INS_BEQD           ) << std::endl;
             std::cout << "INS_BNED            =" << std::hex << (int)INS_BNED            << " \t| " << std::bitset<8>(INS_BNED           ) << std::endl;
             std::cout << "INS_MOV             =" << std::hex << (int)INS_MOV             << " \t| " << std::bitset<8>(INS_MOV            ) << std::endl;
-            std::cout << "INS_LDA             =" << std::hex << (int)INS_LDA             << " \t| " << std::bitset<8>(INS_LDA            ) << std::endl;
+ //           std::cout << "INS_LDA             =" << std::hex << (int)INS_LDA             << " \t| " << std::bitset<8>(INS_LDA            ) << std::endl;
             std::cout << "INS_LDB             =" << std::hex << (int)INS_LDB             << " \t| " << std::bitset<8>(INS_LDB            ) << std::endl;
             std::cout << "INS_STB             =" << std::hex << (int)INS_STB             << " \t| " << std::bitset<8>(INS_STB            ) << std::endl;
             std::cout << "INS_PUSH            =" << std::hex << (int)INS_PUSH            << " \t| " << std::bitset<8>(INS_PUSH           ) << std::endl;

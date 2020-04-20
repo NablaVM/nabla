@@ -174,25 +174,17 @@ double run_convert_to_double(int64_t val)
 
 uint64_t run_convert_double_to_uint64(double val)
 {
-    union ieee754_double ied;
+    // Extract from our value
+    union deval
+    {
+        uint64_t val;
+        double d;
+    };
 
-    ied.d = val;
+    union deval d; d.d = val;
 
-    uint64_t packed = ied.ieee.negative  | 
-                      ied.ieee.exponent  |
-                      ied.ieee.mantissa0 |
-                      ied.ieee.mantissa1;
-
-
-        union testd
-        {
-            uint64_t ui;
-            double   d;
-        };
-
-
-
-    return packed;
+    // Return uint64_t
+    return d.val;
 }
 
 // -----------------------------------------------------
@@ -292,66 +284,135 @@ int vm_run(NVM* vm)
                 uint8_t dest =  run_extract_one(ins, 6);
                 assert(dest < 16);
 
-#warning need to get int64_t -> double && double->int64_t completed, then all double arith can be ironed out
-
-                // Id always 3 for doubles
                 run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
             
-                printf("INS_ADDD RHS: %lx\n", rhs);
-                printf("INS_ADDD LHS: %lx\n", lhs);
+                vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) + run_convert_to_double(rhs));
 
-                double r = run_convert_to_double(rhs);
-                double l = run_convert_to_double(lhs);
-
-                printf("The r double : %f\n", r);
-                printf("The l double : %f\n", l);
-
-//                vm->registers[dest] = run_convert_double_to_uint64(
-//
-//                    run_convert_to_double(vm->registers[lhs]) + run_convert_to_double(vm->registers[rhs])
-//                );
-
+                printf("Result : %f\n", run_convert_to_double(lhs) + run_convert_to_double(rhs));
                 break;
             }          
             case INS_SUBD :
             {
+                uint8_t dest =  run_extract_one(ins, 6);
+                assert(dest < 16);
 
+                run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
+            
+                vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) - run_convert_to_double(rhs));
 
+                printf("Result : %f\n", run_convert_to_double(lhs) - run_convert_to_double(rhs));
                 break;
             }          
             case INS_MULD :
             {
+                uint8_t dest =  run_extract_one(ins, 6);
+                assert(dest < 16);
 
+                run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
+            
+                vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) * run_convert_to_double(rhs));
 
+                printf("Result : %f\n", run_convert_to_double(lhs) * run_convert_to_double(rhs));
                 break;
             }          
             case INS_DIVD :
             {
+                uint8_t dest =  run_extract_one(ins, 6);
+                assert(dest < 16);
 
+                run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
+            
+                vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) / run_convert_to_double(rhs));
+
+                printf("Result : %f\n", run_convert_to_double(lhs) / run_convert_to_double(rhs));
                 break;
             }          
             case INS_BGT  :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+                
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Doing branch > to: %lu\n", branchAddr); 
+#endif
+                if(lhs > rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BGTE :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+                
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Doing branch >= to: %lu\n", branchAddr); 
+#endif
+                if(lhs >= rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BLT  :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+                
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Doing branch < to: %lu\n", branchAddr); 
+#endif
+                if(lhs < rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BLTE :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+                
+                printf("lhs: %lu\n", lhs);
+                printf("rhs: %lu\n", rhs);
+                printf("Dest Addr: %lu\n", branchAddr);
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Doing branch <= to: %lu\n", branchAddr); 
+#endif
+                if(lhs <= rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BEQ  :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Doing branch == to: %lu\n", branchAddr); 
+#endif
+                if(lhs == rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BNE  :
             {
+                lhs = vm->registers[run_extract_one(ins, 6)];
+                rhs = vm->registers[run_extract_one(ins, 5)];
+
+                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
+                                      (uint64_t)run_extract_two(ins, 2);
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Doing branch != to: %lu\n", branchAddr); 
+#endif
+                if(lhs != rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BGTD :
@@ -382,19 +443,15 @@ int vm_run(NVM* vm)
             {
 
                 break;
-            }          
-            case INS_LDA  :
-            {
-                break;
-            }          
+            }
             case INS_LDB  :
             {
                 uint8_t dest =  run_extract_one(ins, 6);
 
                 uint8_t stackSouce = run_extract_one(ins, 5);
 
-                uint64_t sourceAddress = (uint16_t)run_extract_two(ins, 4) | 
-                                         (uint16_t)run_extract_two(ins, 2);
+                uint64_t sourceAddress = (uint64_t)run_extract_two(ins, 4) << 16| 
+                                         (uint64_t)run_extract_two(ins, 2);
 
                 int okay = -255;
                 if(stackSouce == GLOBAL_STACK)

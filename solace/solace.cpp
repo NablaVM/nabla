@@ -1429,7 +1429,7 @@ bool instruction_blt()
         return false;
     }
 
-    return branch_instruction(Bytegen::BranchTypes::BGT);
+    return branch_instruction(Bytegen::BranchTypes::BLT);
 }
 
 // -----------------------------------------------
@@ -1519,7 +1519,7 @@ bool instruction_bltd()
         return false;
     }
 
-    return branch_instruction(Bytegen::BranchTypes::BLT);
+    return branch_instruction(Bytegen::BranchTypes::BLTD);
 }
 
 // -----------------------------------------------
@@ -1717,8 +1717,8 @@ bool instruction_create_label()
         return false;
     }
 
-    // Set the label ...  Current location + 1 will get us the instruction that we need to be at
-    currentFunction.labels[label] = (currentFunction.instructions.size()/8) + 1;
+    // Set the label
+    currentFunction.labels[label] = (currentFunction.instructions.size()/8) ;
 
     // Labels don't have bytes generated with them, instead we keep track of them for the life of the function and 
     // place their instruction location in corresponding branches

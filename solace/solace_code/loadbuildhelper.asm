@@ -28,7 +28,6 @@
     ; ldb r3 $2(gs) ; Should be 55
     ; ldb r4 $3(gs) ; Should be 568888
 
-
     ; ldb r9 $0(gs)       ; load integer into 49
     ; add r9 r9 $1        ; add 1 to 96
 
@@ -53,12 +52,84 @@
     ; div r1 r0 $2       ; 25
     ; div r1 $100 r1     ; 4
 
+    ; ldb r9  $5(gs)       
+    ; ldb r10 $6(gs)      
+    ; add.d r0 r9 r10      ; 11.5
+    ; sub.d r0 r9 r10      ; 8.5
+    ; mul.d r0 r10 r9      ; 15.0
+    ; div.d r0 r9 r10      ; 6.66
+
+    ; Branch tests 
+
+
+; -------------------- BGT -----------------------------
+;     add r0 $2 $10        ; Put 12 into reg 0
+;     add r1 $5 $5         ; Put 10 into reg 1
+; testLabel:
+; 
+;     add r9 $5 $4
+;     add r1 r1 $1        ;  inc r1 by 1
+; 
+;     bgt r0 r1 testLabel ; while r0 > r1
+; ------------------------------------------------------
+
+
+; -------------------- BGTE -----------------------------
+;     add r0 $2 $10        ; Put 12 into reg 0
+;     add r1 $5 $5         ; Put 10 into reg 1
+; testLabel:
+; 
+;     add r9 $5 $4
+;     add r1 r1 $1        ;  inc r1 by 1
+; 
+;     bgte r0 r1 testLabel ; while r0 >= r1
+; ------------------------------------------------------
+
+
+; -------------------- BLT -----------------------------
+;    add r0 $0 $0         ; Put 0 into reg 0
+;    add r1 $0 $5         ; Put 5 into reg 1
+;
+;testLabel:
+;    add r0 r0 $1        ;  inc r0 by 1
+;
+;    blt r0 r1 testLabel ; while r0 < r1 
+; ------------------------------------------------------
+
+; -------------------- BLTE ----------------------------
+;     add r0 $0 $0         ; Put 0 into reg 0
+;     add r1 $0 $5         ; Put 5 into reg 1
+; 
+; testLabel:
+;     add r0 r0 $1        ;  inc r0 by 1
+; 
+;     blte r0 r1 testLabel ; while r0 < r1 
+; ------------------------------------------------------
+
+
+; -------------------- BEQ -----------------------------
+;     add r0 $0 $0         ; Put 0 into reg 0
+;     add r1 $0 $1         ; Put 1 into reg 1
+; 
+; testLabel:
+;     add r0 r0 $1        ;  inc r0 by 1
+; 
+;     beq r0 r1 testLabel ; while r0 == r1 
+; ------------------------------------------------------
+
+
+; -------------------- BNE ----------------------------
+;     add r0 $0 $0         ; Put 0 into reg 0
+;     add r1 $0 $5         ; Put 5 into reg 1
+; 
+; testLabel:
+;     add r0 r0 $1        ;  inc r0 by 1
+; 
+;     bne r0 r1 testLabel ; while r0 != r1 
+; ------------------------------------------------------
+
+
 ; ----------------------- In progress -----------------------
-
-    ldb r9  $5(gs)       ;lhsd    ; These dont work yet
-    ldb r10 $6(gs)       ;rhsd    ; These dont work yet
-    add.d r0 r9 r10      ;        ; These dont work yet
-
 
     exit
 >
