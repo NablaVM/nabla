@@ -211,7 +211,6 @@ int vm_run(NVM* vm)
     // Indicate that it is now running
     FILE_GLOBAL_IS_VM_RUNNING = 1;
 
-
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("Running VM\n");
 #endif
@@ -219,8 +218,16 @@ int vm_run(NVM* vm)
     // Set function pointer to the entry function
     vm->fp = vm->entryAddress;
 
+    // The current function to get instructions from
     NFUNC * currentFunction = &vm->functions[vm->fp];
+
+    // The current function's instruction pointer ( the instruction we want to fetch, decode, and execute )
     currentFunction->ip = 0;
+
+    // Indicate if we are switching functions. When this is set, we don't want to increase the instruction pointer
+    // as we have modified it as-per the guidance of an instruction. Either a call, or a return. In any case we want
+    // to ensure the bottom of the loop doesn't increase the ip
+    uint8_t switchingFunction = 0;
 
     while(FILE_GLOBAL_IS_VM_RUNNING)
     {
@@ -229,18 +236,32 @@ int vm_run(NVM* vm)
 
         if(res != STACK_OKAY)
         {
-            printf("DEBUG: INSTRUCTION NOT FOUND FROM IP");
-            return VM_RUN_ERROR_INSTRUCTION_NOT_FOUND;
+            /*
+                If the result isn't okay we attempt to return. This is because we are out of instructions 
+                and the developer decided to not use the 'ret' keyword because who does if you can go without?
+
+                PEOPLE WHO LIKE OPTIMIZED CODE! If you use the 'ret' keyword or 'exit' in main, 
+                then this sort of ugly doesn't have to happen
+            */
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("Current instruction stack empty, attempting to force a return.\n");
+#endif
+            goto vm_attempt_force_return;
         }
 
+        // The full first byte of the instruction
         uint8_t operation =  run_extract_one(ins, 7);
+
+        // The 'opcode' of the instruction (first 6 bits)
         uint8_t op = (operation & 0xFC);
+
+        // The 'id' of the isntruction (key information that tells us how to decode the rest of the instruction)
         uint8_t id = (operation & 0x03);
 
 
-        printf("Operation  :  %u\n", operation);
-        printf("op         :  %u\n", op);
-        printf("id         :  %u\n", id);
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+        printf("Operation  :  %u\t opcode  : %u\t id  : %u \n", operation, op, id);
+#endif
 
         int64_t lhs = 0;
         int64_t rhs = 0;
@@ -254,7 +275,9 @@ int vm_run(NVM* vm)
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = lhs+rhs;
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("result: %ld\n", vm->registers[dest]);
+#endif
                 break;
             }          
             case INS_SUB  :
@@ -264,7 +287,9 @@ int vm_run(NVM* vm)
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = lhs-rhs;
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("result: %ld\n", vm->registers[dest]);
+#endif
                 break;
             }          
             case INS_MUL  :
@@ -274,7 +299,9 @@ int vm_run(NVM* vm)
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = lhs*rhs;
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("result: %ld\n", vm->registers[dest]);
+#endif
                 break;
             }          
             case INS_DIV  :
@@ -286,7 +313,9 @@ int vm_run(NVM* vm)
                 if(rhs == 0){ vm->registers[dest] = 0; }
                 else { vm->registers[dest] = lhs/rhs; }
                 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("result: %ld\n", vm->registers[dest]);
+#endif
                 break;
             }          
             case INS_ADDD :
@@ -298,7 +327,9 @@ int vm_run(NVM* vm)
             
                 vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) + run_convert_to_double(rhs));
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("Result : %f\n", run_convert_to_double(lhs) + run_convert_to_double(rhs));
+#endif
                 break;
             }          
             case INS_SUBD :
@@ -310,7 +341,9 @@ int vm_run(NVM* vm)
             
                 vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) - run_convert_to_double(rhs));
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("Result : %f\n", run_convert_to_double(lhs) - run_convert_to_double(rhs));
+#endif
                 break;
             }          
             case INS_MULD :
@@ -322,7 +355,9 @@ int vm_run(NVM* vm)
             
                 vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) * run_convert_to_double(rhs));
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("Result : %f\n", run_convert_to_double(lhs) * run_convert_to_double(rhs));
+#endif
                 break;
             }          
             case INS_DIVD :
@@ -334,7 +369,9 @@ int vm_run(NVM* vm)
             
                 vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) / run_convert_to_double(rhs));
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("Result : %f\n", run_convert_to_double(lhs) / run_convert_to_double(rhs));
+#endif
                 break;
             }          
             case INS_BGT  :
@@ -554,8 +591,6 @@ int vm_run(NVM* vm)
                     stack_push(vm->registers[sourceReg], vm->functions[vm->fp].localStack, &okay);
                 }
                 assert(okay == STACK_OKAY);
-
-                printf("Pushed.\n");
                 break;
             }          
             case INS_POP  :
@@ -583,13 +618,77 @@ int vm_run(NVM* vm)
                 vm->functions[vm->fp].ip = destAddress; 
                 continue;
             }          
+
+            case INS_CS_SF :
+            {
+                // Call Stack Store function ( The function to return to when next return hits)
+                uint64_t func_from =  (uint64_t)run_extract_two(ins, 6) << 16| 
+                                      (uint64_t)run_extract_two(ins, 4);
+
+                int cssfOkay = 0;
+                stack_push(func_from, vm->callStack, &cssfOkay);
+
+                assert(cssfOkay == STACK_OKAY);
+                break;
+            }
+
+            case INS_CS_SR :
+            {
+                // Call Stack Store Region Of Interest ( Instruction Pointer )
+                uint64_t roi =  (uint64_t)run_extract_two(ins, 6) << 16| 
+                                (uint64_t)run_extract_two(ins, 4);
+                                    
+                int cssrOkay = 0;
+                stack_push(roi, vm->callStack, &cssrOkay);
+                
+                assert(cssrOkay == STACK_OKAY);
+                break;
+            }
+
             case INS_CALL :
             {
+                // Call
+                uint64_t destAddress =  (uint64_t)run_extract_two(ins, 6) << 16| 
+                                        (uint64_t)run_extract_two(ins, 4);
+
+                vm->fp = destAddress;
+
+                currentFunction = &vm->functions[vm->fp];
+
+                switchingFunction = 1;
+
+                currentFunction->ip = 0;
                 break;
             }          
             case INS_RET  :
             {
-                break;
+vm_attempt_force_return:
+                if(stack_is_empty(vm->callStack))
+                {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("Callstack empty. Exiting\n");
+#endif
+                    FILE_GLOBAL_IS_VM_RUNNING = 0;
+                    return 0;
+                }
+
+                int getRetData = 0;
+
+                uint64_t ret_roi = stack_pop(vm->callStack, &getRetData);
+                assert(getRetData == STACK_OKAY);
+
+                uint64_t func_to = stack_pop(vm->callStack, &getRetData);
+                assert(getRetData == STACK_OKAY);
+
+                vm->fp = func_to;
+
+                currentFunction = &vm->functions[vm->fp];
+
+                currentFunction->ip = ret_roi;
+
+                switchingFunction = 1;
+
+                break; // Yes
             }          
             case INS_EXIT :
             {
@@ -613,9 +712,18 @@ int vm_run(NVM* vm)
             }
         }
 
-        //  Increase the instruction pointer
+        //  Increase the instruction pointer if we aren't explicitly told not to
         //
-        currentFunction->ip++;
+        if(0 == switchingFunction)
+        {
+            currentFunction->ip++;
+        }
+        else
+        {
+        // This was only to ensure we didn't inc the ip, and since we didn't we will un-flag this
+        // so we can step through the next (funky fresh) function
+            switchingFunction = 0;
+        }
     }
 
     return 0;
@@ -949,6 +1057,12 @@ int vm_load_file(FILE* file, NVM * vm)
                     {
                         return VM_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS;
                     }
+                }
+
+                // If there are no constants present, then okay, move on. 
+                if (numberOfConstants == 0)
+                {
+                    currentStatus = IDLE;
                 }
             }
             else if (currentByte == INS_SEG_FUNC)

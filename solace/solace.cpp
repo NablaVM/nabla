@@ -1648,8 +1648,14 @@ bool instruction_call()
     }
 
     uint32_t currentAddress = nablaByteGen.getCurrentFunctionCouner();
-    uint32_t returnArea     = (currentFunction.instructions.size()/8) + 1;
+    uint32_t returnArea     = (currentFunction.instructions.size()/8) +3; // Have to add extra b/c hidden generated instructions
     uint32_t destination    = finalPayload.functions[currentPieces[1]];
+
+
+    std::cout << "Creating call from : " <<
+     currentFunction.name << " @ " << currentAddress << " ret area : "
+      << returnArea << " dest : " << currentPieces[1] << " @ " << finalPayload.functions[currentPieces[1]] << std::endl;
+
 
     std::vector<Bytegen::Instruction> ins = nablaByteGen.createCallInstruction(
         currentAddress,
@@ -2096,6 +2102,8 @@ bool instruction_end_function()
     addBytegenInstructionToPayload(funcEnd);
 
     finalPayload.functions[currentFunction.name] = functionAddress;
+
+    std::cout << "FUCN: " << currentFunction.name << " addr : " << functionAddress << std::endl;
 
     isSystemBuildingFunction = false;
     currentFunction.name = "UNDEFINED";
