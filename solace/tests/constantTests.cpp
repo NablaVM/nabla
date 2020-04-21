@@ -160,10 +160,10 @@ TEST(ConstantTests, doublePrecisionFp)
 
         ied.d = dval;
 
-        uint64_t packed = ied.ieee.negative  | 
-                            ied.ieee.exponent  |
-                            ied.ieee.mantissa0 |
-                            ied.ieee.mantissa1;
+        uint64_t packed = (uint64_t)ied.ieee.negative  << 63| 
+                          (uint64_t)ied.ieee.exponent  << 52|
+                          (uint64_t)ied.ieee.mantissa0 << 32|
+                          (uint64_t)ied.ieee.mantissa1 << 0;
 
         expected.push_back( SOLACE::MANIFEST::CONST_DBL      );
         expected.push_back( (packed & 0xFF00000000000000) >> 56 );
@@ -179,10 +179,10 @@ TEST(ConstantTests, doublePrecisionFp)
 
         if(expected.size() != actual.size()) { FAIL(".double construction byte length mismatch"); }
 
-       // for(int i = 0; i < expected.size(); i++)
-       // {
-       //     CHECK_EQUAL_TEXT(expected[i], actual[i], "Mistmatched byte in .double");
-       // }
+        for(int i = 0; i < expected.size(); i++)
+        {
+            CHECK_EQUAL_TEXT(expected[i], actual[i], "Mistmatched byte in .double");
+        }
     }
 }
 

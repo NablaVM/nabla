@@ -700,9 +700,6 @@ vm_attempt_force_return:
                 uint64_t stackEnd = stack_get_size(currentFunction->instructions);
                 if(currentFunction->ip == stackEnd)
                 {
-                    //  This will need to be updated in the future to check the call stack and check
-                    //  for return instructions. If there isn't any THEN this should happen. For now, we die
-                    //
                     FILE_GLOBAL_IS_VM_RUNNING = 0;
                     return 0;
                 }
