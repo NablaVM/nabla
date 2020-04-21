@@ -8,7 +8,7 @@
 */
 
 #include "solace.hpp"
-
+#include <fstream>
 #include <iostream>
 
 namespace
@@ -40,5 +40,17 @@ int main(int argc, char ** argv)
 
     std::cout << "Complete. " << bytes.size() << " bytes were generated." << std::endl;
 
+    std::ofstream out("solace.out", std::ios::out | std::ios::binary);
+    if(!out.is_open())
+    {
+        std::cerr << "Unable to open solace.out for writing" << std::endl;
+        return 1;
+    }
+
+    std::cout << "Writing out to solace.out...";
+
+    out.write(reinterpret_cast<const char*>(&bytes[0]), bytes.size());
+
+    std::cout << "complete." << std::endl;
     return 0;
 }

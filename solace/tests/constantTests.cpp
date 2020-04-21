@@ -160,10 +160,10 @@ TEST(ConstantTests, doublePrecisionFp)
 
         ied.d = dval;
 
-        uint64_t packed = ied.ieee.negative  | 
-                            ied.ieee.exponent  |
-                            ied.ieee.mantissa0 |
-                            ied.ieee.mantissa1;
+        uint64_t packed = (uint64_t)ied.ieee.negative  << 63| 
+                          (uint64_t)ied.ieee.exponent  << 52|
+                          (uint64_t)ied.ieee.mantissa0 << 32|
+                          (uint64_t)ied.ieee.mantissa1 << 0;
 
         expected.push_back( SOLACE::MANIFEST::CONST_DBL      );
         expected.push_back( (packed & 0xFF00000000000000) >> 56 );

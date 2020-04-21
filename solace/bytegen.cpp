@@ -99,6 +99,15 @@ namespace SOLACE
 
         address = functionCounter;
 
+        ins.bytes[0] = MANIFEST::INS_FUNCTION_CREATE;
+        ins.bytes[1] = (numInstructions & 0x00FF000000000000) >> 48 ;
+        ins.bytes[2] = (numInstructions & 0x0000FF0000000000) >> 40 ;
+        ins.bytes[3] = (numInstructions & 0x000000FF00000000) >> 32 ;
+        ins.bytes[4] = (numInstructions & 0x00000000FF000000) >> 24 ;
+        ins.bytes[5] = (numInstructions & 0x0000000000FF0000) >> 16 ;
+        ins.bytes[6] = (numInstructions & 0x000000000000FF00) >> 8  ;
+        ins.bytes[7] = (numInstructions & 0x00000000000000FF) >> 0  ;
+
         functionCounter++;
 
         return ins;
@@ -110,9 +119,11 @@ namespace SOLACE
 
     Bytegen::Instruction Bytegen::createFunctionEnd()
     {
-        std::cout << "Bytegen::createFunctionEnd()" << std::endl;
+        //std::cout << "Bytegen::createFunctionEnd()" << std::endl;
 
-        return Instruction{ MANIFEST::INS_FUNCTION_END, 0, 0, 0, 0, 0, 0, 0 };
+        return Instruction{ MANIFEST::INS_FUNCTION_END, 
+                            0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF 
+        };
     }
 
     // ------------------------------------------------------------------------
@@ -123,7 +134,7 @@ namespace SOLACE
     {
         std::vector<uint8_t> result;
 
-        std::cout << "Bytegen::createConstantString(" << val << ")" << std::endl;
+        //std::cout << "Bytegen::createConstantString(" << val << ")" << std::endl;
         
         result.push_back( MANIFEST::CONST_STR );
 
@@ -208,10 +219,10 @@ namespace SOLACE
 
         ied.d = dval;
 
-        uint64_t packed = ied.ieee.negative  | 
-                          ied.ieee.exponent  |
-                          ied.ieee.mantissa0 |
-                          ied.ieee.mantissa1;
+        uint64_t packed = (uint64_t)ied.ieee.negative  << 63| 
+                          (uint64_t)ied.ieee.exponent  << 52|
+                          (uint64_t)ied.ieee.mantissa0 << 32|
+                          (uint64_t)ied.ieee.mantissa1 << 0;
 
         result.push_back( MANIFEST::CONST_DBL      );
         result.push_back( (packed & 0xFF00000000000000) >> 56 );
@@ -330,7 +341,7 @@ namespace SOLACE
                 return ins; // Keep that compiler happy.
         }
 
-     //   std::cout << "Arg1: " << arg1 << " Arg2: " << arg2 << " Arg3: " << arg3 << std::endl;
+     //   //std::cout << "Arg1: " << arg1 << " Arg2: " << arg2 << " Arg3: " << arg3 << std::endl;
      //   dumpInstruction(ins);
 
         return ins;
@@ -595,6 +606,70 @@ namespace SOLACE
         ins.push_back(call);
 
         return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createSegConstInstruction
+    // ------------------------------------------------------------------------
+
+    std::vector<uint8_t> Bytegen::createSegConstInstruction(uint64_t count)
+    {
+        std::vector<uint8_t> result;
+
+        result.push_back( MANIFEST::INS_SEG_CONST );
+        result.push_back( (count & 0xFF00000000000000) >> 56 );
+        result.push_back( (count & 0x00FF000000000000) >> 48 );
+        result.push_back( (count & 0x0000FF0000000000) >> 40 );
+        result.push_back( (count & 0x000000FF00000000) >> 32 );
+        result.push_back( (count & 0x00000000FF000000) >> 24 );
+        result.push_back( (count & 0x0000000000FF0000) >> 16 );
+        result.push_back( (count & 0x000000000000FF00) >> 8  );
+        result.push_back( (count & 0x00000000000000FF) >> 0  );
+
+        return result;
+    }
+
+    // ------------------------------------------------------------------------
+    // createSegFuncInstruction
+    // ------------------------------------------------------------------------
+
+    std::vector<uint8_t> Bytegen::createSegFuncInstruction(uint64_t entryAddress)
+    {
+        std::vector<uint8_t> result;
+
+        result.push_back( MANIFEST::INS_SEG_FUNC );
+        result.push_back( (entryAddress & 0xFF00000000000000) >> 56 );
+        result.push_back( (entryAddress & 0x00FF000000000000) >> 48 );
+        result.push_back( (entryAddress & 0x0000FF0000000000) >> 40 );
+        result.push_back( (entryAddress & 0x000000FF00000000) >> 32 );
+        result.push_back( (entryAddress & 0x00000000FF000000) >> 24 );
+        result.push_back( (entryAddress & 0x0000000000FF0000) >> 16 );
+        result.push_back( (entryAddress & 0x000000000000FF00) >> 8  );
+        result.push_back( (entryAddress & 0x00000000000000FF) >> 0  );
+
+        return result;
+    }
+    
+    // ------------------------------------------------------------------------
+    // createSegBinEOF
+    // ------------------------------------------------------------------------
+
+    std::vector<uint8_t> Bytegen::createSegBinEOF()
+    {
+        std::vector<uint8_t> result;
+
+        // In the future I'd like to dump a checksum here so we are using
+        // a vector. For now, we just load 0xFF
+        result.push_back( MANIFEST::INS_SEG_BEOF );
+        result.push_back( 0xFF );
+        result.push_back( 0xFF );
+        result.push_back( 0xFF );
+        result.push_back( 0xFF );
+        result.push_back( 0xFF );
+        result.push_back( 0xFF );
+        result.push_back( 0xFF );
+
+        return result;
     }
 
 } // End of namespace

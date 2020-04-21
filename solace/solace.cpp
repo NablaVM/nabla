@@ -128,9 +128,17 @@ namespace
 
     Bytegen nablaByteGen;
 
+    struct constantdata
+    {
+        std::string name;
+        std::vector<uint8_t> data;
+    };
+
     struct Payload
     {
-        std::unordered_map<std::string, std::vector<uint8_t> > constants;      // Constants
+        //std::unordered_map<std::string, std::vector<uint8_t> > constants;      // Constants
+
+        std::vector<constantdata> constants;
 
         std::map<std::string, uint32_t>              functions;      // Functions
 
@@ -328,6 +336,18 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     }
 
     /*
+        Create the id that indicates the constant segment is starting
+    */
+    std::vector<uint8_t> constantStartIns = nablaByteGen.createSegConstInstruction(
+        (uint64_t) finalPayload.constants.size()
+        );
+
+    for(auto &b : constantStartIns)
+    {
+        finalBytes.push_back(b);
+    }
+
+    /*
         Load all of the constants
     */
     if(isParserVerbose) { std::cout << "Loading " << finalPayload.constants.size() << " constants" << std::endl; }
@@ -336,16 +356,30 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     {
         if(isParserVerbose) 
         { 
-            std::cout << "\tConstant: " << c.first << " [" << c.second.size() << "] bytes..." << std::endl;
+            std::cout << "\tConstant: " << c.name << " [" << c.data.size() << "] bytes..." << std::endl;
         }
 
-        for(auto &b : c.second)
+        for(auto &b : c.data)
         {
             finalBytes.push_back(b);
         }
     }
 
     if(isParserVerbose) { std::cout << "Complete" << std::endl; }
+
+    /*
+        Create the id that indicates the function segment is starting
+    */
+    uint64_t entryPointAddress = finalPayload.functions[finalPayload.entryPoint];
+
+    std::vector<uint8_t> funcSegment = nablaByteGen.createSegFuncInstruction(
+        entryPointAddress
+    );
+
+    for(auto &b : funcSegment)
+    {
+        finalBytes.push_back(b);
+    }
 
     /*
         Load all of the bytes
@@ -357,6 +391,17 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     }
     std::cout << "complete" << std::endl;
 
+    /*
+        Create the id that indicates the end of function
+    */
+    std::vector<uint8_t> binEnd = nablaByteGen.createSegBinEOF();
+
+    for(auto &b : binEnd)
+    {
+        finalBytes.push_back(b);
+    }
+
+    return true;
 }
 
 // -----------------------------------------------
@@ -634,7 +679,14 @@ inline static bool isString(std::string piece)
 
 inline static bool isConstInPayload(std::string name)
 {
-    return (finalPayload.constants.find(name) != finalPayload.constants.end());
+    for(auto &c : finalPayload.constants)
+    {
+        if(name == c.name)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 // -----------------------------------------------
@@ -643,9 +695,16 @@ inline static bool isConstInPayload(std::string name)
 
 inline static uint32_t getConstIndex(std::string name)
 {
-    std::unordered_map<std::string, std::vector<uint8_t> >::iterator iter = finalPayload.constants.find(name);
-
-    return std::distance(finalPayload.constants.begin(), iter);
+    uint32_t i = 0;
+    for(auto &c : finalPayload.constants)
+    {
+        if(name == c.name)
+        {
+            return i;
+        }
+        i++;
+    }
+    return i;
 }
 
 // -----------------------------------------------
@@ -672,9 +731,14 @@ inline static bool wasFileParsed(std::string name)
 
 inline static void addBytegenInstructionToPayload(Bytegen::Instruction ins)
 {
-    finalPayload.bytes.push_back(ins.bytes[0]); finalPayload.bytes.push_back(ins.bytes[1]); finalPayload.bytes.push_back(ins.bytes[2]);
-    finalPayload.bytes.push_back(ins.bytes[3]); finalPayload.bytes.push_back(ins.bytes[4]); finalPayload.bytes.push_back(ins.bytes[5]);
-    finalPayload.bytes.push_back(ins.bytes[6]); finalPayload.bytes.push_back(ins.bytes[7]);
+    finalPayload.bytes.push_back(ins.bytes[0]); 
+    finalPayload.bytes.push_back(ins.bytes[1]); 
+    finalPayload.bytes.push_back(ins.bytes[2]);
+    finalPayload.bytes.push_back(ins.bytes[3]); 
+    finalPayload.bytes.push_back(ins.bytes[4]); 
+    finalPayload.bytes.push_back(ins.bytes[5]);
+    finalPayload.bytes.push_back(ins.bytes[6]); 
+    finalPayload.bytes.push_back(ins.bytes[7]);
 }
 
 // -----------------------------------------------
@@ -683,10 +747,14 @@ inline static void addBytegenInstructionToPayload(Bytegen::Instruction ins)
 
 inline static void addBytegenInstructionToCurrentFunction(Bytegen::Instruction ins)
 {
-    currentFunction.instructions.push_back(ins.bytes[0]); currentFunction.instructions.push_back(ins.bytes[4]);
-    currentFunction.instructions.push_back(ins.bytes[1]); currentFunction.instructions.push_back(ins.bytes[5]);
-    currentFunction.instructions.push_back(ins.bytes[2]); currentFunction.instructions.push_back(ins.bytes[6]);
-    currentFunction.instructions.push_back(ins.bytes[3]); currentFunction.instructions.push_back(ins.bytes[7]);
+    currentFunction.instructions.push_back(ins.bytes[0]); 
+    currentFunction.instructions.push_back(ins.bytes[1]);
+    currentFunction.instructions.push_back(ins.bytes[2]); 
+    currentFunction.instructions.push_back(ins.bytes[3]);
+    currentFunction.instructions.push_back(ins.bytes[4]); 
+    currentFunction.instructions.push_back(ins.bytes[5]);
+    currentFunction.instructions.push_back(ins.bytes[6]); 
+    currentFunction.instructions.push_back(ins.bytes[7]);
 }
 
 // -----------------------------------------------
@@ -1361,7 +1429,7 @@ bool instruction_blt()
         return false;
     }
 
-    return branch_instruction(Bytegen::BranchTypes::BGT);
+    return branch_instruction(Bytegen::BranchTypes::BLT);
 }
 
 // -----------------------------------------------
@@ -1451,7 +1519,7 @@ bool instruction_bltd()
         return false;
     }
 
-    return branch_instruction(Bytegen::BranchTypes::BLT);
+    return branch_instruction(Bytegen::BranchTypes::BLTD);
 }
 
 // -----------------------------------------------
@@ -1580,8 +1648,14 @@ bool instruction_call()
     }
 
     uint32_t currentAddress = nablaByteGen.getCurrentFunctionCouner();
-    uint32_t returnArea     = (currentFunction.instructions.size()/8) + 1;
+    uint32_t returnArea     = (currentFunction.instructions.size()/8) +3; // Have to add extra b/c hidden generated instructions
     uint32_t destination    = finalPayload.functions[currentPieces[1]];
+
+
+    std::cout << "Creating call from : " <<
+     currentFunction.name << " @ " << currentAddress << " ret area : "
+      << returnArea << " dest : " << currentPieces[1] << " @ " << finalPayload.functions[currentPieces[1]] << std::endl;
+
 
     std::vector<Bytegen::Instruction> ins = nablaByteGen.createCallInstruction(
         currentAddress,
@@ -1649,8 +1723,8 @@ bool instruction_create_label()
         return false;
     }
 
-    // Set the label ...  Current location + 1 will get us the instruction that we need to be at
-    currentFunction.labels[label] = (currentFunction.instructions.size()/8) + 1;
+    // Set the label
+    currentFunction.labels[label] = (currentFunction.instructions.size()/8) ;
 
     // Labels don't have bytes generated with them, instead we keep track of them for the life of the function and 
     // place their instruction location in corresponding branches
@@ -1803,7 +1877,9 @@ bool instruction_directive()
         }
 
         // Store it
-        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantString(currentPieces[1]);
+        finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantString(currentPieces[2])});
+
+
     }
 
     // ----------------------------------------------------------------------
@@ -1855,10 +1931,10 @@ bool instruction_directive()
             return false;
         }
 
-        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantInt(
+        finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantInt(
             givenInt, 
             integerType      
-        );
+        )});
     }
     // ----------------------------------------------------------------------
     //  Create a .double constant
@@ -1899,7 +1975,7 @@ bool instruction_directive()
         double givenDouble = std::stod(currentPieces[2]);
 
         // Store it
-        finalPayload.constants[currentPieces[1]] = nablaByteGen.createConstantDouble(givenDouble);
+        finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantDouble(givenDouble)});
     }
     // ----------------------------------------------------------------------
     //  Include a file
@@ -2006,9 +2082,8 @@ bool instruction_end_function()
     uint32_t functionAddress = 0;
 
     Bytegen::Instruction funcCreate = nablaByteGen.createFunctionStart(currentFunction.name, 
-                                                                       currentFunction.instructions.size(), 
+                                                                       (uint64_t)currentFunction.instructions.size(), 
                                                                        functionAddress);
-
     if(isParserVerbose)
     {
          std::cout << "Created function : " << currentFunction.name << " at address " << (int)functionAddress
@@ -2027,6 +2102,8 @@ bool instruction_end_function()
     addBytegenInstructionToPayload(funcEnd);
 
     finalPayload.functions[currentFunction.name] = functionAddress;
+
+    std::cout << "FUCN: " << currentFunction.name << " addr : " << functionAddress << std::endl;
 
     isSystemBuildingFunction = false;
     currentFunction.name = "UNDEFINED";

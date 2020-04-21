@@ -42,7 +42,7 @@ namespace SOLACE
         constexpr uint8_t INS_BNED            = 0xC8; 
 
         constexpr uint8_t INS_MOV             = 0xCC;
-        constexpr uint8_t INS_LDA             = 0xD0;
+//        constexpr uint8_t INS_LDA             = 0xD0; // No longer in use
         constexpr uint8_t INS_LDB             = 0xD4;
         constexpr uint8_t INS_STB             = 0xD8;
         constexpr uint8_t INS_PUSH            = 0xDC;
@@ -83,8 +83,12 @@ namespace SOLACE
         constexpr uint8_t LOCAL_STACK         = 0xEE;
 
         // Forbidden Instructions
-        constexpr uint8_t INS_CS_SF               = 0x68;   // Store function
-        constexpr uint8_t INS_CS_SR               = 0x6C;   // Store region
+        constexpr uint8_t INS_CS_SF           = 0x68;   // Store function
+        constexpr uint8_t INS_CS_SR           = 0x6C;   // Store region
+
+        constexpr uint8_t INS_SEG_CONST       = 0x5C;   // Segment for constants
+        constexpr uint8_t INS_SEG_FUNC        = 0x60;   // Segment for functions
+        constexpr uint8_t INS_SEG_BEOF        = 0x64;   // Binary EOF
         
 
         //  This is a helper method for the sake of debugging. I do not intend on keeping this here in the long run.
@@ -112,7 +116,7 @@ namespace SOLACE
             std::cout << "INS_BEQD            =" << std::hex << (int)INS_BEQD            << " \t| " << std::bitset<8>(INS_BEQD           ) << std::endl;
             std::cout << "INS_BNED            =" << std::hex << (int)INS_BNED            << " \t| " << std::bitset<8>(INS_BNED           ) << std::endl;
             std::cout << "INS_MOV             =" << std::hex << (int)INS_MOV             << " \t| " << std::bitset<8>(INS_MOV            ) << std::endl;
-            std::cout << "INS_LDA             =" << std::hex << (int)INS_LDA             << " \t| " << std::bitset<8>(INS_LDA            ) << std::endl;
+ //           std::cout << "INS_LDA             =" << std::hex << (int)INS_LDA             << " \t| " << std::bitset<8>(INS_LDA            ) << std::endl;
             std::cout << "INS_LDB             =" << std::hex << (int)INS_LDB             << " \t| " << std::bitset<8>(INS_LDB            ) << std::endl;
             std::cout << "INS_STB             =" << std::hex << (int)INS_STB             << " \t| " << std::bitset<8>(INS_STB            ) << std::endl;
             std::cout << "INS_PUSH            =" << std::hex << (int)INS_PUSH            << " \t| " << std::bitset<8>(INS_PUSH           ) << std::endl;
@@ -162,10 +166,10 @@ namespace SOLACE
     50	| 01010000
     54	| 01010100
     58	| 01011000
+    [ BELOW ARE CURRENT INSTRUCTIONS ]
     5c	| 01011100
     60	| 01100000
     64	| 01100100
-    [ BELOW ARE CURRENT INSTRUCTIONS ]
     68	| 01101000
     6c	| 01101100
 

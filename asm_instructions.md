@@ -33,7 +33,7 @@ To access a function, a 'call' must occur, you can not jump to a function. Furth
 |   .int32	    |     42        |   emit intN to global stack	                |
 |   .int64	    |     42        |   emit intN to global stack	                |
 |   .double	    |   3.14 	    |   emit 3.14 to global stack                	|
-|   .include	|  "file.asm" 	|   add "file,asm" to source                   	|
+|   .include	|  "file.asm" 	|   add "file,asm" to source    (TO BE REMOVED) |
 
 ### In-place numerical values
 
@@ -59,9 +59,9 @@ Abbreviations :
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
 |---              |---        |---            |---           |---                                           |
 |     add         |        r  |    r , *n     |   r , *n     |  Add Arg2 and Arg3, Store in Arg1            |
-|     sub         |        r  |    r , *n     |   r , *n     |  Sub Arg3 from Arg3, Store in Arg1           |
+|     sub         |        r  |    r , *n     |   r , *n     |  Sub Arg3 from Arg2, Store in Arg1           |
 |     mul         |        r  |    r , *n     |   r , *n     |  Mul Arg2 and Arg3, Store in Arg1            |
-|     div         |        r  |    r , *n     |   r , *n     |  Div Arg3 by  Arg2, Store in Arg1            |
+|     div         |        r  |    r , *n     |   r , *n     |  Div Arg2 by  Arg3, Store in Arg1            |
 |     add.d       |        r  |      r        |     r        |  Add (double) Arg2 and Arg3, Store in Arg1   |
 |     sub.d       |        r  |      r        |     r        |  Sub (double) Arg3 from Arg3, Store in Arg1  |
 |     mul.d       |        r  |      r        |     r        |  Mul (double) Arg2 and Arg3, Store in Arg1   |
@@ -175,7 +175,7 @@ with '1' just for the sake of demonstration
     INS    ID   REGISTER    [ ---- INTEGER ---- ]   REGISTER    [ -------- UNUSED --------------]
     111111 10 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-    Case 10:
+    Case 11:
     INS    ID   REGISTER    [ ---- INTEGER ---- ]   [ ---- INTEGER ---- ]   [ ---- UNUSED ---- ]
     111111 11 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
     
@@ -266,7 +266,7 @@ a return will occur.
 Function start / end are special instructions that are scanned for upon initial program load
 to tell the VM how to structure its self. 
 
-**function start**
+**function start** - Currently allows 2^48 instructions per function
 
     INS    ID   [ --------------------- NUM INSTRUCTIONS IN FUNC ------------------------------ ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
@@ -311,7 +311,7 @@ id bits ignored, size is 9 bytes fixed
 
 In this system, there are multiple stacks, but only 2 that can be accessed at any given time programatically. The functional stack, and the global stack. Each slot of each stack is 8 bytes. 
 
-### Functional stack
+### Local stack
 
 A stack accessed by 'ls' for 'local stack' that accesses the stack preserved for the current function. Once the system leaves the function, the local stack is blown away. 
 
@@ -319,11 +319,9 @@ A stack accessed by 'ls' for 'local stack' that accesses the stack preserved for
 
 A stack accessed by 'gs' for 'global stack' that accesses the stack used across the entire program. Great care should be taken when using this stack, as there is no garbage collection in the scope of what I care to do here.
 
-### System stack
+### Call stack
 
 Not able to be accessed by software directly. The system stack is pushed and popped by calls and returns.
-
-
 
 ## Forbidden Instructions 
 
@@ -337,7 +335,6 @@ Tell the system to put a function address in the call stack
       INS      [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
     11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-
 **callstack_store_roi**
 
 Tell the system to put a function location in the call stack
@@ -347,3 +344,24 @@ Tell the system to put a function location in the call stack
 
 These instructions are used in the back-end to make calls and returns work. When a call is written by a user, these are generated
 by the byte gen to tell the system to put the function and region the call came from such-that returns can identify where to go to
+
+**begin_constant_segment**
+
+Tell the system that the following area is the binary is constants
+
+      INS      [ ---------------------------------- Number of consants ----------------------------------- ]
+    11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**begin_function_segment**
+
+Tell the system that the following are is functions.
+
+      INS      [ ---------------------------------- Entry Function Address ------------------------------- ]
+    11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**binary_end**
+
+Right now the data is unused, but eventualy the unused section will contain a binary checksum
+
+      INS      [ ----------------------------------- Unused ---------------------------------- ]
+    11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
