@@ -33,7 +33,7 @@ To access a function, a 'call' must occur, you can not jump to a function. Furth
 |   .int32	    |     42        |   emit intN to global stack	                |
 |   .int64	    |     42        |   emit intN to global stack	                |
 |   .double	    |   3.14 	    |   emit 3.14 to global stack                	|
-|   .include	|  "file.asm" 	|   add "file,asm" to source                   	|
+|   .include	|  "file.asm" 	|   add "file,asm" to source    (TO BE REMOVED) |
 
 ### In-place numerical values
 
@@ -311,7 +311,7 @@ id bits ignored, size is 9 bytes fixed
 
 In this system, there are multiple stacks, but only 2 that can be accessed at any given time programatically. The functional stack, and the global stack. Each slot of each stack is 8 bytes. 
 
-### Functional stack
+### Local stack
 
 A stack accessed by 'ls' for 'local stack' that accesses the stack preserved for the current function. Once the system leaves the function, the local stack is blown away. 
 
@@ -319,11 +319,9 @@ A stack accessed by 'ls' for 'local stack' that accesses the stack preserved for
 
 A stack accessed by 'gs' for 'global stack' that accesses the stack used across the entire program. Great care should be taken when using this stack, as there is no garbage collection in the scope of what I care to do here.
 
-### System stack
+### Call stack
 
 Not able to be accessed by software directly. The system stack is pushed and popped by calls and returns.
-
-
 
 ## Forbidden Instructions 
 

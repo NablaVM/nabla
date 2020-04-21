@@ -1,3 +1,12 @@
+/*
+    Josh A. Bosley 2020
+
+    Function naming:
+        vm_*    functions are able to be accessed outside of this source 
+        load_*  functions are used internally during the 'loading' phase of operation
+        run_*   functions are used internally during the 'running' phase of operation
+*/
+
 #include "vm.h"     // Vm header
 #include "vmrc.h"   // Return codes
 #include "vmins.h"  // Instructions
@@ -185,6 +194,10 @@ uint64_t run_convert_double_to_uint64(double val)
     // Return uint64_t
     return d.val;
 }
+
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
 
 uint8_t run_check_double_equal(double lhs, double rhs)
 {
@@ -679,6 +692,12 @@ vm_attempt_force_return:
 
                 uint64_t func_to = stack_pop(vm->callStack, &getRetData);
                 assert(getRetData == STACK_OKAY);
+
+                // Clear out the function's local call stack
+                while(0 == stack_is_empty(currentFunction->localStack))
+                {
+                    int k; stack_pop(currentFunction->localStack, &k); assert(k == STACK_OKAY);
+                }
 
                 vm->fp = func_to;
 
