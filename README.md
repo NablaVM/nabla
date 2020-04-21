@@ -1,7 +1,5 @@
 
-<center> <h1> <b> ∇ </b> </h1> </center>
-<center> <h1> <b> Nabla </b> </h1> </center>
-
+<center> <h1> <b> ∇ Nabla </b> </h1> </center>
 
 ### About
 This is the Nabla virtual machine project. 
