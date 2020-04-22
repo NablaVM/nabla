@@ -280,7 +280,7 @@ int load_function(NVM* vm, FILE* file)
     // Now that the instructions are loaded, we increase the function pointer as we are using it to access
     // the function storage for loading
     vm->fp++;
-
+    vm->numberOfFunctions++;
     return 0;
 }
 
@@ -316,6 +316,7 @@ int bin_load_vm(FILE* file, NVM * vm)
 
     enum LoadStatus currentStatus = IDLE;
 
+    vm->numberOfFunctions = 0;
     uint64_t numberOfConstants      = 0;
     uint64_t expectedEntryAddress   = 0;
 

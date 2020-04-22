@@ -90,9 +90,9 @@ namespace HARP
     //
     // --------------------------------------------
     
-    std::vector<int64_t> Analyzer::getGlobalStack()
+    std::vector<uint64_t> Analyzer::getGlobalStack()
     {
-        std::vector<int64_t> result;
+        std::vector<uint64_t> result;
 
         if(!loaded)
         {
@@ -102,11 +102,100 @@ namespace HARP
         while(!stack_is_empty(vm->globalStack))
         {
             int okay = -255;
-            int64_t value = stack_pop(vm->globalStack, &okay);
+            uint64_t value = (uint64_t)stack_pop(vm->globalStack, &okay);
 
             result.push_back(value);
         }
 
         return result;
+    }
+
+    // --------------------------------------------
+    //
+    // --------------------------------------------
+    
+    std::vector<uint64_t> Analyzer::getCallStack()
+    {
+        std::vector<uint64_t> result;
+
+        if(!loaded)
+        {
+            return result;
+        }
+
+        while(!stack_is_empty(vm->callStack))
+        {
+            int okay = -255;
+            uint64_t value = (uint64_t)stack_pop(vm->callStack, &okay);
+
+            result.push_back(value);
+        }
+
+        return result;
+    }
+
+    // --------------------------------------------
+    //
+    // --------------------------------------------
+    
+    std::vector<int64_t> Analyzer::getRegisters()
+    {
+        std::vector<int64_t> result;
+
+        if(!loaded)
+        {
+            return result;
+        }
+
+        for(int i = 0 ; i < 16; i++)
+        {
+            result.push_back(vm->registers[i]);
+        }
+
+        return result;
+    }
+
+    // --------------------------------------------
+    //
+    // --------------------------------------------
+    
+    uint64_t Analyzer::getFunctionPointer()
+    {
+        return vm->fp;
+    }
+
+    // --------------------------------------------
+    //
+    // --------------------------------------------
+    
+    uint64_t Analyzer::getEntryAddress()
+    {
+        return vm->entryAddress;
+    }
+
+    // --------------------------------------------
+    //
+    // --------------------------------------------
+    
+    std::vector<Analyzer::FunctionInfo> Analyzer::getFunctions()
+    {
+        std::vector<FunctionInfo> functions;
+
+        for(uint64_t i = 0; i < vm->numberOfFunctions; i++)
+        {
+            FunctionInfo fi;
+            fi.address = i;
+            
+            while(!stack_is_empty(vm->functions[i].instructions))
+            {
+                int okay = -255;
+                uint64_t value = (uint64_t)stack_pop(vm->functions[i].instructions, &okay);
+                fi.instructions.push_back(value);
+            }
+
+            functions.push_back(fi);
+        }
+
+        return functions;
     }
 }

@@ -20,6 +20,7 @@ struct VM
     uint8_t  id;             // Specific vm id
     uint64_t fp;             // Function pointer
     uint64_t entryAddress;   // Entry function address listed in binary
+    uint64_t numberOfFunctions;
     int64_t  registers[16];  // VM Registers
     NablaStack globalStack;  // Shared 'global' stack
     NablaStack callStack;    // Call stack

@@ -20,6 +20,14 @@ namespace HARP
     class Analyzer
     {
     public:
+
+        //! \brief A way to represent a function with its address
+        struct FunctionInfo
+        {
+            uint64_t address;
+            std::vector<uint64_t> instructions;
+        };
+
         //! \brief Construct an analyzer
         Analyzer();
 
@@ -33,7 +41,18 @@ namespace HARP
         //! \returns The contents of the global stack
         //! \pre Binary should be loaded via loadBin
         //! \post Vm global stack will be emptied 
-        std::vector<int64_t> getGlobalStack();
+        std::vector<uint64_t> getGlobalStack();
+
+        std::vector<uint64_t> getCallStack();
+
+        std::vector<int64_t> getRegisters();
+
+        uint64_t getFunctionPointer();
+
+        uint64_t getEntryAddress();
+
+        std::vector<FunctionInfo> getFunctions();
+
         
     private:
         bool loaded;
