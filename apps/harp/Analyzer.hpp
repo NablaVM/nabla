@@ -1,7 +1,9 @@
 #ifndef HARP_COMPOSER_HPP
 #define HARP_COMPOSER_HPP
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 extern "C" 
 {
@@ -26,8 +28,15 @@ namespace HARP
         //! \retval true The file was loaded 
         //! \retval false The file failed to load
         bool loadBin(std::string file);
+
+        //! \brief Get the contents of the global stack
+        //! \returns The contents of the global stack
+        //! \pre Binary should be loaded via loadBin
+        //! \post Vm global stack will be emptied 
+        std::vector<int64_t> getGlobalStack();
         
     private:
+        bool loaded;
         NablaVirtualMachine vm;
     };
 }

@@ -88,6 +88,9 @@ int main(int argc, char ** argv)
         return 1;
     }
 
+    std::vector<int64_t> gs = analyzer.getGlobalStack();
+
+    std::cout << "Global stack has : " << gs.size() << " constants" << std::endl;
 
     return 0;
 }

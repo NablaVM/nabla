@@ -6,6 +6,7 @@ extern "C"
     #include <stdio.h>
     #include "vm.h"
     #include "binloader.h"
+    #include "stack.h"
 }
 
 namespace HARP
@@ -14,7 +15,7 @@ namespace HARP
     //
     // --------------------------------------------
 
-    Analyzer::Analyzer()
+    Analyzer::Analyzer() : loaded(false)
     {
         // Create the virutal machine
         vm = vm_new();
@@ -77,10 +78,35 @@ namespace HARP
                 return false;
 
             default:
-                return true;
+                break;
         }
         
         fclose(file_in);
+        loaded = true;
         return true;
+    }
+
+    // --------------------------------------------
+    //
+    // --------------------------------------------
+    
+    std::vector<int64_t> Analyzer::getGlobalStack()
+    {
+        std::vector<int64_t> result;
+
+        if(!loaded)
+        {
+            return result;
+        }
+
+        while(!stack_is_empty(vm->globalStack))
+        {
+            int okay = -255;
+            int64_t value = stack_pop(vm->globalStack, &okay);
+
+            result.push_back(value);
+        }
+
+        return result;
     }
 }
