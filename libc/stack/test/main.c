@@ -1,5 +1,4 @@
 #include "../stack.h"
-#include "../stackrc.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +10,6 @@
 // -----------------------------------------------
 void pushPop()
 {
-    printf("Push & pop tests...");
     int result;
 
     // Each stack frame is 8 bytes. 
@@ -54,8 +52,6 @@ void pushPop()
     }
 
     assert(stack_is_empty(stack) == 1);
-
-    printf("complete\n");
 }
 
 
@@ -64,9 +60,8 @@ void pushPop()
 // -----------------------------------------------
 int main(void)
 {
+    printf("Starting libc stack tests...");
     pushPop();
-
-
-    printf("\nAll tests completed\n");
+    printf("complete\n");
     exit(EXIT_SUCCESS);
 }

@@ -19,3 +19,8 @@ add_subdirectory(apps/harp)
 # -------------------------------------------------
 
 add_subdirectory(apps/vm)
+
+# -------------------------------------------------
+#   libc tests (Non-CPPU Tests)
+# -------------------------------------------------
+add_subdirectory(libc/stack/test)
