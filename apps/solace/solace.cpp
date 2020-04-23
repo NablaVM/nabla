@@ -1164,9 +1164,19 @@ bool instruction_mov()
         return false;
     }
 
-    if(!isRegister(currentPieces[2]))
+    NABLA::Bytegen::MovSetup setup;
+
+    if(isRegister(currentPieces[2]))
     {
-        std::cerr << "Argument 2 of 'mov' must be a register" << std::endl;
+        setup = NABLA::Bytegen::MovSetup::REG_REG;
+    }
+    else if (isDirectNumerical(currentPieces[2]))
+    {
+        setup = NABLA::Bytegen::MovSetup::REG_NUM;
+    }
+    else
+    {
+        std::cerr << "Argument 2 of 'mov' must be a register or a direct numerical constant" << std::endl;
         return false;
     }
 
@@ -1178,7 +1188,7 @@ bool instruction_mov()
 
     // Generate the bytes and add to the current function
     addBytegenInstructionToCurrentFunction(
-        nablaByteGen.createMovInstruction(reg1, reg2)
+        nablaByteGen.createMovInstruction(setup, reg1, reg2)
         );
     return true;
 }

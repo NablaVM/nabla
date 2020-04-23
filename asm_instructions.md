@@ -90,24 +90,14 @@ numbers, if the value in a given 'd' register is not a floating point, the behav
 Branch instructions assume that the conditional values stored in registers are integer values unless 'd' is specified. 
 If 'd' is specified and the value in a given register is not a floating point, the behaviour is undefined.
 
-Currently branches must branch to existing labels, that is, labels that come before them within the function.
-
 ## Loading / Storing Instructions
 |  Instruction     |  Arg1     |  Arg2    |  Description                                 |
 |---               |---        |---       |---                                           |
-|      mov         |    r      |   r      |  Move data from Arg2 into Arg1               |
+|      mov         |    r      |   r, *n  |  Move data from Arg2 into Arg1 (8-bit max *n)|
 |      ldb         |    r      |   *sp    |  Load data from Arg2 (address) into Arg1     |
 |      stb         |   *sp     |   r      |  Store Arg2 data at Arg1 (arg1=addr)         |
 |      push        |    sp     |   r      |  Data from Arg2 into Arg1                    |
 |      pop         |    sp     |   r      |  Data from Arg2 into Arg1                    |
-
-
-**DEVELOPMENT NOTE:** Consider adding in-place int and double placement in PUSH, as-well-as *i, *s, and *d
-
-*Note:* Moves destroy data in source. It will 0-out the data.
-*Note:* ldb assumes data from Arg2 represents an address, and will attempt to pull data from whatever address it assumes. We can leverage a dReg to load string data if we want to, but performing arithmatic operations on data representing a string will result in undefined behaviour.
-*Note:* A mix of rRegs and dRegs can be used for mov and ldb, but it is important to note that since rRegs store only 4 bytes,
-if you move rReg data to dReg data and attempt an arithmatic operation that is meant for dRegs undefined behaviour will result. 
 
 ## Jump / Call
 
@@ -201,15 +191,17 @@ Here is an example of a bit layout for a branch operation
 
 ### Load / Store operations
 
-The first 6 bytes represent the specific instruction (mov / movd / etc)
-
-Since not all load / store operations are the same their bit fields differ slightly by specific instruction.
-For all instructions except ldw/ldwd the ID bits don't matter. 
-
 **mov** - Move
+
+Indication Bits:
+00 - Register, Register
+01 - Register, Numerical Constant
 
     INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+    INS    ID   REGISTER     INTEGER    [ ----------------------- UNUSED ---------------------- ]
+    111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 **stb** - Store bytes
 

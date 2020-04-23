@@ -84,6 +84,8 @@
 
     mov r0 r15
 
+    mov r1 $55
+
     ; Branch tests 
 
 
