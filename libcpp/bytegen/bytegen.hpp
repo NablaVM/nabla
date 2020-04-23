@@ -99,6 +99,15 @@ namespace NABLA
         };
 
         //!
+        //! \brief Helper to determine the inputs of mov creation functions
+        //!
+        enum class MovSetup
+        {
+            REG_REG,    //! Arg1 is a register, and so is arg 2
+            REG_NUM     //! Arg1 is a register, and arg2 is a number
+        };
+
+        //!
         //! \brief Create a bytegen
         //!
         Bytegen();
@@ -156,9 +165,10 @@ namespace NABLA
         Instruction createJumpInstruction(uint32_t location);
 
         //! \brief Create a move instruction
+        //! \param setup Flag for what argument 2 represents (reg v.s num)
         //! \param reg1  Register 1 (dest)
         //! \param reg2  Register 2 (src)
-        Instruction createMovInstruction(uint8_t reg1, uint8_t reg2);
+        Instruction createMovInstruction(MovSetup setup, uint8_t reg1, uint8_t reg2);
 
         //! \brief Create a push instruction
         //! \param stack The stack to push to

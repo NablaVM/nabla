@@ -61,16 +61,35 @@ TEST(MovTests, AllMovTests)
     {
         NABLA::Bytegen::Instruction expectedIns;
 
-        expectedIns.bytes[0] = INS_MOV;
-        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 15)) ;
-        expectedIns.bytes[2] = integerToRegister(getRandom8(0, 15)) ;
-        expectedIns.bytes[3] = 0xFF;
-        expectedIns.bytes[4] = 0xFF;
-        expectedIns.bytes[5] = 0xFF;
-        expectedIns.bytes[6] = 0xFF;
-        expectedIns.bytes[7] = 0xFF;
+        NABLA::Bytegen::MovSetup setup = (j % 2 == 0 ) ? NABLA::Bytegen::MovSetup::REG_REG :
+                                                         NABLA::Bytegen::MovSetup::REG_NUM;
+        
+        if(setup == NABLA::Bytegen::MovSetup::REG_REG)
+        {
+            expectedIns.bytes[0] = INS_MOV;
+            expectedIns.bytes[1] = integerToRegister(getRandom8(0, 15)) ;
+            expectedIns.bytes[2] = integerToRegister(getRandom8(0, 15)) ;
+            expectedIns.bytes[3] = 0xFF;
+            expectedIns.bytes[4] = 0xFF;
+            expectedIns.bytes[5] = 0xFF;
+            expectedIns.bytes[6] = 0xFF;
+            expectedIns.bytes[7] = 0xFF;
+        }
+        else
+        {
+            expectedIns.bytes[0] = (INS_MOV | 0x01);
+            expectedIns.bytes[1] = integerToRegister(getRandom8(0, 15)) ;
+            expectedIns.bytes[2] = getRandom8(0, 15);
+            expectedIns.bytes[3] = 0xFF;
+            expectedIns.bytes[4] = 0xFF;
+            expectedIns.bytes[5] = 0xFF;
+            expectedIns.bytes[6] = 0xFF;
+            expectedIns.bytes[7] = 0xFF;
+        }
+        
         
         NABLA::Bytegen::Instruction ins = byteGen.createMovInstruction(
+            setup,
             expectedIns.bytes[1],
             expectedIns.bytes[2]
         );

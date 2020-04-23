@@ -510,8 +510,23 @@ int vm_run(NVM* vm)
                 lhs = run_extract_one(ins, 6);
                 rhs = run_extract_one(ins, 5);
 
-                vm->registers[lhs] = vm->registers[rhs];
-                vm->registers[rhs] = 0;
+                // Move register value into another register
+                if(id == 0)
+                {
+                    vm->registers[lhs] = vm->registers[rhs];
+                }
+                // Move numerival value into a register
+                else if (id == 1)
+                {
+                    vm->registers[lhs] = rhs;
+                }
+                else
+                {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("Error: Unknown ID bits expressed in INS_MOV\n");
+#endif
+                    return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+                }
                 break;
             }
             case INS_LDB  :
