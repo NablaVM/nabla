@@ -27,6 +27,6 @@
 
 <main:
 
-    ldb r3 $10(gs)
-    ldb r3 $2147483646(ls)
+    ldb r3 $0(gs)
+    ldb r3 $2(gs)
 >
