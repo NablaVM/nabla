@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.8)
+
+project(solace)
+
+# Needed for VM instructions
+include_directories(${CMAKE_SOURCE_DIR}/libc/vm)
+
+include_directories(${CMAKE_SOURCE_DIR}/libcpp/bytegen)
+
+set(SOLACE_COMPILER_SOURCES
+    ${CMAKE_SOURCE_DIR}/libcpp/bytegen/bytegen.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/solace.cpp
+)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests/)
+
+add_custom_target(copy-solace-asm ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/solace_code ${CMAKE_BINARY_DIR}/solace_code
+)
+
+add_executable(solace main.cpp ${SOLACE_COMPILER_SOURCES})
+
