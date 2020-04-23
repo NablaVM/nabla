@@ -5,15 +5,11 @@ throw out tokens about what its doing. We could load code that we expect a certa
 and ensure that the operations are going as we intend.
 
 
-The vm-loading code needs to be put somewhere.. like a vm-loader maybe? The only 'issue' is then some functionality of the vm that doesn't need to be exposed would be exposed (accessing global stack, etc)
---Though it might not be a bad idea. Exposing direct access to the stack would make later expansions easier?
-
-
 --Remove '"' from string constants in solace... i thought i did that, but apparently not... 
 
 ## After above, but sooner than later 
 
-Write simple util to dump nabla binaries so we can debug easier as things get rolling
+DONE: Write simple util to dump nabla binaries so we can debug easier as things get rolling
 
 This tool will eventually become the decompiler, but at first it really just needs to dump shit out
 
