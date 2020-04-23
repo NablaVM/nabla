@@ -139,8 +139,6 @@ namespace
 
         std::vector<constantdata> constants;
 
-        std::map<std::string, uint32_t>              functions;      // Functions
-
         std::vector<std::string> filesParsed;   // Files that have been parsed
         std::vector<uint8_t> bytes;             // Resulting byte data
         std::string entryPoint;                 // Application entry point
@@ -217,6 +215,9 @@ namespace
 
     //         Function             Label       value
     std::map<std::string, std::map<std::string, uint32_t> > preProcessedLabels;
+
+    //        Function    Address
+    std::map<std::string, uint32_t> preProcessedFunctions;
 
     // A temporary function instruction accumulator
     struct FunctionInformation
@@ -308,7 +309,7 @@ inline static std::string ltrim (std::string &line)
 
 inline static bool isFunctionInPayload(std::string name)
 {
-    return (finalPayload.functions.find(name) != finalPayload.functions.end());
+    return (preProcessedFunctions.find(name) != preProcessedFunctions.end());
 }
 
 // -----------------------------------------------
@@ -324,7 +325,7 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
                   << std::endl << "Finalizing payload" 
                   << std::endl
                   << "\tFiles parsed ......... " << finalPayload.filesParsed.size() << std::endl
-                  << "\tFunctions created .... " << finalPayload.functions.size() << std::endl
+                  << "\tFunctions created .... " << preProcessedFunctions.size() << std::endl
                   << "\tTotal bytes .......... " << finalPayload.bytes.size() << std::endl
                   << "-----------------------------------" 
                   << std::endl;
@@ -372,7 +373,7 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     /*
         Create the id that indicates the function segment is starting
     */
-    uint64_t entryPointAddress = finalPayload.functions[finalPayload.entryPoint];
+    uint64_t entryPointAddress = preProcessedFunctions[finalPayload.entryPoint];
 
     std::vector<uint8_t> funcSegment = nablaByteGen.createSegFuncInstruction(
         entryPointAddress
@@ -424,55 +425,88 @@ inline static bool parseFile(std::string file)
         Load and pre-process
     */
 
-    bool inFunc = false;
-    uint64_t preprocessInsCount = 0;
-    std::string cFuncName;
+    bool inFunc = false;                        // Ensure we are inside a function before we determine a line was an instruction
+    uint64_t preprocessInsCount = 0;            // Count the instructions in the current function to determine label addresses
+    uint32_t preprocessFunctionCounter    = 0;  // Count the number of functions so we can determine function address
+    std::string cFuncName;                      // The function that we are currently processing
 
     while (std::getline(ifs, currentLine))
     {
+        // Ensure we ignore comments
         currentLine = currentLine.substr(0, currentLine.find(";", 0));
+
+        // Remove potential cruft
         currentLine = ltrim(currentLine);
 
         if(currentLine.length() > 0)
         {
+            // Seperate the lines by 'chunks' (spaces not inside string definitions)
             currentPieces = chunkLine(currentLine);
 
             if(currentPieces.size() > 0)
             {
+                // Always assume that we are accepting the current line as an instruction unless
+                // explicitly told not to
                 bool acceptLine = true;
 
                 // In a new function
                 if(std::regex_match(currentPieces[0], std::regex("^\\<[a-zA-Z0-9_]+:$")))
                 {
+                    // Indicate that we are in a function
                     inFunc = true;
+
+                    // Get the current function's name
                     cFuncName = currentPieces[0].substr(1, currentPieces[0].size()-2);
+
+                    // Ensure that the function is unique
+                    if(preProcessedFunctions.find(cFuncName) != preProcessedFunctions.end())
+                    {
+                        std::cerr << "Duplicate function '" << cFuncName << "' found" << std::endl;
+                        return false;
+                    }
+
+                    // Set the address of the function so we can map calls to it in the second pass
+                    preProcessedFunctions[cFuncName] = preprocessFunctionCounter;
                 }
                 // Left a function
                 else if (std::regex_match(currentPieces[0], std::regex("^\\>$")))
                 {
+                    // Indicate we aren't in a function anymore
                     inFunc = false;
+
+                    // Reset the instruction count, because we count per-function for labels
                     preprocessInsCount = 0;
+
+                    // Increaase the function counter so the next function can get the appropriate address
+                    preprocessFunctionCounter++;
                 }
                 // Found a label
                 else if(inFunc && std::regex_match(currentPieces[0], std::regex("^[a-zA-Z0-9_]+:$")))
                 {
+                    // get the label string value
                     std::string label = currentPieces[0] .substr(0, currentPieces[0].size()-1);
 
+                    // Ensure that the label isnt a duplicate
                     if(preProcessedLabels[cFuncName].find(label) !=  preProcessedLabels[cFuncName].end())
                     {
                         std::cerr << "Duplicate label '" << label << "' found in function '" << cFuncName << "'" << std::endl;
                         return false;
                     }
 
+                    // Create a label in the map of maps that maps to the area the jmp or branch instruction should go to
                     preProcessedLabels[cFuncName][label] = preprocessInsCount;
 
+                    // Ensure that we don't count this line as an instruction
                     acceptLine = false;
                 }
                 else if (inFunc)
                 {
+                    // Increase the instruction count
                     preprocessInsCount++;
                 }
 
+                // If we are to put the line in for actual processing (i.e not a label) add it to the rawFile
+                // for the second pass
                 if(acceptLine)
                 {
                     rawFile.push_back(currentLine);
@@ -1708,12 +1742,12 @@ bool instruction_call()
 
     uint32_t currentAddress = nablaByteGen.getCurrentFunctionCouner();
     uint32_t returnArea     = (currentFunction.instructions.size()/8) +3; // Have to add extra b/c hidden generated instructions
-    uint32_t destination    = finalPayload.functions[currentPieces[1]];
+    uint32_t destination    = preProcessedFunctions[currentPieces[1]];
 
 
     std::cout << "Creating call from : " <<
      currentFunction.name << " @ " << currentAddress << " ret area : "
-      << returnArea << " dest : " << currentPieces[1] << " @ " << finalPayload.functions[currentPieces[1]] << std::endl;
+      << returnArea << " dest : " << currentPieces[1] << " @ " << preProcessedFunctions[currentPieces[1]] << std::endl;
 
 
     std::vector<NABLA::Bytegen::Instruction> ins = nablaByteGen.createCallInstruction(
@@ -2058,13 +2092,6 @@ bool instruction_create_function()
         return false;
     }
 
-    // Check if the function name exists yet
-    if(isFunctionInPayload(functionName))
-    {
-        std::cerr << "Error [" << functionName << "] previously defined " << std::endl;
-        return false;
-    }
-
     // Check if the unique function is the entry point under the condition that we haven't found it yet
     if(!initPointDefined)
     {
@@ -2123,8 +2150,6 @@ bool instruction_end_function()
     NABLA::Bytegen::Instruction funcEnd = nablaByteGen.createFunctionEnd();
 
     addBytegenInstructionToPayload(funcEnd);
-
-    finalPayload.functions[currentFunction.name] = functionAddress;
 
     isSystemBuildingFunction = false;
     currentFunction.name = "UNDEFINED";
