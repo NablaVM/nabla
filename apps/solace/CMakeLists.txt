@@ -12,7 +12,9 @@ set(SOLACE_COMPILER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/solace.cpp
 )
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests/)
+if(COMPILE_TESTS)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests/)
+endif()
 
 add_custom_target(copy-solace-asm ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/solace_code ${CMAKE_BINARY_DIR}/solace_code
