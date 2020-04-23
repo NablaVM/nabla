@@ -53,11 +53,7 @@ int load_vm(FILE * file, NablaVirtualMachine vm)
 int run_vm(NablaVirtualMachine vm)
 {
     switch(vm_run(vm))
-    {
-        case VM_RUN_ERROR_VM_NOT_LOADED:
-            perror("VM could not start. It has not yet been loaded");
-            return -1;
-            
+    {       
         case VM_RUN_ERROR_VM_ALREADY_RUNNING:
             perror("VM could not start. It is already running");
             return -1;

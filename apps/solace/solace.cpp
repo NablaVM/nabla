@@ -112,7 +112,6 @@ bool instruction_bned();
 bool instruction_jmp();
 bool instruction_call();
 bool instruction_return();
-bool instruction_create_label();
 
 bool instruction_exit();
 
@@ -139,8 +138,6 @@ namespace
         //std::unordered_map<std::string, std::vector<uint8_t> > constants;      // Constants
 
         std::vector<constantdata> constants;
-
-        std::map<std::string, uint32_t>              functions;      // Functions
 
         std::vector<std::string> filesParsed;   // Files that have been parsed
         std::vector<uint8_t> bytes;             // Resulting byte data
@@ -209,8 +206,6 @@ namespace
         MatchCall{ std::regex("^call$")      , instruction_call      },
         MatchCall{ std::regex("^ret$")       , instruction_return    },
 
-        MatchCall{ std::regex("^[a-zA-Z0-9_]+:$") , instruction_create_label },
-
         MatchCall{ std::regex("^exit$")      , instruction_exit      },
 
         // Function creation
@@ -218,12 +213,17 @@ namespace
         MatchCall{ std::regex("^\\>$")       , instruction_end_function }
     };
 
+    //         Function             Label       value
+    std::map<std::string, std::map<std::string, uint32_t> > preProcessedLabels;
+
+    //        Function    Address
+    std::map<std::string, uint32_t> preProcessedFunctions;
+
     // A temporary function instruction accumulator
     struct FunctionInformation
     {
         std::string name;
         std::vector<uint8_t> instructions;
-        std::map<std::string, uint32_t>    labels;         // Labels - rhs value is their index within a function
     };
 
     FunctionInformation currentFunction;
@@ -231,6 +231,9 @@ namespace
     bool isSystemBuildingFunction;
 
     bool isParserVerbose;
+
+    std::vector<std::string> rawFile;
+
 }
 
 // -----------------------------------------------
@@ -306,7 +309,7 @@ inline static std::string ltrim (std::string &line)
 
 inline static bool isFunctionInPayload(std::string name)
 {
-    return (finalPayload.functions.find(name) != finalPayload.functions.end());
+    return (preProcessedFunctions.find(name) != preProcessedFunctions.end());
 }
 
 // -----------------------------------------------
@@ -322,7 +325,7 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
                   << std::endl << "Finalizing payload" 
                   << std::endl
                   << "\tFiles parsed ......... " << finalPayload.filesParsed.size() << std::endl
-                  << "\tFunctions created .... " << finalPayload.functions.size() << std::endl
+                  << "\tFunctions created .... " << preProcessedFunctions.size() << std::endl
                   << "\tTotal bytes .......... " << finalPayload.bytes.size() << std::endl
                   << "-----------------------------------" 
                   << std::endl;
@@ -370,7 +373,7 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     /*
         Create the id that indicates the function segment is starting
     */
-    uint64_t entryPointAddress = finalPayload.functions[finalPayload.entryPoint];
+    uint64_t entryPointAddress = preProcessedFunctions[finalPayload.entryPoint];
 
     std::vector<uint8_t> funcSegment = nablaByteGen.createSegFuncInstruction(
         entryPointAddress
@@ -418,42 +421,132 @@ inline static bool parseFile(std::string file)
         return false;
     }
 
-    while(std::getline(ifs, currentLine))
+    /*
+        Load and pre-process
+    */
+
+    bool inFunc = false;                        // Ensure we are inside a function before we determine a line was an instruction
+    uint64_t preprocessInsCount = 0;            // Count the instructions in the current function to determine label addresses
+    uint32_t preprocessFunctionCounter    = 0;  // Count the number of functions so we can determine function address
+    std::string cFuncName;                      // The function that we are currently processing
+
+    while (std::getline(ifs, currentLine))
     {
+        // Ensure we ignore comments
         currentLine = currentLine.substr(0, currentLine.find(";", 0));
+
+        // Remove potential cruft
         currentLine = ltrim(currentLine);
 
         if(currentLine.length() > 0)
         {
+            // Seperate the lines by 'chunks' (spaces not inside string definitions)
             currentPieces = chunkLine(currentLine);
 
             if(currentPieces.size() > 0)
             {
-                bool found = false;
-                for(auto &i : parserMethods)
-                {
-                    // Match what the line means to do, and call the function to handle it
-                    if(std::regex_match(currentPieces[0], i.reg))
-                    {
-                        // If the call returns false, an error popped up
-                        if(!i.call())
-                        {
-                            return false;
-                        }
+                // Always assume that we are accepting the current line as an instruction unless
+                // explicitly told not to
+                bool acceptLine = true;
 
-                        found = true;
+                // In a new function
+                if(std::regex_match(currentPieces[0], std::regex("^\\<[a-zA-Z0-9_]+:$")))
+                {
+                    // Indicate that we are in a function
+                    inFunc = true;
+
+                    // Get the current function's name
+                    cFuncName = currentPieces[0].substr(1, currentPieces[0].size()-2);
+
+                    // Ensure that the function is unique
+                    if(preProcessedFunctions.find(cFuncName) != preProcessedFunctions.end())
+                    {
+                        std::cerr << "Duplicate function '" << cFuncName << "' found" << std::endl;
+                        return false;
                     }
+
+                    // Set the address of the function so we can map calls to it in the second pass
+                    preProcessedFunctions[cFuncName] = preprocessFunctionCounter;
+                }
+                // Left a function
+                else if (std::regex_match(currentPieces[0], std::regex("^\\>$")))
+                {
+                    // Indicate we aren't in a function anymore
+                    inFunc = false;
+
+                    // Reset the instruction count, because we count per-function for labels
+                    preprocessInsCount = 0;
+
+                    // Increaase the function counter so the next function can get the appropriate address
+                    preprocessFunctionCounter++;
+                }
+                // Found a label
+                else if(inFunc && std::regex_match(currentPieces[0], std::regex("^[a-zA-Z0-9_]+:$")))
+                {
+                    // get the label string value
+                    std::string label = currentPieces[0] .substr(0, currentPieces[0].size()-1);
+
+                    // Ensure that the label isnt a duplicate
+                    if(preProcessedLabels[cFuncName].find(label) !=  preProcessedLabels[cFuncName].end())
+                    {
+                        std::cerr << "Duplicate label '" << label << "' found in function '" << cFuncName << "'" << std::endl;
+                        return false;
+                    }
+
+                    // Create a label in the map of maps that maps to the area the jmp or branch instruction should go to
+                    preProcessedLabels[cFuncName][label] = preprocessInsCount;
+
+                    // Ensure that we don't count this line as an instruction
+                    acceptLine = false;
+                }
+                else if (inFunc)
+                {
+                    // Increase the instruction count
+                    preprocessInsCount++;
                 }
 
-                if(!found)
+                // If we are to put the line in for actual processing (i.e not a label) add it to the rawFile
+                // for the second pass
+                if(acceptLine)
                 {
-                    std::cerr << "Unknown instruction(s) : " << currentLine << std::endl;
-                    return false;
+                    rawFile.push_back(currentLine);
                 }
             }
         }
     }
 
+    ifs.close();
+
+    for(uint64_t cline = 0; cline < rawFile.size(); cline++)
+    {
+        currentLine = rawFile[cline];
+
+        std::cout << currentLine << std::endl;
+
+        currentPieces = chunkLine(currentLine);
+
+        bool found = false;
+        for(auto &i : parserMethods)
+        {
+            // Match what the line means to do, and call the function to handle it
+            if(std::regex_match(currentPieces[0], i.reg))
+            {
+                // If the call returns false, an error popped up
+                if(!i.call())
+                {
+                    return false;
+                }
+
+                found = true;
+            }
+        }
+
+        if(!found)
+        {
+            std::cerr << "Unknown instruction(s) : " << currentLine << std::endl;
+            return false;
+        }
+    }
     return true;
 }
 
@@ -713,7 +806,7 @@ inline static uint32_t getConstIndex(std::string name)
 
 inline static bool isLabelInCurrentFunction(std::string name)
 {
-    return (currentFunction.labels.find(name) != currentFunction.labels.end());
+    return (preProcessedLabels[currentFunction.name].find(name) !=  preProcessedLabels[currentFunction.name].end());
 }
 
 // -----------------------------------------------
@@ -1381,7 +1474,7 @@ inline bool branch_instruction(NABLA::Bytegen::BranchTypes type)
         return false;
     }
 
-    uint32_t labelValue = currentFunction.labels[currentPieces[3]];
+    uint32_t labelValue = preProcessedLabels[currentFunction.name][currentPieces[3]];
 
     if(isParserVerbose) { std::cout << currentPieces[0] << " Arg1: " 
                           << currentPieces[1]           << " Arg2: "
@@ -1615,7 +1708,7 @@ bool instruction_jmp()
 
     if(isParserVerbose) { std::cout << "Creating jmp instruction to : " << currentPieces[1] << std::endl; }
 
-    uint32_t labelValue = currentFunction.labels[currentPieces[1]];
+    uint32_t labelValue = preProcessedLabels[currentFunction.name][currentPieces[1]];
 
     addBytegenInstructionToCurrentFunction(
         nablaByteGen.createJumpInstruction(labelValue)
@@ -1649,12 +1742,12 @@ bool instruction_call()
 
     uint32_t currentAddress = nablaByteGen.getCurrentFunctionCouner();
     uint32_t returnArea     = (currentFunction.instructions.size()/8) +3; // Have to add extra b/c hidden generated instructions
-    uint32_t destination    = finalPayload.functions[currentPieces[1]];
+    uint32_t destination    = preProcessedFunctions[currentPieces[1]];
 
 
     std::cout << "Creating call from : " <<
      currentFunction.name << " @ " << currentAddress << " ret area : "
-      << returnArea << " dest : " << currentPieces[1] << " @ " << finalPayload.functions[currentPieces[1]] << std::endl;
+      << returnArea << " dest : " << currentPieces[1] << " @ " << preProcessedFunctions[currentPieces[1]] << std::endl;
 
 
     std::vector<NABLA::Bytegen::Instruction> ins = nablaByteGen.createCallInstruction(
@@ -1692,42 +1785,6 @@ bool instruction_return()
         nablaByteGen.createReturnInstruction()
         );
 
-    return true;
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-bool instruction_create_label()
-{
-    if(!isSystemBuildingFunction)
-    {
-        std::cerr << "Lables must exist within a function" << std::endl;
-        return false;
-    }
-
-    if(currentPieces.size() != 1)
-    {
-        std::cerr << "Invalid label definition : " << currentLine << std::endl;
-        return false;
-    }
-
-    currentPieces[0] = rtrim(currentPieces[0]);
-
-    std::string label = currentPieces[0] .substr(0, currentPieces[0].size()-1);
-
-    if(isLabelInCurrentFunction(label))
-    {
-        std::cerr << "Label [" << label << "] already exists in function [" << currentFunction.name << "] " << std::endl;
-        return false;
-    }
-
-    // Set the label
-    currentFunction.labels[label] = (currentFunction.instructions.size()/8) ;
-
-    // Labels don't have bytes generated with them, instead we keep track of them for the life of the function and 
-    // place their instruction location in corresponding branches
     return true;
 }
 
@@ -2035,13 +2092,6 @@ bool instruction_create_function()
         return false;
     }
 
-    // Check if the function name exists yet
-    if(isFunctionInPayload(functionName))
-    {
-        std::cerr << "Error [" << functionName << "] previously defined " << std::endl;
-        return false;
-    }
-
     // Check if the unique function is the entry point under the condition that we haven't found it yet
     if(!initPointDefined)
     {
@@ -2101,15 +2151,9 @@ bool instruction_end_function()
 
     addBytegenInstructionToPayload(funcEnd);
 
-    finalPayload.functions[currentFunction.name] = functionAddress;
-
-    std::cout << "FUCN: " << currentFunction.name << " addr : " << functionAddress << std::endl;
-
     isSystemBuildingFunction = false;
     currentFunction.name = "UNDEFINED";
     currentFunction.instructions.clear();
-
-    currentFunction.labels.clear();
 
     return true;
 }

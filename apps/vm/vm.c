@@ -187,7 +187,6 @@ int vm_run(NVM* vm)
 {
     // Ensure vm is okay, check that its loaded, and not running
     assert(vm);
-    if(1 == stack_is_empty(vm->globalStack))  {  return VM_RUN_ERROR_VM_NOT_LOADED;      }
     if(1 == FILE_GLOBAL_IS_VM_RUNNING)        {  return VM_RUN_ERROR_VM_ALREADY_RUNNING; }
 
     // Indicate that it is now running
