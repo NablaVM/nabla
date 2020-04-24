@@ -1,5 +1,12 @@
 #ifndef VM_INSTRUCTIONS_H
 #define VM_INSTRUCTIONS_H
+    #define INS_NOP             0x00
+    #define INS_LSH             0x44
+    #define INS_RSH             0x48
+    #define INS_AND             0x4c
+    #define INS_OR              0x50
+    #define INS_XOR             0x54
+    #define INS_NOT             0x58
     #define INS_ADD             0x7C
     #define INS_SUB             0x80
     #define INS_MUL             0x84
@@ -28,7 +35,7 @@
     #define INS_JUMP            0xE4
     #define INS_CALL            0xE8
     #define INS_RET             0xEC
-    #define INS_EXIT            0xF0
+    #define INS_EXIT            0xF0 
     #define NINS_LABEL          0xFC
     #define REGISTER_0          0x00
     #define REGISTER_1          0x01

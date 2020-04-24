@@ -11,12 +11,14 @@ include_directories(${CMAKE_SOURCE_DIR}/libcpp/bytegen)
 add_executable(nablaInsTest
         ${SOLACE_COMPILER_SOURCES}
         arithmaticTests.cpp
+        bitwiseTests.cpp
         branchTests.cpp
         constantTests.cpp
         callTests.cpp
         exitTests.cpp
         jumpTests.cpp
         movTests.cpp
+        nopTests.cpp
         pushpopTests.cpp
         returnTests.cpp
         stbldbTests.cpp

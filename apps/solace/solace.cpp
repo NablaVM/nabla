@@ -1,4 +1,42 @@
 /*
+    Josh. A Bosley
+
+
+    Planned updates:
+            Things that I would like to do in the future for specific types have a large comment in them
+            describing the update along with a 'DEVELOPMENT_NOTE' tag so it can be found easily.
+            Once solace and byte gen get working these should be put onto a project board
+
+
+    This parser is a bit long and in need of explanation. The basic gist is this :
+
+        A file name is given to parse. We open the file and iterate over each line.
+
+        On the first pass labels, and functions are enumerated for addressing while the lines are split apart by relevant chunks of information.
+        Blank lines are discarded. Relevant chunks are any space seperated groups of chars with the exception of declared strings, which are preserved.
+
+        For instance :    
+                            this is an example "of something" that gets chunked
+        Will be stored as :
+                            [this, is, an, example, "of something", that, gets, chunked]
+        
+        On the second pass we  we iterate over the chunked lines. We go through a vector (parserMethods) that matches regex against the 
+        0th element of the chunk list in an attempt to locate an instruction. 
+        
+        If a known instruction is matched, its corresponding function will be called as layed-out by the 'parserMethods' vector. 
+
+        If no expression is matched, the line is deemed invalid and we indicate this by returning false and refusing to continue parsing
+    
+        A matched expression's call will handle the particulars of instruction. It will validate the arguments allowed by the instruction and 
+        then call into the bytegenerator to get create the corresponding byte code for the instruction.
+
+        Once all of the bytes have been generated (end of the file) finalizePayload() is called to formulate the resulting binary in a way that
+        libc/binloader can understand.
+
+    Implemented, and tested instruction list below. Fields indicate if the path for parsing in solace has been created, if the byte generator is being
+    called to formulate the instruction, and the status of a cpputest existing to ensure that the bytegenerator stays conforming to the nabla ASM spec.
+
+
     Argument          Parsed            Generated           Tested
     -----------------------------------------------------------------
         add             X                   X                  X
@@ -30,37 +68,15 @@
         call            X                   X                  X
         ret             X                   X                  X
         exit            X                   X                  X
+        lsh             X                   X                  X
+        rsh             X                   X                  X
+        and             X                   X                  X
+        or              X                   X                  X
+        xor             X                   X                  X
+        not             X                   X                  X
+        nop
         label           X                   NA                 NA
 
-    Planned updates:
-            Things that I would like to do in the future for specific types have a large comment in them
-            describing the update along with a 'DEVELOPMENT_NOTE' tag so it can be found easily.
-            Once solace and byte gen get working these should be put onto a project board
-
-
-    This parser is a bit long and in need of explanation. The basic gist is this :
-
-        A file name is given to parse. We open the file and iterate over each line.
-        
-        Each line is 'chunked' or split into pieces of relevant information. 
-            Since we are working with an asm-like code, the first section that has been 'chunked' we can key off to determine the
-            validitiy of the following statement.
-
-        As we iterate over the chunked lines, we go through a vector (parserMethods) that matches regex against the first relevant part of the line
-            in an attempt to locate an instruction. If a known instruction is matched, its corresponding function will be called
-            as layed-out by the 'parserMethods' vector. 
-
-            If no expression is matched, the line is deemed invalid and we indicate this by returning false and refusing to continue parsing
-    
-        A matched expression's call will handle the particulars of instruction. It will validate the arguments allowed by the instruction and ensure
-            that referenced constants exist, etc. 
-
-        For items that might not exist at the time of parsing (call <function>, jmp <label>, and [branch_command] <label> ) things get a little tricky. 
-
-            Right now we ignore functions that aren't created yet. There is no prototyping yet. If something is called it has to have been defined
-
-            Labels determine where they are by how many instructions are currently aggregated into the current function. There is no actual
-            'instruction' for label. We determine the index of the label, and tell the byte generator to take us to that spot.
 */
 
 #include "solace.hpp"
@@ -79,6 +95,14 @@
 
 namespace SOLACE
 {
+bool instruction_nop();
+
+bool instruction_lsh();
+bool instruction_rsh();
+bool instruction_and();
+bool instruction_or ();
+bool instruction_xor();
+bool instruction_not();
 
 bool instruction_add();
 bool instruction_sub();
@@ -138,8 +162,6 @@ namespace
         //std::unordered_map<std::string, std::vector<uint8_t> > constants;      // Constants
 
         std::vector<constantdata> constants;
-
-        std::vector<std::string> filesParsed;   // Files that have been parsed
         std::vector<uint8_t> bytes;             // Resulting byte data
         std::string entryPoint;                 // Application entry point
 
@@ -169,6 +191,16 @@ namespace
         
         // Directives
         MatchCall{ std::regex("^\\.[a-z0-9]+(8|16|32|64)?$") , instruction_directive },
+
+        MatchCall{ std::regex("^nop$")       , instruction_nop       },
+
+        // Bitwise
+        MatchCall{ std::regex("^lsh$")       , instruction_lsh       },
+        MatchCall{ std::regex("^rsh$")       , instruction_rsh       },
+        MatchCall{ std::regex("^and$")       , instruction_and       },
+        MatchCall{ std::regex("^or$" )       , instruction_or        },
+        MatchCall{ std::regex("^xor$")       , instruction_xor       },
+        MatchCall{ std::regex("^not$")       , instruction_not       },
 
         // Arithmatic
         MatchCall{ std::regex("^add$")       , instruction_add       },
@@ -324,7 +356,6 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
                   << "-----------------------------------" 
                   << std::endl << "Finalizing payload" 
                   << std::endl
-                  << "\tFiles parsed ......... " << finalPayload.filesParsed.size() << std::endl
                   << "\tFunctions created .... " << preProcessedFunctions.size() << std::endl
                   << "\tTotal bytes .......... " << finalPayload.bytes.size() << std::endl
                   << "-----------------------------------" 
@@ -568,9 +599,6 @@ bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes, bool verbose)
     currentFunction.name = "UNDEFINED";
     isSystemBuildingFunction = false;
 
-    // Mark the file as parsed before anything in an attempt to reduce depends loops =]
-    finalPayload.filesParsed.push_back(asmFile);
-
     // Parse the first file - Include directives will drive the parsing
     // of required files
     if(!parseFile(asmFile))
@@ -813,15 +841,6 @@ inline static bool isLabelInCurrentFunction(std::string name)
 //
 // -----------------------------------------------
 
-inline static bool wasFileParsed(std::string name)
-{
-    return (std::find(finalPayload.filesParsed.begin(), finalPayload.filesParsed.end(), name) != finalPayload.filesParsed.end());
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
 inline static void addBytegenInstructionToPayload(NABLA::Bytegen::Instruction ins)
 {
     finalPayload.bytes.push_back(ins.bytes[0]); 
@@ -871,7 +890,7 @@ inline static std::string convertArithToString(NABLA::Bytegen::ArithmaticTypes t
 }
 
 // -----------------------------------------------
-// Parsed, not complete
+// 
 // -----------------------------------------------
 
 inline static bool arithmatic_instruction(NABLA::Bytegen::ArithmaticTypes type)
@@ -2045,24 +2064,6 @@ bool instruction_directive()
         finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantDouble(givenDouble)});
     }
     // ----------------------------------------------------------------------
-    //  Include a file
-    // ----------------------------------------------------------------------
-    else if (std::regex_match(currentPieces[0], std::regex("^\\.include$"))) 
-    {
-        if(isParserVerbose){ std::cout << "\tinclude: " << currentLine << std::endl; }
-
-        // Check if it has been parsed before
-        if(wasFileParsed(currentPieces[1]))
-        {
-            std::cout << "WARN: File <" << currentPieces[1] << "> already marked as parsed. Skipping" << std::endl;
-            return true;
-        }
-
-        parseFile(currentPieces[1]);
-
-        finalPayload.filesParsed.push_back(currentPieces[1]);
-    }
-    // ----------------------------------------------------------------------
     //  Undefined directive
     // ----------------------------------------------------------------------
     else 
@@ -2168,5 +2169,285 @@ bool instruction_end_function()
     return true;
 }
 
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static std::string convertBitwiseToString(NABLA::Bytegen::BitwiseTypes type)
+{
+    switch(type)
+    {
+        case NABLA::Bytegen::BitwiseTypes::LSH : return "LSH"; 
+        case NABLA::Bytegen::BitwiseTypes::RSH : return "RSH"; 
+        case NABLA::Bytegen::BitwiseTypes::AND : return "AND"; 
+        case NABLA::Bytegen::BitwiseTypes::OR  : return "OR "; 
+        case NABLA::Bytegen::BitwiseTypes::XOR : return "XOR"; 
+        case NABLA::Bytegen::BitwiseTypes::NOT : return "NOT";
+        default:                 return "UNKNOWN"; // Keep that compiler happy.
+    }
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool bitwise_instruction(NABLA::Bytegen::BitwiseTypes type)
+{
+    
+    bool isArg2Register = true;
+    bool isArg3Register = true;
+
+    // --------------------------------------------
+    //  ARG 1
+    // --------------------------------------------
+
+    // Check if is register
+    if(!isRegister(currentPieces[1]))
+    {
+        std::cerr << convertBitwiseToString(type) << "::arg1::not_matched, given :" << currentPieces[1] << std::endl;
+        return false;
+    }
+
+    // --------------------------------------------
+    //  ARG 2
+    // --------------------------------------------
+
+    if(isRegister(currentPieces[2]))
+    {
+        //std::cout << "Register : " << currentPieces[2] << std::endl;
+    }
+    else if(isDirectNumerical(currentPieces[2]))
+    {
+        if(isParserVerbose){ std::cout << "Direct Numerical : " << currentPieces[2] << std::endl; }
+
+        if(!isDirectNumericalInRange(currentPieces[2]))
+        {
+            std::cerr << "Error: Direct numerical insert is out of range: " << currentPieces[2] << std::endl;
+            return false;
+        }
+
+        isArg2Register = false;
+    }
+    else
+    {
+        std::cerr << convertBitwiseToString(type) << "::arg2::not_matched, given :" << currentPieces[2] << std::endl;
+        return false;
+    }
+
+    // NOT is the only case where we don't have a 3rd argument. For the sake of ease, we add a fake argument here,
+    // Bytegen will ignore the third argument for a NOT construction anyway, but we want to key it as a register
+    if(type == NABLA::Bytegen::BitwiseTypes::NOT)
+    {
+        currentPieces.push_back("r15");
+    }
+
+    // --------------------------------------------
+    //  ARG 3
+    // --------------------------------------------
+
+    if(isRegister(currentPieces[3]))
+    {
+        if(isParserVerbose){ std::cout << "Register : " << currentPieces[3] << std::endl; }
+    }
+    else if(isDirectNumerical(currentPieces[3]))
+    {
+        if(isParserVerbose){ std::cout << "Direct Numerical : " << currentPieces[3] << std::endl; }
+
+        if(!isDirectNumericalInRange(currentPieces[3]))
+        {
+            std::cerr << "Error: Direct numerical insert is out of range: " << currentPieces[3] << std::endl;
+            return false;
+        }
+
+        isArg3Register = false;
+    }
+    else
+    {
+        std::cerr << convertBitwiseToString(type) << "::arg3::not_matched, given :" << currentPieces[3] << std::endl;
+        return false;
+    } 
+
+    // Get numerical values of the numbers OR regs
+    int16_t arg1 = getNumberFromNumericalOrRegister(currentPieces[1]);
+    int16_t arg2 = getNumberFromNumericalOrRegister(currentPieces[2]);
+    int16_t arg3 = getNumberFromNumericalOrRegister(currentPieces[3]);
+
+    // Determine how we want to inform the bytegen whats going on 
+    NABLA::Bytegen::ArithmaticSetup setup;
+    if (isArg2Register && isArg3Register)       { setup = NABLA::Bytegen::ArithmaticSetup::REG_REG; }
+    else if (isArg2Register && !isArg3Register) { setup = NABLA::Bytegen::ArithmaticSetup::REG_NUM; }
+    else if (isArg3Register && !isArg2Register) { setup = NABLA::Bytegen::ArithmaticSetup::NUM_REG; }
+    else                                        { setup = NABLA::Bytegen::ArithmaticSetup::NUM_NUM; }
+
+    // Call to create the instruction and add to current function
+    addBytegenInstructionToCurrentFunction(nablaByteGen.createBitwiseInstruction(type, setup, arg1, arg2, arg3));
+
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_lsh()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray bitwise instruction. Not currently building a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'LSH' instruction : " << currentLine << std::endl;
+        return false;
+    }
+    
+    if(isParserVerbose) { std::cout << "LSH : " << currentLine << std::endl; }
+
+    return bitwise_instruction(NABLA::Bytegen::BitwiseTypes::LSH);
+}
+
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_rsh()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray bitwise instruction. Not currently building a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'RSH' instruction : " << currentLine << std::endl;
+        return false;
+    }
+    
+    if(isParserVerbose) { std::cout << "RSH : " << currentLine << std::endl; }
+
+    return bitwise_instruction(NABLA::Bytegen::BitwiseTypes::RSH);
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_and()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray bitwise instruction. Not currently building a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'AND' instruction : " << currentLine << std::endl;
+        return false;
+    }
+    
+    if(isParserVerbose) { std::cout << "AND : " << currentLine << std::endl; }
+
+    return bitwise_instruction(NABLA::Bytegen::BitwiseTypes::AND);
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_or ()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray bitwise instruction. Not currently building a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'OR' instruction : " << currentLine << std::endl;
+        return false;
+    }
+    
+    if(isParserVerbose) { std::cout << "OR : " << currentLine << std::endl; }
+
+    return bitwise_instruction(NABLA::Bytegen::BitwiseTypes::OR);
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_xor()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray bitwise instruction. Not currently building a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 4)
+    {
+        std::cerr << "Invalid 'XOR' instruction : " << currentLine << std::endl;
+        return false;
+    }
+    
+    if(isParserVerbose) { std::cout << "XOR : " << currentLine << std::endl; }
+
+    return bitwise_instruction(NABLA::Bytegen::BitwiseTypes::XOR);
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_not()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray bitwise instruction. Not currently building a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 3)
+    {
+        std::cerr << "Invalid 'NOT' instruction : " << currentLine << std::endl;
+        return false;
+    }
+    
+    if(isParserVerbose) { std::cout << "NOT : " << currentLine << std::endl; }
+
+    return bitwise_instruction(NABLA::Bytegen::BitwiseTypes::NOT);
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_nop()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray bitwise instruction. Not currently building a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 1)
+    {
+        std::cerr << "Invalid 'NOT' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    if(isParserVerbose) { std::cout << "NOP : " << currentLine << std::endl; }
+
+
+    addBytegenInstructionToCurrentFunction(nablaByteGen.createNopInstruction());
+
+    return true;
+}
 
 } // End namespace SOLACE

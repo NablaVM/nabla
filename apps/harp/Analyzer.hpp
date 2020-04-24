@@ -1,3 +1,7 @@
+/*
+    Load and analyze a Nabla binary file
+*/
+
 #ifndef HARP_COMPOSER_HPP
 #define HARP_COMPOSER_HPP
 
@@ -11,10 +15,10 @@ extern "C"
     #include "VmInstructions.h"
 }
 
-typedef struct VM * NablaVirtualMachine;
-
 namespace HARP
 {
+    typedef struct VM * NablaVirtualMachine;
+
     //! \class Analyzer
     //! \brief Loads a vm from whatever bin is given and uses that vm to access information about the code
     class Analyzer
@@ -43,17 +47,27 @@ namespace HARP
         //! \post Vm global stack will be emptied 
         std::vector<uint64_t> getGlobalStack();
 
+        //! \brief Get the contents of the call stack
+        //! \returns The contents of the call stack
+        //! \post Vm call stack will be emptied 
         std::vector<uint64_t> getCallStack();
 
+        //! \brief Get the contents of vm registers
+        //! \returns The contents of the vm registers
         std::vector<int64_t> getRegisters();
 
+        //! \brief Get the function pointer address
+        //! \returns Address of VM function pointer
         uint64_t getFunctionPointer();
 
+        //! \brief Get the VM entry method
+        //! \returns The address of the first method to be executed by VM
         uint64_t getEntryAddress();
 
+        //! \brief Get a list of functions within the VM
+        //! \returns The functions loaded into the vm along-with all of their instruction
         std::vector<FunctionInfo> getFunctions();
 
-        
     private:
         bool loaded;
         NablaVirtualMachine vm;

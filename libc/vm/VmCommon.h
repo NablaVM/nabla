@@ -43,12 +43,15 @@ struct VM
 #define VM_LOAD_ERROR_ALREADY_LOADED           -15
 #define VM_LOAD_ERROR_EOB_NOT_FOUND            -16
 
+#define VM_INIT_ERROR_ALREADY_INITIALIZED      -30
+
 /*
     Potential return values for vm_run
 */
 #define VM_RUN_ERROR_VM_ALREADY_RUNNING        -51
 #define VM_RUN_ERROR_INSTRUCTION_NOT_FOUND     -100
 #define VM_RUN_ERROR_UNKNOWN_INSTRUCTION       -101
+#define VM_RUN_ERROR_VM_NOT_INITIALIZED        -102
 
 /*
     Nabla VM settings

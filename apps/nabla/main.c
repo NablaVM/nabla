@@ -16,31 +16,31 @@ int load_vm(FILE * file, NablaVirtualMachine vm)
     {
         case VM_LOAD_ERROR_NULL_VM:
             perror("The VM given was null");
-            return -1;
+            return 1;
 
         case VM_LOAD_ERROR_FILE_OPEN:    
             perror("There was an error opening the bytecode file"); 
-            return -1;
+            return 1;
 
         case VM_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS:    
             perror("There was an error loading constants from the bytecode file"); 
-            return -1;
+            return 1;
 
         case VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION:
             perror("There was an error loading function from the bytecode file");
-            return -1;
+            return 1;
 
         case VM_LOAD_ERROR_UNHANDLED_INSTRUCTION:   
             perror("The loader came across something it didn't understand and threw a fit"); 
-            return -1;
+            return 1;
 
         case VM_LOAD_ERROR_ALREADY_LOADED:
             perror("The VM has already been loaded");
-            return -1;
+            return 1;
 
         case VM_LOAD_ERROR_EOB_NOT_FOUND:
             perror("Binary file didn't give a binary EOF instruction");
-            return -1;
+            return 1;
 
         default:
             return 0;
@@ -56,7 +56,11 @@ int run_vm(NablaVirtualMachine vm)
     {       
         case VM_RUN_ERROR_VM_ALREADY_RUNNING:
             perror("VM could not start. It is already running");
-            return -1;
+            return 1;
+
+        case VM_RUN_ERROR_UNKNOWN_INSTRUCTION:
+            perror("VM caught an illegal instruction");
+            return 1;
 
         default:
             return 0;
@@ -71,7 +75,7 @@ int main(int argc, char**argv)
     if(argc != 2)
     {
         perror("No input file given");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // Create the virutal machine
@@ -99,12 +103,12 @@ int main(int argc, char**argv)
 
     if(0 != load_return)
     {
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     if(0 != run_vm(virtualMachine))
     {
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     return 0;

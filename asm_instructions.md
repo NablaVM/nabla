@@ -33,7 +33,6 @@ To access a function, a 'call' must occur, you can not jump to a function. Furth
 |   .int32	    |     42        |   emit intN to global stack	                |
 |   .int64	    |     42        |   emit intN to global stack	                |
 |   .double	    |   3.14 	    |   emit 3.14 to global stack                	|
-|   .include	|  "file.asm" 	|   add "file,asm" to source    (TO BE REMOVED) |
 
 ### In-place numerical values
 
@@ -55,6 +54,12 @@ Abbreviations :
 |     sp       | stack pointer   (ls, gs)               |
 |     *sp      | stack pointer offset  ($N(ls), $N(gs)) |
 
+## Misc Instructions
+| Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
+|---              |---        |---            |---           |---                                           |
+|     nop         |    NA     |    NA         |   NA         |  No Operation                                |
+
+
 ## Artihmatic Instructions
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
 |---              |---        |---            |---           |---                                           |
@@ -69,6 +74,17 @@ Abbreviations :
    
 Arithmatic instructions that specify 'd' assumes that the values being operated on are double-precision floating point
 numbers, if the value in a given 'd' register is not a floating point, the behaviour is undefined.
+
+## Bitwise Instructions
+| Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
+|---              |---        |---            |---           |---                                           |
+|     lsh         |        r  |    r , *n     |   r , *n     |  Left shift arg 2 by arg3, store in arg 1    |
+|     rsh         |        r  |    r , *n     |   r , *n     |  Right shift arg2 by arg3, store in arg 1    |
+|     and         |        r  |    r , *n     |   r , *n     |  And arg 2 with arg 3 store in arg 1         |
+|     or          |        r  |    r , *n     |   r , *n     |  Or arg 2 with arg 3, store in arg 1         |
+|     xor         |        r  |    r , *n     |   r , *n     |  Xor arg 2 with arg 3, store in arg 1        |
+|     not         |        r  |      r        |     NA       |  Flip the bits of arg2 store in arg 1        |
+
 
 ## Branch Instructions
 
@@ -151,6 +167,43 @@ and displayed below are not applicable. Instead, double-based arithmatic operati
 '00' case listed below.
 
 Here is an example of the bit layout given an arithmatic operation. Note: All but ID here are filled
+with '1' just for the sake of demonstration
+
+    Case 00:
+    INS    ID   REGISTER    REGISTER    REGISTER  [ ----------------- UNUSED -------------------]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+    Case 01:
+    INS    ID   REGISTER    REGISTER    [ ---- INTEGER ---- ]   [ -------- UNUSED --------------]
+    111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+    Case 10:
+    INS    ID   REGISTER    [ ---- INTEGER ---- ]   REGISTER    [ -------- UNUSED --------------]
+    111111 10 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+    Case 11:
+    INS    ID   REGISTER    [ ---- INTEGER ---- ]   [ ---- INTEGER ---- ]   [ ---- UNUSED ---- ]
+    111111 11 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+    
+
+## Bitwise Operations
+
+[Byte 1]
+The first 6 bits represent the specific instruction (add / mul/ etc)
+The remaining 2 bits of the first byte indicate what the remaining bytes represent.
+
+The indication bits are as follows:
+00 - Byte 3 will be a register, Byte 4 will be a register
+01 - Byte 3 will be a register, Byte 4/5 will be a 2-byte integer
+10 - Byte 3/4 will be a 2-byte integer, Byte 5 will be a register
+11 - Byte 3/4 will be a 2-byte integer, Byte 5/6 will be a 2-byte integer
+
+[Byte 2]
+The second byte is the destination register
+
+Unaccounted bytes will be unused, and marked as '1'
+
+Here is an example of the bit layout given a bitwise operation. Note: All but ID here are filled
 with '1' just for the sake of demonstration
 
     Case 00:

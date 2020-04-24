@@ -25,6 +25,15 @@ Virtual machine information that needs to be shared by multiple applications
     38	| 00111000
     3c	| 00111100
     40	| 01000000
+    
+    
+    
+    
+    
+    
+
+    [ BELOW ARE CURRENT INSTRUCTIONS ]
+    0	| 00000000
     44	| 01000100
     48	| 01001000
     4c	| 01001100
@@ -32,7 +41,6 @@ Virtual machine information that needs to be shared by multiple applications
     54	| 01010100
     58	| 01011000
 
-    [ BELOW ARE CURRENT INSTRUCTIONS ]
     5c	| 01011100
     60	| 01100000
     64	| 01100100

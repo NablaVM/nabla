@@ -108,6 +108,19 @@ namespace NABLA
         };
 
         //!
+        //! \brief Types of bitwise operations 
+        //!
+        enum class BitwiseTypes
+        {
+            LSH = 0x01,
+            RSH = 0x02,
+            AND = 0x03,
+            OR  = 0x04,
+            XOR = 0x05,
+            NOT = 0x06
+        };
+
+        //!
         //! \brief Create a bytegen
         //!
         Bytegen();
@@ -213,6 +226,11 @@ namespace NABLA
 
         //! \brief Create segment binary end of file
         std::vector<uint8_t> createSegBinEOF();
+
+
+        Instruction createBitwiseInstruction(BitwiseTypes type, ArithmaticSetup setup, int16_t arg1, int16_t arg2, int16_t arg3);    
+
+        Instruction createNopInstruction();
 
     private:
 

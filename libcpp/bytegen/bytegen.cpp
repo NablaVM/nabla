@@ -687,4 +687,153 @@ namespace NABLA
         return result;
     }
 
+    // ------------------------------------------------------------------------
+    // 
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createBitwiseInstruction(Bytegen::BitwiseTypes type, Bytegen::ArithmaticSetup setup, int16_t arg1, int16_t arg2, int16_t arg3)
+    {
+        uint8_t op;
+        Instruction ins;
+
+        switch(type)
+        {
+            case Bytegen::BitwiseTypes::LSH : op = INS_LSH; break; 
+            case Bytegen::BitwiseTypes::RSH : op = INS_RSH; break; 
+            case Bytegen::BitwiseTypes::AND : op = INS_AND; break; 
+            case Bytegen::BitwiseTypes::OR  : op = INS_OR ; break; 
+            case Bytegen::BitwiseTypes::XOR : op = INS_XOR; break; 
+            case Bytegen::BitwiseTypes::NOT : op = INS_NOT; break;
+            default:  std::cerr << "Type error - Bytegen bitwiseInstruction" << std::endl; 
+                      exit(EXIT_FAILURE); // Keep that compiler happy.
+        }
+
+  // Set id
+        switch(setup)
+        {
+            case Bytegen::ArithmaticSetup::REG_REG: 
+            {
+                ins.bytes[0] = (op);
+                ins.bytes[1] = (integerToRegister(arg1));
+                ins.bytes[2] = (integerToRegister(arg2));
+                ins.bytes[3] = (integerToRegister(arg3));
+                ins.bytes[4] = 0xFF;
+                ins.bytes[5] = 0xFF;
+                ins.bytes[6] = 0xFF;
+                ins.bytes[7] = 0xFF;
+                
+                if(type == BitwiseTypes::NOT)
+                {
+                    ins.bytes[3] = 0xFF;
+                }
+                break; 
+            }
+
+            case Bytegen::ArithmaticSetup::NUM_REG: 
+            {
+                op = op | 0x02; 
+                ins.bytes[0] = (op);
+                ins.bytes[1] = (integerToRegister(arg1));
+
+                uint16_t num = static_cast<uint16_t>(arg2);
+
+                ins.bytes[2] = ( (num & 0xFF00) >> 8 ) ;
+
+                ins.bytes[3] = ( (num & 0x00FF) >> 0 ) ;
+
+                ins.bytes[4] = (integerToRegister(arg3));
+
+                ins.bytes[5] = 0xFF;
+                ins.bytes[6] = 0xFF;
+                ins.bytes[7] = 0xFF;
+
+
+                if(type == BitwiseTypes::NOT)
+                {
+                    ins.bytes[4] = 0xFF;
+                }
+                break; 
+            }
+
+            case Bytegen::ArithmaticSetup::REG_NUM: 
+            {
+                if(type == BitwiseTypes::NOT)
+                {
+                    std::cerr << "Someone is trying to use NOT incorrectly in the ByteGen!" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                op = op | 0x01; 
+                ins.bytes[0] = (op);
+                ins.bytes[1] = (integerToRegister(arg1));
+                ins.bytes[2] = (integerToRegister(arg2));
+
+                uint16_t num = static_cast<uint16_t>(arg3);
+
+                ins.bytes[3] = ( (num & 0xFF00) >> 8 ) ;
+
+                ins.bytes[4] = ( (num & 0x00FF) >> 0 ) ;
+
+                ins.bytes[5] = 0xFF;
+                ins.bytes[6] = 0xFF;
+                ins.bytes[7] = 0xFF;
+                break; 
+            }
+
+            case Bytegen::ArithmaticSetup::NUM_NUM: 
+            {
+                if(type == BitwiseTypes::NOT)
+                {
+                    std::cerr << "Someone is trying to use NOT incorrectly in the ByteGen!" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+
+                op = op | 0x03; 
+                ins.bytes[0] = (op);
+                ins.bytes[1] = (integerToRegister(arg1));
+
+                uint16_t num = static_cast<uint16_t>(arg2);
+
+                ins.bytes[2] = ( (num & 0xFF00) >> 8 ) ;
+                ins.bytes[3] = ( (num & 0x00FF) >> 0 ) ;
+
+                uint16_t num1 = static_cast<uint16_t>(arg3);
+
+                ins.bytes[4] = ( (num1 & 0xFF00) >> 8 ) ;
+                ins.bytes[5] = ( (num1 & 0x00FF) >> 0 ) ;
+
+                ins.bytes[6] = 0xFF;
+                ins.bytes[7] = 0xFF;
+                break; 
+            }
+
+            default:      
+                std::cerr << "SOMETHING AWFUL HAPPENED DON'T TRUST ANYTHING" << std::endl;
+                return ins; // Keep that compiler happy.
+        }
+
+        // dumpInstruction(ins);
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // 
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createNopInstruction()
+    {
+        Instruction ins;
+
+        ins.bytes[0] = INS_NOP;
+        ins.bytes[1] = 0xFF;
+        ins.bytes[2] = 0xFF;
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        return ins;
+    }
+
 } // End of namespace
