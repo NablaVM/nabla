@@ -14,7 +14,7 @@ set(HARP_DECOMPILER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Analyzer.cpp
     ${CMAKE_SOURCE_DIR}/libc/binloader/binloader.c
     ${CMAKE_SOURCE_DIR}/libc/stack/stack.c
-    ${CMAKE_SOURCE_DIR}/apps/vm/vm.c
+    ${CMAKE_SOURCE_DIR}/libc/vm/vm.c
 )
 
 

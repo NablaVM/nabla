@@ -4,13 +4,13 @@ project(nablaLang)
 
 option(BUILD_SOLACE         "Build solace parser"        ON)
 option(BUILD_HARP           "Build harp application"     ON)
-option(BUILD_VM             "Build nabla VM"             ON)
+option(BUILD_NABLA          "Build nabla application"    ON)
 option(COMPILE_TESTS        "Execute compile-time tests" ON)
 
 include(${CMAKE_SOURCE_DIR}/cmake/FindCppuTest.cmake)
 
 # -------------------------------------------------
-#   Solace Parser
+#   Solace Assembler
 # -------------------------------------------------
 if(BUILD_SOLACE)
     add_subdirectory(apps/solace)
@@ -24,10 +24,10 @@ if(BUILD_HARP)
 endif()
 
 # -------------------------------------------------
-#   Virtual Machine
+#   Nabla Application
 # -------------------------------------------------
-if(BUILD_VM)
-    add_subdirectory(apps/vm)
+if(BUILD_NABLA)
+    add_subdirectory(apps/nabla)
 endif()
 
 # -------------------------------------------------

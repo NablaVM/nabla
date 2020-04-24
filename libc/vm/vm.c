@@ -13,12 +13,23 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static uint8_t  FILE_GLOBAL_INVOKED_VM_COUNT = 0;
-static uint8_t  FILE_GLOBAL_IS_VM_RUNNING    = 0;
-
 
 typedef struct FUNC NFUNC;
 typedef struct VM NVM;
+
+
+static uint8_t   FILE_GLOBAL_INVOKED_VM_COUNT  = 0;
+static uint8_t   FILE_GLOBAL_IS_VM_RUNNING     = 0;
+static uint8_t   FILE_GLOBAL_IS_VM_INITIALIZED = 0;
+
+
+// The current function to get instructions from
+static NFUNC * currentFunction;
+
+// Indicate if we are switching functions. When this is set, we don't want to increase the instruction pointer
+// as we have modified it as-per the guidance of an instruction. Either a call, or a return. In any case we want
+// to ensure the bottom of the loop doesn't increase the ip
+static uint8_t switchingFunction;
 
 /*
     ---------------------------------------------------------------------------------
@@ -183,34 +194,42 @@ uint8_t run_check_double_equal(double lhs, double rhs)
 //
 // -----------------------------------------------------
 
-int vm_run(NVM* vm)
+int vm_init(struct VM* vm)
 {
-    // Ensure vm is okay, check that its loaded, and not running
     assert(vm);
-    if(1 == FILE_GLOBAL_IS_VM_RUNNING)        {  return VM_RUN_ERROR_VM_ALREADY_RUNNING; }
 
-    // Indicate that it is now running
-    FILE_GLOBAL_IS_VM_RUNNING = 1;
-
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-    printf("Running VM\n");
-#endif
+    if(FILE_GLOBAL_IS_VM_INITIALIZED)
+    {
+        perror("VM is already initialized\n");
+        return VM_INIT_ERROR_ALREADY_INITIALIZED;
+    }
 
     // Set function pointer to the entry function
     vm->fp = vm->entryAddress;
 
     // The current function to get instructions from
-    NFUNC * currentFunction = &vm->functions[vm->fp];
-
-    // The current function's instruction pointer ( the instruction we want to fetch, decode, and execute )
-    currentFunction->ip = 0;
+    currentFunction = &vm->functions[vm->fp];
 
     // Indicate if we are switching functions. When this is set, we don't want to increase the instruction pointer
     // as we have modified it as-per the guidance of an instruction. Either a call, or a return. In any case we want
     // to ensure the bottom of the loop doesn't increase the ip
-    uint8_t switchingFunction = 0;
+    switchingFunction = 0;
 
-    while(FILE_GLOBAL_IS_VM_RUNNING)
+    // The current function's instruction pointer ( the instruction we want to fetch, decode, and execute )
+    currentFunction->ip = 0;
+
+    FILE_GLOBAL_IS_VM_INITIALIZED = 1;
+
+    return 0;
+}
+
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
+int vm_cycle(struct VM* vm, uint64_t n)
+{
+    for(uint64_t cycle = 0; cycle < n; cycle++)
     {
         int res = 0;
         uint64_t ins = stack_value_at(currentFunction->ip, currentFunction->instructions, &res);
@@ -239,16 +258,90 @@ int vm_run(NVM* vm)
         // The 'id' of the isntruction (key information that tells us how to decode the rest of the instruction)
         uint8_t id = (operation & 0x03);
 
-
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-        printf("Operation  :  %u\t opcode  : %u\t id  : %u \n", operation, op, id);
-#endif
-
+        // Left hand side of an operation (arg 2 of asm instruction)
         int64_t lhs = 0;
+
+        // Right hand side of an operation (arg 3 of an asm instruction)
         int64_t rhs = 0;
 
         switch(op)
-        {
+        {     
+            case INS_NOP:
+            {
+                // No op
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("nop\n");
+#endif
+                break;
+            }
+            case INS_LSH :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = (lhs << rhs);
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("LSH : result: %ld\n", vm->registers[dest]);
+#endif
+                break;
+            } 
+
+            case INS_RSH :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = (lhs >> rhs);
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("RSH : result: %ld\n", vm->registers[dest]);
+#endif
+                break;
+            } 
+
+            case INS_AND :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = (lhs & rhs);
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("AND : result: %ld\n", vm->registers[dest]);
+#endif
+                break;
+            } 
+
+            case INS_OR  :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = (lhs | rhs);
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("OR : result: %ld\n", vm->registers[dest]);
+#endif
+                break;
+            } 
+
+            case INS_XOR :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = (lhs ^ rhs);
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("XOR : result: %ld\n", vm->registers[dest]);
+#endif
+                break;
+            } 
+
+            case INS_NOT :
+            {
+                uint8_t dest =  run_extract_one(ins, 6);
+                run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
+                vm->registers[dest] = (~lhs);
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("NOT : result: %ld\n", vm->registers[dest]);
+#endif
+                break;
+            } 
+
             case INS_ADD  :
             {
                 uint8_t dest =  run_extract_one(ins, 6);
@@ -696,7 +789,7 @@ vm_attempt_force_return:
             {
                 FILE_GLOBAL_IS_VM_RUNNING = 0;
                 return 0;
-            }         
+            }    
             default:
             {
                 uint64_t stackEnd = stack_get_size(currentFunction->instructions);
@@ -705,7 +798,6 @@ vm_attempt_force_return:
                     FILE_GLOBAL_IS_VM_RUNNING = 0;
                     return 0;
                 }
-
                 return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
                 break; 
             }
@@ -726,4 +818,57 @@ vm_attempt_force_return:
     }
 
     return 0;
+}
+
+// -----------------------------------------------------
+//  We pass through cycle so we don't have to run
+//  the init check every time when running a bin
+// -----------------------------------------------------
+
+int vm_step(struct VM* vm, uint64_t n)
+{
+    if(!FILE_GLOBAL_IS_VM_INITIALIZED)
+    {
+        return VM_RUN_ERROR_VM_NOT_INITIALIZED;
+    }
+
+    return vm_cycle(vm, n);
+}
+
+// -----------------------------------------------------
+// Run a vm until the end of its life
+// -----------------------------------------------------
+
+int vm_run(NVM* vm)
+{
+    if(1 == FILE_GLOBAL_IS_VM_RUNNING)        {  return VM_RUN_ERROR_VM_ALREADY_RUNNING; }
+
+    if(0 == FILE_GLOBAL_IS_VM_INITIALIZED)
+    {
+        int init_res = vm_init(vm);
+
+        if(init_res != 0)
+        {
+            return init_res;
+        }
+    }
+
+    // Indicate that it is now running
+    FILE_GLOBAL_IS_VM_RUNNING = 1;
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+    printf("Running VM\n");
+#endif
+
+    int result;
+    while(FILE_GLOBAL_IS_VM_RUNNING)
+    {
+        result = vm_cycle(vm, 1);
+
+        if(result != 0)
+        {
+            return result;
+        }
+    }
+    return result;
 }
