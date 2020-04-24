@@ -226,10 +226,16 @@ namespace NABLA
 
         //! \brief Create segment binary end of file
         std::vector<uint8_t> createSegBinEOF();
-
-
+1
+        //! \brief Create a bitwise instruction
+        //! \param type The particular bitwise instruction to create
+        //! \param setup Indicate what args 1-3 mean
+        //! \param arg1 An argument from the asm
+        //! \param arg2 An argument from the asm
+        //! \param arg3 An argument from the asm
         Instruction createBitwiseInstruction(BitwiseTypes type, ArithmaticSetup setup, int16_t arg1, int16_t arg2, int16_t arg3);    
 
+        //! \brief Create a no-op instruction
         Instruction createNopInstruction();
 
     private:
