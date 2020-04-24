@@ -1,3 +1,0 @@
-# libcpp
-
-Shared CPP functionality 
