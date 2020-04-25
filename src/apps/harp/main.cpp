@@ -171,6 +171,7 @@ void analyzeFile(std::string fileName)
                       << "\tfc       ......................... function count"                  << std::endl
                       << "\tfp       ......................... function pointer"                << std::endl
                       << "\tfd       ......................... function dump (-b for binary)"   << std::endl
+                      << "\tfv <N>   ......................... view function N"                 << std::endl
                       << "\tea       ......................... show entry address"              << std::endl
                       << "\tstep | s ......................... step vm execution of bin 1 step" << std::endl
                       << "\treset    ......................... reset and reload current bin"    << std::endl;
@@ -250,6 +251,32 @@ void analyzeFile(std::string fileName)
                     }
                     std::cout << std::endl;
                 }
+            }
+            else if(results[0] == "fv")
+            {
+                if(results.size() != 2)
+                {
+                    std::cout << TERM_RED << "Function fiew requires an <N> to select a function" << TERM_RESET << std::endl;
+                    goto skip_input;
+                }
+
+                uint64_t fnum = std::stoi(results[1]);
+
+                if(fnum > functions.size()-1)
+                {
+                    std::cout << TERM_RED << "Invalid function address" << TERM_RESET << std::endl;
+                    goto skip_input;
+                }
+
+                std::cout << TERM_CYAN << "Address " << TERM_RESET << TERM_YELLOW 
+                            << "0x" << std::hex << std::uppercase << std::setfill('0') 
+                            << std::setw(8) << functions[fnum].address << TERM_RESET << std::endl << std::endl;
+
+                for(auto & i : functions[fnum].instructions)
+                {
+                    show64Hex(i);
+                }
+                std::cout << std::endl;
             }
             else if(results[0] == "ea")
             {
