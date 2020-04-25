@@ -16,6 +16,10 @@ typedef struct Stack * NablaStack;
 //! \returns Stack pointer
 NablaStack stack_new(uint64_t capacity);
 
+//! \brief Delete a stack
+//! \post All reserved stack information freed
+void stack_delete(NablaStack stack);
+
 //! \brief Get the capacity of the stack
 //! \param stack The stack
 //! \returns capacity of given stack

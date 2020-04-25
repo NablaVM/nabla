@@ -91,6 +91,31 @@ NVM * vm_new()
 }
 
 // -----------------------------------------------------
+// 
+// -----------------------------------------------------
+
+void vm_delete(NVM * vm)
+{
+    FILE_GLOBAL_IS_VM_RUNNING     = 0;
+    FILE_GLOBAL_IS_VM_INITIALIZED = 0;
+    for(int i = 0; i < NABLA_SETTINGS_MAX_FUNCTIONS; i++)
+    {
+        stack_delete(vm->functions[i].instructions);
+        stack_delete(vm->functions[i].localStack);
+    }
+    free(vm->functions);
+    stack_delete(vm->globalStack);
+    stack_delete(vm->callStack);
+    free(vm);
+
+    // Should be, but lets be careful
+    if(FILE_GLOBAL_INVOKED_VM_COUNT > 0)
+    {
+        FILE_GLOBAL_INVOKED_VM_COUNT--;
+    }
+}
+
+// -----------------------------------------------------
 //  Extract a byte from a 64-bit instruction
 // -----------------------------------------------------
 

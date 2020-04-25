@@ -10,4 +10,8 @@ typedef struct VM * NablaVirtualMachine;
 //! \returns Result code listed in vmrc.h prefixed with VM_LOAD_
 int bin_load_vm(FILE* file, NablaVirtualMachine vm);
 
+//! \brief Reset the bin loader
+//! \post The bin loader will be able to be called again
+void bin_reset();
+
 #endif
