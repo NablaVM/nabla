@@ -38,10 +38,10 @@ namespace NABLA
         //!
         enum class ArithmaticSetup
         {
-            REG_REG,    //! Two registers
-            REG_NUM,    //! A register and a number
-            NUM_REG,    //! A number and a register
-            NUM_NUM     //! Two numbers
+            REG_REG = 0x00,    //! Two registers
+            REG_NUM = 0x01,    //! A register and a number
+            NUM_REG = 0x02,    //! A number and a register
+            NUM_NUM = 0x03     //! Two numbers
         };
 
         //!
