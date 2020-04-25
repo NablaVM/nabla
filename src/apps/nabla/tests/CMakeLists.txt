@@ -7,8 +7,8 @@ link_directories(${CPPUTEST_LIBRARIES})
 include_directories(../)
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/libcpp/bytegen/)
-include_directories(${CMAKE_SOURCE_DIR}/libc/stack)
 include_directories(${CMAKE_SOURCE_DIR}/libc/binloader)
+include_directories(${CMAKE_SOURCE_DIR}/libc/stack)
 include_directories(${CMAKE_SOURCE_DIR}/libc/vm)
 
 add_executable(nablaVmTests

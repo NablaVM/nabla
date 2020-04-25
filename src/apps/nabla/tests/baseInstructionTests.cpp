@@ -29,7 +29,7 @@ namespace
     {
         return std::vector<uint8_t>(std::begin(ins.bytes), std::end(ins.bytes));
     }
-    
+        
     uint16_t getRandom16(uint16_t low, uint16_t high)
     {
         std::random_device rd;
@@ -64,7 +64,7 @@ namespace
 
     bool check_result(NablaVirtualMachine vm, int16_t dest_reg, uint64_t expected)
     {
-        return (vm->registers[dest_reg] == (int64_t)expected);
+        return ((int64_t)vm->registers[dest_reg] == (int64_t)expected);
     }
 
     uint64_t calculateArith( NABLA::Bytegen::ArithmaticTypes arithType, uint64_t lhs, uint16_t rhs)
@@ -75,10 +75,6 @@ namespace
             case NABLA::Bytegen::ArithmaticTypes::SUB:  return lhs - rhs;
             case NABLA::Bytegen::ArithmaticTypes::DIV:  return lhs / rhs;
             case NABLA::Bytegen::ArithmaticTypes::MUL:  return lhs * rhs;
-            case NABLA::Bytegen::ArithmaticTypes::ADDD: return lhs + rhs; // Have to convert to double first
-            case NABLA::Bytegen::ArithmaticTypes::SUBD: return lhs - rhs; // Have to convert to double first
-            case NABLA::Bytegen::ArithmaticTypes::DIVD: return lhs / rhs; // Have to convert to double first
-            case NABLA::Bytegen::ArithmaticTypes::MULD: return lhs * rhs; // Have to convert to double first
             default: return 0;
         };
         return 0;
@@ -90,12 +86,12 @@ TEST_GROUP(NablaInstructionTests)
 {
     void setup()
     {
-    //    MemoryLeakWarningPlugin::turnOffNewDeleteOverloads();
+        MemoryLeakWarningPlugin::turnOffNewDeleteOverloads();
     }
 
     void teardown()
     {
-    //    MemoryLeakWarningPlugin::turnOnNewDeleteOverloads();
+        MemoryLeakWarningPlugin::turnOnNewDeleteOverloads();
     }
 };
 
@@ -110,7 +106,7 @@ TEST(NablaInstructionTests, standardArith)
     {
         NABLA::Bytegen::ArithmaticTypes arithType = static_cast<NABLA::Bytegen::ArithmaticTypes>(typesItr);
 
-        for(int setupItr = 1; setupItr <= 3; setupItr++)
+        for(int setupItr = 0; setupItr <= 3; setupItr++)
         {
             NABLA::Bytegen bytegen;
             NablaVirtualMachine vm = vm_new();
@@ -126,29 +122,29 @@ TEST(NablaInstructionTests, standardArith)
             switch(arithSetup)
             {
                 case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
-                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65530); // random reg with random val
-                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65530); // random reg with random val
+                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65000); // random reg with random val
+                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65000); // random reg with random val
 
                     expectedResult = calculateArith(arithType, vm->registers[arg1], vm->registers[arg2]);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
-                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65530); // Random reg with random val
-                    arg2 = getRandom16(0, 65530);                                            // Random val
+                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65000); // Random reg with random val
+                    arg2 = getRandom16(0, 65000);                                            // Random val
 
                     expectedResult = calculateArith(arithType, vm->registers[arg1], arg2);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
-                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65530); // Random reg with random val
-                    arg1 = getRandom16(0, 65530);                                           // Random val
+                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65000); // Random reg with random val
+                    arg1 = getRandom16(0, 65000);                                           // Random val
 
                     expectedResult = calculateArith(arithType, arg1, vm->registers[arg2]);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_NUM: 
-                    arg1 = getRandom16(0, 65530);                                            // Random val
-                    arg2 = getRandom16(0, 65530);                                            // Random val
+                    arg1 = getRandom16(0, 65000);                                            // Random val
+                    arg2 = getRandom16(0, 65000);                                            // Random val
 
                     expectedResult = calculateArith(arithType, arg1, arg2);
                     break;
@@ -174,5 +170,94 @@ TEST(NablaInstructionTests, standardArith)
             vm_delete(vm);
         }
     }
+}
 
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, branchIns)
+{
+    std::cout << "(NablaInstructionTests, branchIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, pushPopIns)
+{
+    std::cout << "(NablaInstructionTests, pushPopIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, jumpIns)
+{
+    std::cout << "(NablaInstructionTests, jumpIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, movIns)
+{
+    std::cout << "(NablaInstructionTests, movIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, stbLdbIns)
+{
+    std::cout << "(NablaInstructionTests, stbLdbIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, callIns)
+{
+    std::cout << "(NablaInstructionTests, callIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, returnIns)
+{
+    std::cout << "(NablaInstructionTests, returnIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, exitIns)
+{
+    std::cout << "(NablaInstructionTests, exitIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, bitwiseIns)
+{
+    std::cout << "(NablaInstructionTests, bitwiseIns)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, nopIns)
+{
+    std::cout << "(NablaInstructionTests, nopIns)\t\t This test needs to be written here" << std::endl;
 }
