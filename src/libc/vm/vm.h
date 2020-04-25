@@ -8,6 +8,10 @@
 //! \returns Vm pointer
 struct VM* vm_new();
 
+//! \brief Delete the vm
+//! \post The VM data will be freed, and vm_init can be ran on a new vm
+void vm_delete(struct VM* vm);
+
 /* 
     ----------------------------------------------
 

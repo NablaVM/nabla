@@ -32,6 +32,21 @@ namespace HARP
     //
     // --------------------------------------------
     
+    Analyzer::~Analyzer()
+    {
+        std::cout << "Deleting" << std::endl;
+        loaded = false;
+        vm_delete(vm);
+        vm = nullptr;
+
+        // Reset the binloader
+        bin_reset();
+    }
+
+    // --------------------------------------------
+    //
+    // --------------------------------------------
+    
     bool Analyzer::loadBin(std::string file)
     {
         /*
@@ -80,6 +95,9 @@ namespace HARP
             default:
                 break;
         }
+
+        // Init the vm
+        vm_init(vm);
         
         fclose(file_in);
         loaded = true;
@@ -99,10 +117,10 @@ namespace HARP
             return result;
         }
 
-        while(!stack_is_empty(vm->globalStack))
+        for(uint64_t i = 0; i < stack_get_size(vm->globalStack); i++)
         {
             int okay = -255;
-            uint64_t value = (uint64_t)stack_pop(vm->globalStack, &okay);
+            uint64_t value = (uint64_t)stack_value_at(i, vm->globalStack, &okay);
 
             result.push_back(value);
         }
@@ -123,10 +141,10 @@ namespace HARP
             return result;
         }
 
-        while(!stack_is_empty(vm->callStack))
+        for(uint64_t i = 0; i < stack_get_size(vm->callStack); i++)
         {
             int okay = -255;
-            uint64_t value = (uint64_t)stack_pop(vm->callStack, &okay);
+            uint64_t value = (uint64_t)stack_value_at(i, vm->callStack, &okay);
 
             result.push_back(value);
         }
@@ -186,10 +204,10 @@ namespace HARP
             FunctionInfo fi;
             fi.address = i;
             
-            while(!stack_is_empty(vm->functions[i].instructions))
+            for(uint64_t j = 0; j < stack_get_size(vm->functions[i].instructions); j++)
             {
                 int okay = -255;
-                uint64_t value = (uint64_t)stack_pop(vm->functions[i].instructions, &okay);
+                uint64_t value = (uint64_t)stack_value_at(j, vm->functions[i].instructions, &okay);
                 fi.instructions.push_back(value);
             }
 
@@ -197,5 +215,26 @@ namespace HARP
         }
 
         return functions;
+    }
+
+    // --------------------------------------------
+    //
+    // --------------------------------------------
+    
+    void Analyzer::step(uint64_t n )
+    {
+        switch(vm_step(vm, n))
+        {       
+            case VM_RUN_ERROR_VM_ALREADY_RUNNING:
+                std::cerr << "VM could not start. It is already running" << std::endl;
+                return;
+
+            case VM_RUN_ERROR_UNKNOWN_INSTRUCTION:
+                std::cerr << "VM caught an illegal instruction" << std::endl;
+                return;
+
+            default:
+                return;
+        }
     }
 }

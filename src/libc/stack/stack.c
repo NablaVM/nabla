@@ -50,6 +50,16 @@ NStack * stack_new(uint64_t capacity)
 //
 // -----------------------------------------------------
 
+void stack_delete(NStack * stack)
+{
+    free(stack->elements);
+    free(stack);
+}
+
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
 uint64_t stack_get_capacity(NStack * stack)
 {
     assert(stack);

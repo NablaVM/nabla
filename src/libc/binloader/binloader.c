@@ -10,9 +10,16 @@
 
 typedef struct VM NVM;
 
-static uint8_t  FILE_GLOBAL_INVOKED_VM_COUNT = 0;
 static uint8_t  FILE_GLOBAL_IS_VM_LOADED     = 0;
-static uint8_t  FILE_GLOBAL_IS_VM_RUNNING    = 0;
+
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
+void bin_reset()
+{
+    FILE_GLOBAL_IS_VM_LOADED = 0;
+}
 
 /*
     ---------------------------------------------------------------------------------

@@ -136,25 +136,14 @@ void show64Bin(uint64_t value)
 
 void analyzeFile(std::string fileName)
 {
-    HARP::Analyzer analyzer;
+    HARP::Analyzer * analyzer = new HARP::Analyzer();
 
-    if(!analyzer.loadBin(fileName))
+    if(!analyzer->loadBin(fileName))
     {
         std::cerr << "Error analyzing : " << fileName << std::endl;
         exit(EXIT_FAILURE);
     }
-
-    std::vector<uint64_t> gs   = analyzer.getGlobalStack();
-    std::vector<uint64_t> cs   = analyzer.getCallStack();
-    std::vector<int64_t>  regs = analyzer.getRegisters();
-    uint64_t functionPointer   = analyzer.getFunctionPointer();
-    uint64_t entryAddress      = analyzer.getEntryAddress();
-    std::vector<HARP::Analyzer::FunctionInfo> functions = analyzer.getFunctions();
-
-    std::cout << "Global stack has : " << gs.size() << " items" << std::endl;
-    std::cout << "Call stack has   : " << cs.size() << " items" << std::endl;
-    std::cout << "Function Count   : " << functions.size() << " items" << std::endl;
-    std::cout << "Entry address (0-indexed)   : " << entryAddress << std::endl;
+    std::vector<HARP::Analyzer::FunctionInfo> functions = analyzer->getFunctions();
 
     std::cout << TERM_GREEN << "Used 'exit' to exit, and 'help' for help" << TERM_RESET << std::endl;
 
@@ -163,20 +152,29 @@ void analyzeFile(std::string fileName)
     std::cout << "harp> ";
     while(getline(std::cin, input))
     {
+        if(input.size() == 0)
+        {
+            goto skip_input;
+        }
+
         if(input == "exit")
         {
             return;
         }
         else if(input == "help" || input == "h")
         {
-            std::cout << "\texit     ......................... exits analyzer"        << std::endl
-                      << "\thelp | h ......................... show this message"     << std::endl
-                      << "\tgs       ......................... global stack"          << std::endl
-                      << "\tcs       ......................... call stack"            << std::endl
-                      << "\tregs     ......................... registers"             << std::endl
-                      << "\tfc       ......................... function count"        << std::endl
-                      << "\tfd       ......................... function dump (-b for binary)" << std::endl
-                      << "\tea       ......................... Show entry address"    << std::endl;
+            std::cout << "\texit     ......................... exits analyzer"                  << std::endl
+                      << "\thelp | h ......................... show this message"               << std::endl
+                      << "\tgs       ......................... global stack"                    << std::endl
+                      << "\tcs       ......................... call stack"                      << std::endl
+                      << "\tregs     ......................... registers"                       << std::endl
+                      << "\tfc       ......................... function count"                  << std::endl
+                      << "\tfp       ......................... function pointer"                << std::endl
+                      << "\tfd       ......................... function dump (-b for binary)"   << std::endl
+                      << "\tfv <N>   ......................... view function N"                 << std::endl
+                      << "\tea       ......................... show entry address"              << std::endl
+                      << "\tstep | s ......................... step vm execution of bin 1 step" << std::endl
+                      << "\treset    ......................... reset and reload current bin"    << std::endl;
         }
         else
         {
@@ -186,6 +184,7 @@ void analyzeFile(std::string fileName)
 
             if(results[0] == "gs")
             {
+                std::vector<uint64_t> gs   = analyzer->getGlobalStack();
                 for(uint64_t i = 0; i < gs.size(); i++)
                 {
                     std::cout << TERM_CYAN << "GS Address " << TERM_RESET << TERM_YELLOW << "0x" << std::hex << std::uppercase 
@@ -197,9 +196,10 @@ void analyzeFile(std::string fileName)
             }
             else if(results[0] == "cs")
             {
+                std::vector<uint64_t> cs   = analyzer->getCallStack();
                 for(uint64_t i = 0; i < cs.size(); i++)
                 {
-                    std::cout << TERM_CYAN << "CS Address " << TERM_RESET << TERM_YELLOW << "0x" << std::hex << std::uppercase 
+                    std::cout << std::endl << TERM_CYAN << "CS Address " << TERM_RESET << TERM_YELLOW << "0x" << std::hex << std::uppercase 
                               << std::setfill('0') << std::setw(8) << (int)i << TERM_RESET << std::endl << std::endl;
                     show64Hex(cs[i]);
                 }
@@ -207,16 +207,21 @@ void analyzeFile(std::string fileName)
             }
             else if(results[0] == "regs")
             {
+                std::vector<int64_t>  regs = analyzer->getRegisters();
                 for(uint8_t i = 0; i < regs.size(); i++)
                 {
                     std::cout << TERM_CYAN << "REG " << TERM_RESET << TERM_YELLOW << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(2) << (int)i << TERM_RESET;
-                    show64Hex(i);
+                    show64Hex(regs[i]);
                 }
                 std::cout << std::endl;
             }
             else if(results[0] == "fc")
             {
                 std::cout << TERM_CYAN << "Function Count :" << TERM_RESET << " " << functions.size() << std::endl << std::endl;
+            }
+            else if(results[0] == "fp")
+            {
+                std::cout << TERM_CYAN << "Function Pointer :" << TERM_RESET << " " << analyzer->getFunctionPointer() << std::endl;
             }
             else if(results[0] == "fd")
             {
@@ -247,10 +252,53 @@ void analyzeFile(std::string fileName)
                     std::cout << std::endl;
                 }
             }
+            else if(results[0] == "fv")
+            {
+                if(results.size() != 2)
+                {
+                    std::cout << TERM_RED << "Function fiew requires an <N> to select a function" << TERM_RESET << std::endl;
+                    goto skip_input;
+                }
+
+                uint64_t fnum = std::stoi(results[1]);
+
+                if(fnum > functions.size()-1)
+                {
+                    std::cout << TERM_RED << "Invalid function address" << TERM_RESET << std::endl;
+                    goto skip_input;
+                }
+
+                std::cout << TERM_CYAN << "Address " << TERM_RESET << TERM_YELLOW 
+                            << "0x" << std::hex << std::uppercase << std::setfill('0') 
+                            << std::setw(8) << functions[fnum].address << TERM_RESET << std::endl << std::endl;
+
+                for(auto & i : functions[fnum].instructions)
+                {
+                    show64Hex(i);
+                }
+                std::cout << std::endl;
+            }
             else if(results[0] == "ea")
             {
                 std::cout << TERM_CYAN << "Entry Address (main) : " << TERM_RESET 
-                          << TERM_YELLOW << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(8) << entryAddress << TERM_RESET << std::endl << std::endl;
+                          << TERM_YELLOW << "0x" << std::hex << std::uppercase 
+                          << std::setfill('0') << std::setw(8) <<  analyzer->getEntryAddress() << TERM_RESET << std::endl << std::endl;
+            }
+            else if(results[0] == "step" || results[0] == "s")
+            {
+                analyzer->step(1);
+            }
+            else if(results[0] == "reset")
+            {
+                delete analyzer;
+                analyzer = new HARP::Analyzer();
+
+                if(!analyzer->loadBin(fileName))
+                {
+                    std::cerr << "Error analyzing : " << fileName << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                functions = analyzer->getFunctions();
             }
         }
 
