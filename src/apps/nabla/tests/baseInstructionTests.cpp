@@ -10,6 +10,7 @@
 #include "bytegen.hpp"
 #include <random>
 #include <vector>
+#include <ieee754.h>
 #include "CppUTest/TestHarness.h"
 
 extern "C" 
@@ -36,6 +37,25 @@ namespace
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis(low, high);
         return dis(gen);
+    }
+
+    double getRandomDouble(uint16_t low, uint16_t high)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<double> dis(low, high);
+        return dis(gen);
+    }
+    
+    bool check_double_equal(double lhs, double rhs)
+    {
+        double precision = 0.00001;
+        if (((lhs - precision) < rhs) && 
+            ((lhs + precision) > rhs))
+        {
+            return true;
+        }
+        return false;
     }
 
     void build_test_vm(NablaVirtualMachine vm, std::vector<uint8_t> instructions)
@@ -67,7 +87,31 @@ namespace
         return ((int64_t)vm->registers[dest_reg] == (int64_t)expected);
     }
 
-    uint64_t calculateArith( NABLA::Bytegen::ArithmaticTypes arithType, uint64_t lhs, uint16_t rhs)
+    uint64_t doubleToUint64(double val)
+    {
+        ieee754_double ied;
+        ied.d = val;
+        uint64_t packed = (uint64_t)ied.ieee.negative  << 63| 
+                          (uint64_t)ied.ieee.exponent  << 52|
+                          (uint64_t)ied.ieee.mantissa0 << 32|
+                          (uint64_t)ied.ieee.mantissa1 << 0;
+    }
+
+    double uint64ToDouble(uint64_t val)
+    {
+        union deval
+        {
+            uint64_t val;
+            double d;
+        };
+
+        union deval d; d.val = val;
+
+        // Return double
+        return d.d;
+    }
+
+    uint64_t calculateArith( NABLA::Bytegen::ArithmaticTypes arithType, uint64_t lhs, uint64_t rhs)
     {
         switch(arithType)
         {
@@ -75,6 +119,10 @@ namespace
             case NABLA::Bytegen::ArithmaticTypes::SUB:  return lhs - rhs;
             case NABLA::Bytegen::ArithmaticTypes::DIV:  return lhs / rhs;
             case NABLA::Bytegen::ArithmaticTypes::MUL:  return lhs * rhs;
+            case NABLA::Bytegen::ArithmaticTypes::ADDD:  return doubleToUint64((uint64ToDouble(lhs) + uint64ToDouble(rhs)));
+            case NABLA::Bytegen::ArithmaticTypes::SUBD:  return doubleToUint64((uint64ToDouble(lhs) - uint64ToDouble(rhs)));
+            case NABLA::Bytegen::ArithmaticTypes::DIVD:  return doubleToUint64((uint64ToDouble(lhs) / uint64ToDouble(rhs)));
+            case NABLA::Bytegen::ArithmaticTypes::MULD:  return doubleToUint64((uint64ToDouble(lhs) * uint64ToDouble(rhs)));
             default: return 0;
         };
         return 0;
@@ -94,6 +142,7 @@ namespace
         };
         return 0;
     }
+
 }
 
 
@@ -381,7 +430,73 @@ TEST(NablaInstructionTests, standardBranchInsExpectedFails)
 
 TEST(NablaInstructionTests, doubleArith)
 {
-    std::cout << "(NablaInstructionTests, doubleArith)\t This test needs to be written here" << std::endl;
+    // Each of the arithmatic types (ADD ,MUL, DIV, SUB)
+    for(int typesItr = 0x04; typesItr <= 0x07; typesItr++)
+    {
+        NABLA::Bytegen::ArithmaticTypes arithType = static_cast<NABLA::Bytegen::ArithmaticTypes>(typesItr);
+
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        // The only valid double arith
+        NABLA::Bytegen::ArithmaticSetup arithSetup = NABLA::Bytegen::ArithmaticSetup::REG_REG;
+
+        int16_t dest_reg    = getRandom16(0, 15);
+        uint64_t arg1;
+        uint64_t arg2;
+
+        uint64_t expectedResult;
+
+        switch(arithSetup)
+        {
+            case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
+                arg1 = getRandom16(0, 15); vm->registers[arg1] = doubleToUint64(5.5); // random reg with random val
+                arg2 = getRandom16(0, 15); vm->registers[arg2] = doubleToUint64(5.5); // random reg with random val
+
+                expectedResult = calculateArith(arithType, vm->registers[arg1], vm->registers[arg2]);
+                break;
+
+            case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
+                arg1 = getRandom16(0, 15); vm->registers[arg1] =doubleToUint64(5.5); // Random reg with random val
+                arg2 = doubleToUint64(5.5);                                          // Random val
+
+                expectedResult = calculateArith(arithType, vm->registers[arg1], arg2);
+                break;
+
+            case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
+                arg2 = getRandom16(0, 15); vm->registers[arg2] = doubleToUint64(5.5); // Random reg with random val
+                arg1 = doubleToUint64(5.5);                                           // Random val
+
+                expectedResult = calculateArith(arithType, arg1, vm->registers[arg2]);
+                break;
+
+            case NABLA::Bytegen::ArithmaticSetup::NUM_NUM: 
+                arg1 = doubleToUint64(5.5);                                            // Random val
+                arg2 = doubleToUint64(5.5);                                            // Random val
+
+                expectedResult = calculateArith(arithType, arg1, arg2);
+                break;
+        }
+
+        NABLA::Bytegen::ArithmaticSetup setup;
+
+        // Add registers r0 and r1 together, place in destination
+        NABLA::Bytegen::Instruction ins = bytegen.createArithmaticInstruction(
+            arithType,
+            arithSetup,
+            dest_reg,
+            arg1,
+            arg2
+        );
+
+        build_test_vm(vm, ins_to_vec(ins));
+
+        vm_run(vm);
+
+        CHECK_TRUE(check_double_equal(uint64ToDouble(vm->registers[dest_reg]), uint64ToDouble(expectedResult)));
+
+        vm_delete(vm);
+    }
 }
 
 // ---------------------------------------------------------------
