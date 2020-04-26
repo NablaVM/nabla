@@ -3,7 +3,7 @@
 #include "VmInstructions.h"
 #include <iostream>
 #include <bitset>
-#include<ieee754.h>
+#include <ieee754.h>
 
 namespace NABLA
 {

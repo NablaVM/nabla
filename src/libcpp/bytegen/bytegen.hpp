@@ -38,10 +38,10 @@ namespace NABLA
         //!
         enum class ArithmaticSetup
         {
-            REG_REG,    //! Two registers
-            REG_NUM,    //! A register and a number
-            NUM_REG,    //! A number and a register
-            NUM_NUM     //! Two numbers
+            REG_REG = 0x00,    //! Two registers
+            REG_NUM = 0x01,    //! A register and a number
+            NUM_REG = 0x02,    //! A number and a register
+            NUM_NUM = 0x03     //! Two numbers
         };
 
         //!
@@ -83,8 +83,8 @@ namespace NABLA
         //!
         enum class Stacks
         {
-            GLOBAL,
-            LOCAL
+            GLOBAL = 0x00,
+            LOCAL  = 0x01
         };
 
         //!
@@ -103,8 +103,8 @@ namespace NABLA
         //!
         enum class MovSetup
         {
-            REG_REG,    //! Arg1 is a register, and so is arg 2
-            REG_NUM     //! Arg1 is a register, and arg2 is a number
+            REG_REG = 0x00,    //! Arg1 is a register, and so is arg 2
+            REG_NUM = 0x01     //! Arg1 is a register, and arg2 is a number
         };
 
         //!

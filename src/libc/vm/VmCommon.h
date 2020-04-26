@@ -28,7 +28,7 @@ struct VM
 };
 
 // Set if to 0 to disable debug
-#if 1
+#if 0
     #define NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
 #endif
 
