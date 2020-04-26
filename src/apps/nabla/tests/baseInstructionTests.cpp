@@ -79,6 +79,21 @@ namespace
         };
         return 0;
     }
+
+    uint64_t calculateBitwise( NABLA::Bytegen::BitwiseTypes type, uint64_t lhs, uint64_t rhs)
+    {
+        switch(type)
+        {
+            case NABLA::Bytegen::BitwiseTypes::LSH:  return lhs << rhs;
+            case NABLA::Bytegen::BitwiseTypes::RSH:  return lhs >> rhs;
+            case NABLA::Bytegen::BitwiseTypes::AND:  return lhs &  rhs;
+            case NABLA::Bytegen::BitwiseTypes::OR :  return lhs |  rhs;
+            case NABLA::Bytegen::BitwiseTypes::XOR:  return lhs ^  rhs;
+            case NABLA::Bytegen::BitwiseTypes::NOT:  return     ~  lhs;
+            default: return 0;
+        };
+        return 0;
+    }
 }
 
 
@@ -892,4 +907,85 @@ TEST(NablaInstructionTests, nopIns)
 TEST(NablaInstructionTests, bitwiseIns)
 {
     std::cout << "(NablaInstructionTests, bitwiseIns)\t This test needs to be written here" << std::endl;
+
+    // Each of the arithmatic types (ADD ,MUL, DIV, SUB)
+    for(int typesItr = 0x01; typesItr <= 0x06; typesItr++)
+    {
+        NABLA::Bytegen::BitwiseTypes arithType = static_cast<NABLA::Bytegen::BitwiseTypes>(typesItr);
+
+        for(int setupItr = 0; setupItr <= 3; setupItr++)
+        {
+            NABLA::Bytegen::ArithmaticSetup arithSetup = static_cast<NABLA::Bytegen::ArithmaticSetup>(setupItr);
+
+            // NOT instruction only have 2 seperate arithmatic setups, so we skip the invalids
+            if(NABLA::Bytegen::BitwiseTypes::NOT == arithType)
+            {
+                if(NABLA::Bytegen::ArithmaticSetup::REG_NUM == arithSetup || 
+                   NABLA::Bytegen::ArithmaticSetup::NUM_NUM == arithSetup)
+                {
+                    continue;
+                }
+            }
+
+            NABLA::Bytegen bytegen;
+            NablaVirtualMachine vm = vm_new();
+
+
+            int16_t dest_reg    = getRandom16(0, 15);
+            uint64_t arg1;
+            uint64_t arg2;
+
+            uint64_t expectedResult;
+
+            switch(arithSetup)
+            {
+                case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
+                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65000); // random reg with random val
+                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65000); // random reg with random val
+
+                    expectedResult = calculateBitwise(arithType, vm->registers[arg1], vm->registers[arg2]);
+                    break;
+
+                case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
+                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65000); // Random reg with random val
+                    arg2 = getRandom16(0, 65000);                                            // Random val
+
+                    expectedResult = calculateBitwise(arithType, vm->registers[arg1], arg2);
+                    break;
+
+                case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
+                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65000); // Random reg with random val
+                    arg1 = getRandom16(0, 65000);                                           // Random val
+
+                    expectedResult = calculateBitwise(arithType, arg1, vm->registers[arg2]);
+                    break;
+
+                case NABLA::Bytegen::ArithmaticSetup::NUM_NUM: 
+                    arg1 = getRandom16(0, 65000);                                            // Random val
+                    arg2 = getRandom16(0, 65000);                                            // Random val
+
+                    expectedResult = calculateBitwise(arithType, arg1, arg2);
+                    break;
+            }
+
+            NABLA::Bytegen::ArithmaticSetup setup;
+
+            // Add registers r0 and r1 together, place in destination
+            NABLA::Bytegen::Instruction ins = bytegen.createBitwiseInstruction(
+                arithType,
+                arithSetup,
+                dest_reg,
+                arg1,
+                arg2
+            );
+
+            build_test_vm(vm, ins_to_vec(ins));
+
+            vm_run(vm);
+
+            CHECK_TRUE(check_result(vm, dest_reg, expectedResult));
+
+            vm_delete(vm);
+        }
+    }
 }
