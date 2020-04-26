@@ -15,7 +15,6 @@
 
 extern "C" 
 {
-    #include "VmCommon.h"
     #include <stdio.h>
     #include "vm.h"
     #include "VmInstructions.h"

@@ -2,7 +2,6 @@
 
 #include "stack.h"
 
-#include "VmCommon.h"
 #include "VmInstructions.h"
 
 #include <stdint.h>
@@ -244,7 +243,7 @@ int load_function(NVM* vm, FILE* file)
 
     // All instructions are 8 bytes, so the number of instructions
     // is the bytes divided by 8
-    uint64_t insCount = insBytes/NABLA_SETTINGS_BYTES_PER_INS;
+    uint64_t insCount = insBytes/VM_SETTINGS_BYTES_PER_INS;
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("There are : %lu instructions in the function\n", insCount);
@@ -297,12 +296,12 @@ int load_function(NVM* vm, FILE* file)
 
 int bin_load_vm(FILE* file, NVM * vm)
 {
-    if(vm == NULL) { return VM_LOAD_ERROR_NULL_VM; }
-    if(file == NULL){ return VM_LOAD_ERROR_FILE_OPEN; }
+    if(vm == NULL) { return BIN_LOAD_ERROR_NULL_VM; }
+    if(file == NULL){ return BIN_LOAD_ERROR_FILE_OPEN; }
 
     if(FILE_GLOBAL_IS_VM_LOADED == 1)
     {
-        return VM_LOAD_ERROR_ALREADY_LOADED;
+        return BIN_LOAD_ERROR_ALREADY_LOADED;
     }
 
     // Read in constants - Populate into global stack
@@ -348,7 +347,7 @@ int bin_load_vm(FILE* file, NVM * vm)
                     }
                     else
                     {
-                        return VM_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS;
+                        return BIN_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS;
                     }
                 }
 
@@ -373,7 +372,7 @@ int bin_load_vm(FILE* file, NVM * vm)
                     }
                     else
                     {
-                        return VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION;
+                        return BIN_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION;
                     }
                 }
             }
@@ -382,7 +381,7 @@ int bin_load_vm(FILE* file, NVM * vm)
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("Unhandled instruction while load-state IDLE\n");
 #endif
-            return VM_LOAD_ERROR_UNHANDLED_INSTRUCTION;
+            return BIN_LOAD_ERROR_UNHANDLED_INSTRUCTION;
             }
         }
 
@@ -402,7 +401,7 @@ int bin_load_vm(FILE* file, NVM * vm)
             {
                 if( 0 != load_constant(vm, file, currentByte) )
                 {
-                    return VM_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS;
+                    return BIN_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS;
                 }
 
                 // Dec the number of expected constants
@@ -413,7 +412,7 @@ int bin_load_vm(FILE* file, NVM * vm)
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("Unhandled instruction while load-state EXPECT_CONSTANT\n");
 #endif
-                return VM_LOAD_ERROR_UNHANDLED_INSTRUCTION;
+                return BIN_LOAD_ERROR_UNHANDLED_INSTRUCTION;
             }
 
             //  All functions have been found, time to switch to IDLE
@@ -444,7 +443,7 @@ int bin_load_vm(FILE* file, NVM * vm)
                     uint8_t tmp = 0;
                     if(1 != fread(&tmp, 1, 1, file))
                     {
-                        return VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION;
+                        return BIN_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION;
                     }
                 }
             }
@@ -452,14 +451,14 @@ int bin_load_vm(FILE* file, NVM * vm)
             {
                 if(0 != load_function(vm, file))
                 { 
-                    return VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION; 
+                    return BIN_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION; 
                 }
             }
             else if (currentByte == INS_SEG_BEOF)
             {
                 if(0 != load_end_of_binary(vm, file))
                 {
-                    return VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION; 
+                    return BIN_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION; 
                 }
 
                 // Set the state to end. 
@@ -471,7 +470,7 @@ int bin_load_vm(FILE* file, NVM * vm)
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("Unhandled instruction while load-state EXPECT_FUCNTION : %X \n", currentByte);
 #endif
-                return VM_LOAD_ERROR_UNHANDLED_INSTRUCTION;
+                return BIN_LOAD_ERROR_UNHANDLED_INSTRUCTION;
             }
         }
     } 
@@ -480,10 +479,10 @@ int bin_load_vm(FILE* file, NVM * vm)
     //
     if(currentStatus != STOP_READING)
     {
-        return VM_LOAD_ERROR_EOB_NOT_FOUND;
+        return BIN_LOAD_ERROR_EOB_NOT_FOUND;
     }
 
-    assert(expectedEntryAddress <= NABLA_SETTINGS_MAX_FUNCTIONS);
+    assert(expectedEntryAddress <=VM_SETTINGS_MAX_FUNCTIONS);
 
     //  Set the entry address 
     //

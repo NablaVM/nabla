@@ -4,7 +4,6 @@
 extern "C" 
 {
     #include <stdio.h>
-    #include "vm.h"
     #include "binloader.h"
     #include "stack.h"
 }
@@ -53,31 +52,31 @@ namespace NABLA
         // Hand the file and vm over to be populated
         switch(bin_load_vm(file_in, vm))
         {
-            case VM_LOAD_ERROR_NULL_VM:
+            case BIN_LOAD_ERROR_NULL_VM:
                 std::cerr << "BinExec : The VM given was null" << std::endl;
                 return false;
 
-            case VM_LOAD_ERROR_FILE_OPEN:    
+            case BIN_LOAD_ERROR_FILE_OPEN:    
                 std::cerr << "BinExec : There was an error opening the bytecode file" << std::endl;
                 return false;
 
-            case VM_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS:    
+            case BIN_LOAD_ERROR_FAILED_TO_LOAD_CONSTANTS:    
                 std::cerr << "BinExec : There was an error loading constants from the bytecode file" << std::endl;
                 return false;
 
-            case VM_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION:
+            case BIN_LOAD_ERROR_FAILED_TO_LOAD_FUCNTION:
                 std::cerr << "BinExec : There was an error loading function from the bytecode file" << std::endl;
                 return false;
 
-            case VM_LOAD_ERROR_UNHANDLED_INSTRUCTION:   
+            case BIN_LOAD_ERROR_UNHANDLED_INSTRUCTION:   
                 std::cerr << "BinExec : The loader came across something it didn't understand and threw a fit" << std::endl;
                 return false;
 
-            case VM_LOAD_ERROR_ALREADY_LOADED:
+            case BIN_LOAD_ERROR_ALREADY_LOADED:
                 std::cerr << "BinExec : The VM has already been loaded" << std::endl;
                 return false;
 
-            case VM_LOAD_ERROR_EOB_NOT_FOUND:
+            case BIN_LOAD_ERROR_EOB_NOT_FOUND:
                 std::cerr << "BinExec : Binary file didn't give a binary EOF instruction" << std::endl;
                 return false;
 

@@ -42,7 +42,7 @@ static uint8_t switchingFunction;
 NVM * vm_new()
 {
     // We make this assertion so if someone tries to be clever they have to 
-    assert(NABLA_SETTINGS_BYTES_PER_INS == 8);
+    assert(VM_SETTINGS_BYTES_PER_INS == 8);
 
     NVM * vm = (NVM*)malloc(sizeof(NVM));
 
@@ -53,13 +53,13 @@ NVM * vm_new()
         vm->registers[i] = 0;
     }
 
-    vm->globalStack = stack_new(NABLA_SETTINGS_GLOBAL_STACK_SIZE);
-    vm->callStack   = stack_new(NABLA_SETTINGS_CALL_STACK_SIZE);
+    vm->globalStack = stack_new(VM_SETTINGS_GLOBAL_STACK_SIZE);
+    vm->callStack   = stack_new(VM_SETTINGS_CALL_STACK_SIZE);
 
     assert(vm->globalStack);
     assert(vm->callStack);
 
-    vm->functions = (NFUNC *)malloc(NABLA_SETTINGS_MAX_FUNCTIONS * sizeof(NFUNC));
+    vm->functions = (NFUNC *)malloc(VM_SETTINGS_MAX_FUNCTIONS * sizeof(NFUNC));
 
     assert(vm->functions);
 
@@ -71,13 +71,13 @@ NVM * vm_new()
 
     //  Setup function structures
     //
-    for(int i = 0; i < NABLA_SETTINGS_MAX_FUNCTIONS; i++)
+    for(int i = 0; i <VM_SETTINGS_MAX_FUNCTIONS; i++)
     {
         // Create storage for instructions
-        vm->functions[i].instructions = stack_new(NABLA_SETTINGS_MAX_IN_PER_FUCNTION);
+        vm->functions[i].instructions = stack_new(VM_SETTINGS_MAX_IN_PER_FUCNTION);
 
         // Create the function's local stack
-        vm->functions[i].localStack   = stack_new(NABLA_SETTINGS_LOCAL_STACK_SIZE);
+        vm->functions[i].localStack   = stack_new(VM_SETTINGS_LOCAL_STACK_SIZE);
 
         // Make sure its all allocated
         assert(vm->functions[i].instructions);
@@ -98,7 +98,7 @@ void vm_delete(NVM * vm)
 {
     FILE_GLOBAL_IS_VM_RUNNING     = 0;
     FILE_GLOBAL_IS_VM_INITIALIZED = 0;
-    for(int i = 0; i < NABLA_SETTINGS_MAX_FUNCTIONS; i++)
+    for(int i = 0; i <VM_SETTINGS_MAX_FUNCTIONS; i++)
     {
         stack_delete(vm->functions[i].instructions);
         stack_delete(vm->functions[i].localStack);
