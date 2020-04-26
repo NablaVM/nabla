@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.8)
 
 project(nablaLang)
 
+set(CMAKE_CXX_STANDARD 11)
+
 option(BUILD_SOLACE         "Build solace parser"        ON)
 option(BUILD_HARP           "Build harp application"     ON)
 option(BUILD_NABLA          "Build nabla application"    ON)
