@@ -28,5 +28,5 @@ install:
 script:
 
   - cd $PARENTDIR/build
-  - cmake $PARENTDIR
+  - cmake $PARENTDIR/src
   - make -j2
