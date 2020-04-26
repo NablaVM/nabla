@@ -450,29 +450,29 @@ TEST(NablaInstructionTests, doubleArith)
         switch(arithSetup)
         {
             case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
-                arg1 = getRandom16(0, 15); vm->registers[arg1] = doubleToUint64(5.5); // random reg with random val
-                arg2 = getRandom16(0, 15); vm->registers[arg2] = doubleToUint64(5.5); // random reg with random val
+                arg1 = getRandom16(0, 15); vm->registers[arg1] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // random reg with random val
+                arg2 = getRandom16(0, 15); vm->registers[arg2] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // random reg with random val
 
                 expectedResult = calculateArith(arithType, vm->registers[arg1], vm->registers[arg2]);
                 break;
 
             case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
-                arg1 = getRandom16(0, 15); vm->registers[arg1] =doubleToUint64(5.5); // Random reg with random val
-                arg2 = doubleToUint64(5.5);                                          // Random val
+                arg1 = getRandom16(0, 15); vm->registers[arg1] =doubleToUint64(getRandomDouble(0.0, 65000.0)); // Random reg with random val
+                arg2 = doubleToUint64(getRandomDouble(0.0, 65000.0));                                          // Random val
 
                 expectedResult = calculateArith(arithType, vm->registers[arg1], arg2);
                 break;
 
             case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
-                arg2 = getRandom16(0, 15); vm->registers[arg2] = doubleToUint64(5.5); // Random reg with random val
-                arg1 = doubleToUint64(5.5);                                           // Random val
+                arg2 = getRandom16(0, 15); vm->registers[arg2] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // Random reg with random val
+                arg1 = doubleToUint64(getRandomDouble(0.0, 65000.0));                                           // Random val
 
                 expectedResult = calculateArith(arithType, arg1, vm->registers[arg2]);
                 break;
 
             case NABLA::Bytegen::ArithmaticSetup::NUM_NUM: 
-                arg1 = doubleToUint64(5.5);                                            // Random val
-                arg2 = doubleToUint64(5.5);                                            // Random val
+                arg1 = doubleToUint64(getRandomDouble(0.0, 65000.0));                                            // Random val
+                arg2 = doubleToUint64(getRandomDouble(0.0, 65000.0));                                            // Random val
 
                 expectedResult = calculateArith(arithType, arg1, arg2);
                 break;
