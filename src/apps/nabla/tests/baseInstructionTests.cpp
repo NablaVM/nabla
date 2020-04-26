@@ -683,18 +683,94 @@ TEST(NablaInstructionTests, stbLdbIns)
 // 
 // ---------------------------------------------------------------
 
-TEST(NablaInstructionTests, callIns)
+TEST(NablaInstructionTests, callReturnIns)
 {
-    std::cout << "(NablaInstructionTests, callIns)\t This test needs to be written here" << std::endl;
-}
+    NABLA::Bytegen bytegen;
+    
+    NablaVirtualMachine vm = vm_new();
 
-// ---------------------------------------------------------------
-// 
-// ---------------------------------------------------------------
+    vm->fp = 0;
+    vm->entryAddress = 0;
+    vm->numberOfFunctions = 2;
 
-TEST(NablaInstructionTests, returnIns)
-{
-    std::cout << "(NablaInstructionTests, returnIns)\t This test needs to be written here" << std::endl;
+    std::vector<NABLA::Bytegen::Instruction> callIns = bytegen.createCallInstruction(
+        0, // Function from  
+        1, // Return-to instruction
+        1  // Function to call
+    );
+
+    for(auto &ei : callIns)
+    {
+        std::vector<uint8_t> callBytes = ins_to_vec(ei);
+
+        for(uint64_t ins = 0; ins < callBytes.size()/8; ins++)
+        {
+            uint64_t currentIns = 0;
+            for(int n = 7; n >= 0; n--)   
+            {
+                currentIns |= (uint64_t)callBytes[ins++] << (n * 8);
+            }
+
+            int pushResult;
+            stack_push(currentIns, vm->functions[0].instructions, &pushResult);
+
+            if(pushResult != STACK_OKAY)
+            {
+                FAIL("Failed to push instruction to vm");
+            }
+        }
+    }
+
+    // --------------------------------------------------------------------
+
+    NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+        NABLA::Bytegen::ArithmaticTypes::ADD,
+        NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+        0,  // Destination register
+        0,  // reg 0
+        1   // Inc reg1 by 1 every time this instruction is called
+    );
+
+    std::vector<uint8_t> instructions = ins_to_vec(baseIns);
+
+    for(uint64_t ins = 0; ins < instructions.size()/8; ins++)
+    {
+        uint64_t currentIns = 0;
+        for(int n = 7; n >= 0; n--)   
+        {
+            currentIns |= (uint64_t)instructions[ins++] << (n * 8);
+        }
+
+        int pushResult;
+        stack_push(currentIns, vm->functions[1].instructions, &pushResult);
+
+        if(pushResult != STACK_OKAY)
+        {
+            FAIL("Failed to push instruction to vm");
+        }
+
+    }
+
+    // --------------------------------------------------------------------
+
+    // Init
+    vm_init(vm);
+
+    // Step again to execute load
+    vm_step(vm, 3);
+
+    // Ensure we have entered new 'called' function
+    CHECK_EQUAL(1, vm->fp)
+
+    vm_step(vm, 3);
+    
+    // See if correct val is loaded by the function that was called
+    CHECK_EQUAL(1, vm->registers[0]);
+
+    // Ensure fp came back to 0
+    CHECK_EQUAL(0, vm->fp)
+
+    vm_delete(vm);
 }
 
 // ---------------------------------------------------------------
