@@ -779,7 +779,110 @@ TEST(NablaInstructionTests, callReturnIns)
 
 TEST(NablaInstructionTests, exitIns)
 {
-    std::cout << "(NablaInstructionTests, exitIns)\t This test needs to be written here" << std::endl;
+    NABLA::Bytegen bytegen;
+    NablaVirtualMachine vm = vm_new();
+
+    vm->registers[0]    = 0;
+
+    NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+        NABLA::Bytegen::ArithmaticTypes::ADD,
+        NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+        0,  // Destination register
+        0,  // reg 0
+        1   // Inc reg1 by 1 every time this instruction is called
+    );
+
+    NABLA::Bytegen::Instruction exitIns = bytegen.createExitInstruction();
+
+    NABLA::Bytegen::Instruction baseIns1 = bytegen.createArithmaticInstruction(
+        NABLA::Bytegen::ArithmaticTypes::ADD,
+        NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+        0,  // Destination register
+        0,  // reg 0
+        1   // Inc reg1 by 1 every time this instruction is called
+    );
+
+    build_test_vm(vm, ins_to_vec(baseIns));
+    build_test_vm(vm, ins_to_vec(exitIns));
+    build_test_vm(vm, ins_to_vec(baseIns1));
+
+    // Init
+    vm_init(vm);
+
+    // Step 1 instruction (should be add)
+    vm_step(vm, 1);
+
+    // Sanity
+    CHECK_EQUAL(1, vm->registers[0]);
+
+    // Step a bunch and see if we ever trigger the 
+    // next add instruction (shouldnt be reachable due to exit)
+    vm_step(vm, 10);
+
+    CHECK_EQUAL(1, vm->registers[0]);
+
+    // If the previous test passes. Then we are complete.
+    vm_delete(vm);
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, nopIns)
+{
+    for(int t = 0; t < 100; t++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        vm->registers[0]    = 0;
+
+        uint16_t randomNumAdds = getRandom16(1, 500);
+
+        NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+            NABLA::Bytegen::ArithmaticTypes::ADD,
+            NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+            0,  // Destination register
+            0,  // reg 0
+            1   // Inc reg1 by 1 every time this instruction is called
+        );
+
+        // Add a random number of additions
+        for(int i = 0; i < randomNumAdds; i++)
+        {
+            build_test_vm(vm, ins_to_vec(baseIns));
+        }
+
+        NABLA::Bytegen::Instruction nopIns = bytegen.createNopInstruction();
+
+        uint16_t randomNumNops = getRandom16(1, 500);
+
+        // Add a random number of additions
+        for(int i = 0; i < randomNumNops; i++)
+        {
+            build_test_vm(vm, ins_to_vec(nopIns));
+        }
+
+        vm_init(vm);
+
+        // Step over the adds
+        vm_step(vm, randomNumAdds);
+
+        // Ensure that all of the adds have occured
+        CHECK_EQUAL(randomNumAdds, vm->registers[0]);
+
+        // Step the noops
+        vm_step(vm, randomNumNops);
+
+        // Ensure the addition sum is the same as before noops
+        CHECK_EQUAL(randomNumAdds, vm->registers[0]);
+
+        // Ensure that the instruction pointer is equal to all of the instructions executed
+        CHECK_EQUAL(randomNumAdds + randomNumNops, vm->functions[vm->fp].ip);
+
+        vm_delete(vm);
+    }
 }
 
 // ---------------------------------------------------------------
@@ -789,13 +892,4 @@ TEST(NablaInstructionTests, exitIns)
 TEST(NablaInstructionTests, bitwiseIns)
 {
     std::cout << "(NablaInstructionTests, bitwiseIns)\t This test needs to be written here" << std::endl;
-}
-
-// ---------------------------------------------------------------
-// 
-// ---------------------------------------------------------------
-
-TEST(NablaInstructionTests, nopIns)
-{
-    std::cout << "(NablaInstructionTests, nopIns)\t\t This test needs to be written here" << std::endl;
 }
