@@ -26,11 +26,19 @@ namespace
 {
     typedef struct VM * NablaVirtualMachine;
 
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
     std::vector<uint8_t> ins_to_vec(NABLA::Bytegen::Instruction ins)
     {
         return std::vector<uint8_t>(std::begin(ins.bytes), std::end(ins.bytes));
     }
         
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
     uint16_t getRandom16(uint16_t low, uint16_t high)
     {
         std::random_device rd;
@@ -39,6 +47,10 @@ namespace
         return dis(gen);
     }
 
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
     double getRandomDouble(uint16_t low, uint16_t high)
     {
         std::random_device rd;
@@ -46,6 +58,10 @@ namespace
         std::uniform_real_distribution<double> dis(low, high);
         return dis(gen);
     }
+    
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
     
     bool check_double_equal(double lhs, double rhs)
     {
@@ -58,6 +74,10 @@ namespace
         return false;
     }
 
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
     void build_test_vm(NablaVirtualMachine vm, std::vector<uint8_t> instructions)
     {
         vm->fp = 0;
@@ -82,11 +102,19 @@ namespace
         }
     }
 
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
     bool check_result(NablaVirtualMachine vm, int16_t dest_reg, uint64_t expected)
     {
         return ((int64_t)vm->registers[dest_reg] == (int64_t)expected);
     }
 
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
     uint64_t doubleToUint64(double val)
     {
         ieee754_double ied;
@@ -97,6 +125,10 @@ namespace
                           (uint64_t)ied.ieee.mantissa1 << 0;
     }
 
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
     double uint64ToDouble(uint64_t val)
     {
         union deval
@@ -111,6 +143,10 @@ namespace
         return d.d;
     }
 
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
     uint64_t calculateArith( NABLA::Bytegen::ArithmaticTypes arithType, uint64_t lhs, uint64_t rhs)
     {
         switch(arithType)
@@ -127,6 +163,10 @@ namespace
         };
         return 0;
     }
+
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
 
     uint64_t calculateBitwise( NABLA::Bytegen::BitwiseTypes type, uint64_t lhs, uint64_t rhs)
     {
@@ -145,6 +185,9 @@ namespace
 
 }
 
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
 
 TEST_GROUP(NablaInstructionTests)
 {
@@ -505,7 +548,186 @@ TEST(NablaInstructionTests, doubleArith)
 
 TEST(NablaInstructionTests, doubleBranchIns)
 {
-    std::cout << "(NablaInstructionTests, doubleBranchIns)\t This test needs to be written here" << std::endl;
+    for(int i = 0x07; i <= 0x0C; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
+
+        // Registers for comparisons will be 1-15
+        uint16_t reg1 = getRandom16(1,15);
+        uint16_t reg2 = getRandom16(1,15);
+
+        while(reg1 == reg2)
+        {
+            reg2 = getRandom16(1,15);
+        }
+
+        if(type == NABLA::Bytegen::BranchTypes::BGTD)
+        {
+            vm->registers[reg1] = doubleToUint64(getRandomDouble(500, 600));
+            vm->registers[reg2] = doubleToUint64(getRandomDouble(0, 200));
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BGTED)
+        {
+            vm->registers[reg1] = doubleToUint64(10.0);
+            vm->registers[reg2] = doubleToUint64(10.0);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BLTD)
+        {
+            vm->registers[reg1] = doubleToUint64(getRandomDouble(0, 200));
+            vm->registers[reg2] = doubleToUint64(getRandomDouble(500, 600));
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BLTED)
+        {
+            vm->registers[reg1] = doubleToUint64(10.0);
+            vm->registers[reg2] = doubleToUint64(10.0);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BEQD)
+        {
+            vm->registers[reg1] = doubleToUint64(10.0);
+            vm->registers[reg2] = doubleToUint64(10.0);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BNED)
+        {
+            vm->registers[reg1] = doubleToUint64(10.0);
+            vm->registers[reg2] = doubleToUint64(25.0);
+        }
+
+        // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
+        vm->registers[0]    = 0;
+
+        NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+            NABLA::Bytegen::ArithmaticTypes::ADD,
+            NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+            0,  // Destination register
+            0,  // reg 0
+            1   // Inc reg1 by 1 every time this instruction is called
+        );
+
+        NABLA::Bytegen::Instruction branchIns = bytegen.createBranchInstruction(
+            type,   // Type of branch 
+            reg1,   // Comparison reg 1
+            reg2,   // Comparison reg 2
+            0       // Location to branch to
+        );
+
+        // Populate vm
+        build_test_vm(vm, ins_to_vec(baseIns));
+        build_test_vm(vm, ins_to_vec(branchIns));
+
+        // Init
+        vm_init(vm);
+
+        // Step 1 instruction (should be add)
+        vm_step(vm, 1);
+
+        // Sanity
+        CHECK_EQUAL(1, vm->registers[0]);
+
+        // Step 2 instruction (should be branch check, followed by add)
+        vm_step(vm, 2);
+
+        CHECK_EQUAL(2, vm->registers[0]);
+
+        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
+        vm_delete(vm);
+    }
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, doubleBranchInsFails)
+{
+    for(int i = 0x07; i <= 0x0C; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
+
+        // Registers for comparisons will be 1-15
+        uint16_t reg1 = getRandom16(1,15);
+        uint16_t reg2 = getRandom16(1,15);
+
+        while(reg1 == reg2)
+        {
+            reg2 = getRandom16(1,15);
+        }
+
+        if(type == NABLA::Bytegen::BranchTypes::BGTD)
+        {
+            vm->registers[reg1] = doubleToUint64(getRandomDouble(0, 200));
+            vm->registers[reg2] = doubleToUint64(getRandomDouble(500, 600));
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BGTED)
+        {
+            vm->registers[reg1] = doubleToUint64(9.0);
+            vm->registers[reg2] = doubleToUint64(10.0);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BLTD)
+        {
+            vm->registers[reg1] = doubleToUint64(getRandomDouble(500, 700));
+            vm->registers[reg2] = doubleToUint64(getRandomDouble(100, 200));
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BLTED)
+        {
+            vm->registers[reg1] = doubleToUint64(15.0);
+            vm->registers[reg2] = doubleToUint64(10.0);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BEQD)
+        {
+            vm->registers[reg1] = doubleToUint64(55.0);
+            vm->registers[reg2] = doubleToUint64(10.0);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BNED)
+        {
+            vm->registers[reg1] = doubleToUint64(25.0);
+            vm->registers[reg2] = doubleToUint64(25.0);
+        }
+
+        // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
+        vm->registers[0]    = 0;
+
+        NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+            NABLA::Bytegen::ArithmaticTypes::ADD,
+            NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+            0,  // Destination register
+            0,  // reg 0
+            1   // Inc reg1 by 1 every time this instruction is called
+        );
+
+        NABLA::Bytegen::Instruction branchIns = bytegen.createBranchInstruction(
+            type,   // Type of branch 
+            reg1,   // Comparison reg 1
+            reg2,   // Comparison reg 2
+            0       // Location to branch to
+        );
+
+        // Populate vm
+        build_test_vm(vm, ins_to_vec(baseIns));
+        build_test_vm(vm, ins_to_vec(branchIns));
+
+        // Init
+        vm_init(vm);
+
+        // Step 1 instruction (should be add)
+        vm_step(vm, 1);
+
+        // Sanity
+        CHECK_EQUAL(1, vm->registers[0]);
+
+        // Step 2 instruction (should be branch check that fails)
+        vm_step(vm, 2);
+
+        CHECK_EQUAL(1, vm->registers[0]);
+
+        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
+        vm_delete(vm);
+    }
 }
 
 // ---------------------------------------------------------------
