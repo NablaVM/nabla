@@ -1,6 +1,8 @@
 
 <center> <h1> <b> ∇ Nabla </b> </h1> </center>
 
+[![Build Status](https://travis-ci.com/bosley/nabla.svg?branch=master)](https://travis-ci.com/bosley/nabla)
+
 ### About
 This is the Nabla virtual machine project. 
 

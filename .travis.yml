@@ -1,0 +1,32 @@
+language: cpp
+dist: xenial
+
+# More builds expected in the future
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CXX_COMPILER=g++-7"
+    
+before_install:
+  - eval "${MATRIX_EVAL}"
+
+  - PARENTDIR=$(pwd)
+  
+  - mkdir $PARENTDIR/build
+
+  - bash install_cpputest.sh
+
+install:
+
+script:
+
+  - cd $PARENTDIR/build
+  - cmake $PARENTDIR/src
+  - make -j2
