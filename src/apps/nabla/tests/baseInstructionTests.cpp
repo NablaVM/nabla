@@ -350,7 +350,7 @@ TEST(NablaInstructionTests, standardBranchInsExpectedFails)
         // Sanity
         CHECK_EQUAL(1, vm->registers[0]);
 
-        // Step 2 instruction (should be branch check, followed by add)
+        // Step 2 instruction (should be branch check, but no add)
         vm_step(vm, 2);
 
         CHECK_EQUAL(1, vm->registers[0]);
@@ -453,9 +453,110 @@ TEST(NablaInstructionTests, pushPopIns)
 // 
 // ---------------------------------------------------------------
 
-TEST(NablaInstructionTests, jumpIns)
+TEST(NablaInstructionTests, jumpInsLow)
 {
-    std::cout << "(NablaInstructionTests, jumpIns)\t This test needs to be written here" << std::endl;
+    // Jump low
+    for(int i = 0; i < 5; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        vm->registers[0]    = 0;
+
+        NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+            NABLA::Bytegen::ArithmaticTypes::ADD,
+            NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+            0,  // Destination register
+            0,  // reg 0
+            1   // Inc reg1 by 1 every time this instruction is called
+        );
+
+        NABLA::Bytegen::Instruction jmpIns = bytegen.createJumpInstruction(
+            0
+        );
+
+        build_test_vm(vm, ins_to_vec(baseIns));
+        build_test_vm(vm, ins_to_vec(jmpIns));
+
+        // Init
+        vm_init(vm);
+
+        // Step 1 instruction (should be add)
+        vm_step(vm, 1);
+
+        // Sanity
+        CHECK_EQUAL(1, vm->registers[0]);
+
+        // Step 2 instruction (should be jump, followed by add)
+        vm_step(vm, 2);
+
+        CHECK_EQUAL(2, vm->registers[0]);
+
+        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
+        vm_delete(vm);
+    }
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, jumpInsHigh)
+{
+    // Jump high
+    for(int i = 0; i < 5; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        vm->registers[0]    = 0;
+
+        NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+            NABLA::Bytegen::ArithmaticTypes::ADD,
+            NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+            0,  // Destination register
+            0,  // reg 0
+            1   // Inc reg1 by 1 every time this instruction is called
+        );
+        
+        vm->registers[10]    = 0;
+
+        NABLA::Bytegen::Instruction baseIns1 = bytegen.createArithmaticInstruction(
+            NABLA::Bytegen::ArithmaticTypes::ADD,
+            NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+            10,  // Destination register
+            0,  // reg 0
+            1   // Inc reg1 by 1 every time this instruction is called
+        );
+
+        NABLA::Bytegen::Instruction jmpIns = bytegen.createJumpInstruction(
+            2 // Jump over baseIns to baseIns2
+        );
+
+        build_test_vm(vm, ins_to_vec(jmpIns));
+        build_test_vm(vm, ins_to_vec(baseIns)); // This one is jumped over
+        build_test_vm(vm, ins_to_vec(baseIns1));
+
+        // Init
+        vm_init(vm);
+
+        // Step 1 instruction (should be jump)
+        vm_step(vm, 1);
+
+        // Sanity
+        CHECK_EQUAL(0, vm->registers[0]);
+
+        // Step 2 instruction (should be jump, followed by add to register 2)
+        vm_step(vm, 2);
+
+        // Sanity
+        CHECK_EQUAL(0, vm->registers[0]);   // Hopefully skipped
+
+        CHECK_EQUAL(1, vm->registers[10]);  // Hopefully added 2
+
+        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
+        vm_delete(vm);
+    }
 }
 
 // ---------------------------------------------------------------
@@ -510,7 +611,72 @@ TEST(NablaInstructionTests, movIns)
 
 TEST(NablaInstructionTests, stbLdbIns)
 {
-    std::cout << "(NablaInstructionTests, stbLdbIns)\t This test needs to be written here" << std::endl;
+    for(int i = 0; i < 10; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        NABLA::Bytegen::Stacks stackLoc = static_cast<NABLA::Bytegen::Stacks>(getRandom16(0,1));
+
+        uint16_t reg = getRandom16(0,14);
+
+        vm->registers[reg] = getRandom16(0, 65530);
+
+        NABLA::Bytegen::Instruction storeIns = bytegen.createStbInstruction(
+            stackLoc, i, reg
+        );
+
+        NABLA::Bytegen::Instruction loadIns = bytegen.createLdbInstruction(
+            stackLoc, i, reg+1
+        );
+
+        std::vector<uint8_t> storeBytes = ins_to_vec(storeIns);
+        std::vector<uint8_t> loadBytes  = ins_to_vec(loadIns);
+
+        // Populate vm
+        build_test_vm(vm, storeBytes);
+        build_test_vm(vm, loadBytes);
+
+        // Init
+        vm_init(vm);
+
+        // Extend the stacks so we can put and get from them
+        for(int p = 0; p < 50; p++)
+        {
+            int pushResult;
+            stack_push(0, vm->globalStack, &pushResult);
+            stack_push(0, vm->functions[0].localStack, &pushResult);
+
+            CHECK_EQUAL(pushResult, STACK_OKAY);
+        }
+
+        // Step 1 instruction (store)
+        vm_step(vm, 1);
+
+        // Depending on the stack, get the value that should have been pushed
+        int64_t val;
+        int result = 0;
+        if(stackLoc == NABLA::Bytegen::Stacks::GLOBAL)
+        {
+            val = stack_value_at(i, vm->globalStack, &result);
+        }
+        else
+        {
+            val = stack_value_at(i, vm->functions[0].localStack, &result);
+        }
+
+        // Ensure stack grab was okay. and ensure the value retrieved was the value we put in
+        CHECK_EQUAL(result, STACK_OKAY);
+        CHECK_EQUAL(vm->registers[reg], val);
+
+        // Step again to execute load
+        vm_step(vm, 1);
+
+        // See if correct val is loaded
+        CHECK_EQUAL(val, vm->registers[reg+1]);
+
+        vm_delete(vm);
+    }
 }
 
 // ---------------------------------------------------------------
