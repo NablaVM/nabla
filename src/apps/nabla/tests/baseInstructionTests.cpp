@@ -176,9 +176,206 @@ TEST(NablaInstructionTests, standardArith)
 // 
 // ---------------------------------------------------------------
 
-TEST(NablaInstructionTests, branchIns)
+TEST(NablaInstructionTests, standardBranchIns)
 {
-    std::cout << "(NablaInstructionTests, branchIns)\t This test needs to be written here" << std::endl;
+    for(int i = 0x01; i <= 0x06; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
+
+        // Registers for comparisons will be 1-15
+        uint16_t reg1 = getRandom16(1,15);
+        uint16_t reg2 = getRandom16(1,15);
+
+        while(reg1 == reg2)
+        {
+            reg2 = getRandom16(1,15);
+        }
+
+        if(type == NABLA::Bytegen::BranchTypes::BGT)
+        {
+            vm->registers[reg1] = getRandom16(500, 600);
+            vm->registers[reg2] = getRandom16(0, 200);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BGTE)
+        {
+            vm->registers[reg1] = 10;
+            vm->registers[reg2] = 10;
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BLT)
+        {
+            vm->registers[reg1] = getRandom16(0, 200);
+            vm->registers[reg2] = getRandom16(500, 600);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BLTE)
+        {
+            vm->registers[reg1] = 10;
+            vm->registers[reg2] = 10;
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BEQ)
+        {
+            vm->registers[reg1] = 10;
+            vm->registers[reg2] = 10;
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BNE)
+        {
+            vm->registers[reg1] = 10;
+            vm->registers[reg2] = 25;
+        }
+
+        // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
+        vm->registers[0]    = 0;
+
+        NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+            NABLA::Bytegen::ArithmaticTypes::ADD,
+            NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+            0,  // Destination register
+            0,  // reg 0
+            1   // Inc reg1 by 1 every time this instruction is called
+        );
+
+        NABLA::Bytegen::Instruction branchIns = bytegen.createBranchInstruction(
+            type,   // Type of branch 
+            reg1,   // Comparison reg 1
+            reg2,   // Comparison reg 2
+            0       // Location to branch to
+        );
+
+        // Populate vm
+        build_test_vm(vm, ins_to_vec(baseIns));
+        build_test_vm(vm, ins_to_vec(branchIns));
+
+        // Init
+        vm_init(vm);
+
+        // Step 1 instruction (should be add)
+        vm_step(vm, 1);
+
+        // Sanity
+        CHECK_EQUAL(1, vm->registers[0]);
+
+        // Step 2 instruction (should be branch check, followed by add)
+        vm_step(vm, 2);
+
+        CHECK_EQUAL(2, vm->registers[0]);
+
+        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
+        vm_delete(vm);
+    }
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, standardBranchInsExpectedFails)
+{
+    for(int i = 0x01; i <= 0x06; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
+
+        // Registers for comparisons will be 1-15
+        uint16_t reg1 = getRandom16(1,15);
+        uint16_t reg2 = getRandom16(1,15);
+
+        while(reg1 == reg2)
+        {
+            reg2 = getRandom16(1,15);
+        }
+
+        if(type == NABLA::Bytegen::BranchTypes::BGT)
+        {
+            vm->registers[reg1] = getRandom16(0, 200);
+            vm->registers[reg2] = getRandom16(500, 600);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BGTE)
+        {
+            vm->registers[reg1] = 1;
+            vm->registers[reg2] = 10;
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BLT)
+        {
+            vm->registers[reg1] = getRandom16(500, 600); 
+            vm->registers[reg2] = getRandom16(0, 200);
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BLTE)
+        {
+            vm->registers[reg1] = 55;
+            vm->registers[reg2] = 10;
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BEQ)
+        {
+            vm->registers[reg1] = 500;
+            vm->registers[reg2] = 10;
+        }
+        else if (type == NABLA::Bytegen::BranchTypes::BNE)
+        {
+            vm->registers[reg1] = 25;
+            vm->registers[reg2] = 25;
+        }
+
+        // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
+        vm->registers[0]    = 0;
+
+        NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
+            NABLA::Bytegen::ArithmaticTypes::ADD,
+            NABLA::Bytegen::ArithmaticSetup::REG_NUM,
+            0,  // Destination register
+            0,  // reg 0
+            1   // Inc reg1 by 1 every time this instruction is called
+        );
+
+        NABLA::Bytegen::Instruction branchIns = bytegen.createBranchInstruction(
+            type,   // Type of branch 
+            reg1,   // Comparison reg 1
+            reg2,   // Comparison reg 2
+            0       // Location to branch to
+        );
+
+        // Populate vm
+        build_test_vm(vm, ins_to_vec(baseIns));
+        build_test_vm(vm, ins_to_vec(branchIns));
+
+        // Init
+        vm_init(vm);
+
+        // Step 1 instruction (should be add)
+        vm_step(vm, 1);
+
+        // Sanity
+        CHECK_EQUAL(1, vm->registers[0]);
+
+        // Step 2 instruction (should be branch check, followed by add)
+        vm_step(vm, 2);
+
+        CHECK_EQUAL(1, vm->registers[0]);
+
+        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
+        vm_delete(vm);
+    }
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, doubleArith)
+{
+    std::cout << "(NablaInstructionTests, doubleArith)\t This test needs to be written here" << std::endl;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, doubleBranchIns)
+{
+    std::cout << "(NablaInstructionTests, doubleBranchIns)\t This test needs to be written here" << std::endl;
 }
 
 // ---------------------------------------------------------------
@@ -187,7 +384,69 @@ TEST(NablaInstructionTests, branchIns)
 
 TEST(NablaInstructionTests, pushPopIns)
 {
-    std::cout << "(NablaInstructionTests, pushPopIns)\t This test needs to be written here" << std::endl;
+    for(int i = 0; i < 10; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        NABLA::Bytegen::Stacks stackLoc = static_cast<NABLA::Bytegen::Stacks>(getRandom16(0,1));
+
+        uint16_t pushReg = getRandom16(0,15);
+        uint16_t popReg  = getRandom16(0,15);
+
+        // Ensure push and pop reg differ
+        while(pushReg == popReg)
+        {
+            popReg = getRandom16(0,15);
+        }
+
+        vm->registers[pushReg] = getRandom16(0, 65530);
+
+        NABLA::Bytegen::Instruction pushIns = bytegen.createPushInstruction(
+            stackLoc, pushReg
+        );
+
+        NABLA::Bytegen::Instruction popIns = bytegen.createPopInstruction(
+            stackLoc, popReg
+        );
+
+        std::vector<uint8_t> pushBytes = ins_to_vec(pushIns);
+        std::vector<uint8_t> popBytes  = ins_to_vec(popIns);
+
+        // Populate vm
+        build_test_vm(vm, pushBytes);
+        build_test_vm(vm, popBytes);
+
+        // Init
+        vm_init(vm);
+
+        // Step 1 instruction (should be push)
+        vm_step(vm, 1);
+
+        // Depending on the stack, get the value that should have been pushed
+        int64_t val;
+        int result = 0;
+        if(stackLoc == NABLA::Bytegen::Stacks::GLOBAL)
+        {
+            val = stack_value_at(0, vm->globalStack, &result);
+        }
+        else
+        {
+            val = stack_value_at(0, vm->functions[0].localStack, &result);
+        }
+
+        // Ensure stack grab was okay. and ensure the value retrieved was the value we put in
+        CHECK_EQUAL(result, STACK_OKAY);
+        CHECK_EQUAL(vm->registers[pushReg], val);
+
+        // Step again to execute pop
+        vm_step(vm, 1);
+
+        // See if correct val is stored
+        CHECK_EQUAL(val, vm->registers[popReg]);
+
+        vm_delete(vm);
+    }
 }
 
 // ---------------------------------------------------------------
@@ -205,7 +464,44 @@ TEST(NablaInstructionTests, jumpIns)
 
 TEST(NablaInstructionTests, movIns)
 {
-    std::cout << "(NablaInstructionTests, movIns)\t This test needs to be written here" << std::endl;
+    for(int i = 0; i < 10; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        NABLA::Bytegen::MovSetup setup = static_cast<NABLA::Bytegen::MovSetup>(getRandom16(0,1));
+
+        int16_t dest_reg    = getRandom16(0, 15);
+
+        uint64_t arg1;
+        uint64_t expectedResult;
+
+        if(setup == NABLA::Bytegen::MovSetup::REG_REG)
+        {
+            arg1 = getRandom16(0, 15); 
+            expectedResult = getRandom16(0, 254);
+            vm->registers[arg1] = expectedResult;
+        }
+        else
+        {
+            expectedResult =  getRandom16(0, 254);
+            arg1 = expectedResult;
+        } 
+
+        NABLA::Bytegen::Instruction ins = bytegen.createMovInstruction(
+            setup,
+            dest_reg,
+            arg1
+        );
+
+        build_test_vm(vm, ins_to_vec(ins));
+
+        vm_run(vm);
+
+        CHECK_TRUE(check_result(vm, dest_reg, expectedResult));
+
+        vm_delete(vm);
+    }
 }
 
 // ---------------------------------------------------------------
