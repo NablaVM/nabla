@@ -124,7 +124,7 @@ void load_string_constant(NVM* vm, FILE* file, int *result)
 
         // If we are below 0 that means this stack value is full
         // we need to reset the shifter, and push the value onto the stack
-        if(shifter < 0)
+        if(shifter < 0 || i == strSize-1)
         {
             shifter = 7;
             
