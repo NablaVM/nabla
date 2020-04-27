@@ -3,12 +3,12 @@ cmake_minimum_required(VERSION 3.8)
 project(solace)
 
 # Needed for VM instructions
-include_directories(${CMAKE_SOURCE_DIR}/libc/vm)
+include_directories(${NABLA_LIBC_INCLUDES})
 
-include_directories(${CMAKE_SOURCE_DIR}/libcpp/bytegen)
+include_directories(${NABLA_LIBCPP_INCLUDES})
 
 set(SOLACE_COMPILER_SOURCES
-    ${CMAKE_SOURCE_DIR}/libcpp/bytegen/bytegen.cpp
+    ${NABLA_LIBCPP_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/solace.cpp
 )
 

@@ -9,6 +9,10 @@
 
 #include "vm.h"     // Vm header
 #include "VmInstructions.h"
+
+#include "io.h"
+#include "util.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,7 +46,7 @@ static uint8_t switchingFunction;
 NVM * vm_new()
 {
     // We make this assertion so if someone tries to be clever they have to 
-    assert(NABLA_SETTINGS_BYTES_PER_INS == 8);
+    assert(VM_SETTINGS_BYTES_PER_INS == 8);
 
     NVM * vm = (NVM*)malloc(sizeof(NVM));
 
@@ -53,13 +57,13 @@ NVM * vm_new()
         vm->registers[i] = 0;
     }
 
-    vm->globalStack = stack_new(NABLA_SETTINGS_GLOBAL_STACK_SIZE);
-    vm->callStack   = stack_new(NABLA_SETTINGS_CALL_STACK_SIZE);
+    vm->globalStack = stack_new(VM_SETTINGS_GLOBAL_STACK_SIZE);
+    vm->callStack   = stack_new(VM_SETTINGS_CALL_STACK_SIZE);
 
     assert(vm->globalStack);
     assert(vm->callStack);
 
-    vm->functions = (NFUNC *)malloc(NABLA_SETTINGS_MAX_FUNCTIONS * sizeof(NFUNC));
+    vm->functions = (NFUNC *)malloc(VM_SETTINGS_MAX_FUNCTIONS * sizeof(NFUNC));
 
     assert(vm->functions);
 
@@ -71,13 +75,13 @@ NVM * vm_new()
 
     //  Setup function structures
     //
-    for(int i = 0; i < NABLA_SETTINGS_MAX_FUNCTIONS; i++)
+    for(int i = 0; i <VM_SETTINGS_MAX_FUNCTIONS; i++)
     {
         // Create storage for instructions
-        vm->functions[i].instructions = stack_new(NABLA_SETTINGS_MAX_IN_PER_FUCNTION);
+        vm->functions[i].instructions = stack_new(VM_SETTINGS_MAX_IN_PER_FUCNTION);
 
         // Create the function's local stack
-        vm->functions[i].localStack   = stack_new(NABLA_SETTINGS_LOCAL_STACK_SIZE);
+        vm->functions[i].localStack   = stack_new(VM_SETTINGS_LOCAL_STACK_SIZE);
 
         // Make sure its all allocated
         assert(vm->functions[i].instructions);
@@ -98,7 +102,7 @@ void vm_delete(NVM * vm)
 {
     FILE_GLOBAL_IS_VM_RUNNING     = 0;
     FILE_GLOBAL_IS_VM_INITIALIZED = 0;
-    for(int i = 0; i < NABLA_SETTINGS_MAX_FUNCTIONS; i++)
+    for(int i = 0; i <VM_SETTINGS_MAX_FUNCTIONS; i++)
     {
         stack_delete(vm->functions[i].instructions);
         stack_delete(vm->functions[i].localStack);
@@ -116,25 +120,6 @@ void vm_delete(NVM * vm)
 }
 
 // -----------------------------------------------------
-//  Extract a byte from a 64-bit instruction
-// -----------------------------------------------------
-
-uint8_t run_extract_one(uint64_t data, uint8_t idx)
-{
-    return (data >> (8*idx)) & 0xff;
-}
-
-// -----------------------------------------------------
-//  Extract 2 bytes from a 64-bit instruction
-// -----------------------------------------------------
-
-uint16_t run_extract_two(uint64_t data, uint8_t idx)
-{
-    assert(idx > 0);
-    return (data >> (8*(idx-1))) & 0xffff;
-}
-
-// -----------------------------------------------------
 //  Build lhs and rhs values for an arithmatic operation
 // -----------------------------------------------------
 
@@ -142,77 +127,24 @@ void run_get_arith_lhs_rhs(NVM * vm, uint8_t id, uint64_t ins, int64_t * lhs, in
 {
     if(id == 0)
     {
-        *lhs =   vm->registers[run_extract_one(ins, 5)];
-        *rhs =   vm->registers[run_extract_one(ins, 4)];
+        *lhs =   vm->registers[util_extract_byte(ins, 5)];
+        *rhs =   vm->registers[util_extract_byte(ins, 4)];
     }
     else if (id == 1)
     {
-        *lhs =  vm->registers[run_extract_one(ins, 5)];
-        *rhs =  run_extract_two(ins, 4);
+        *lhs =  vm->registers[util_extract_byte(ins, 5)];
+        *rhs =  util_extract_two_bytes(ins, 4);
     }
     else if (id == 2)
     {
-        *lhs =  run_extract_two(ins, 5);
-        *rhs =  vm->registers[run_extract_one(ins, 3)];
+        *lhs =  util_extract_two_bytes(ins, 5);
+        *rhs =  vm->registers[util_extract_byte(ins, 3)];
     }
     else if (id == 3)
     {
-        *lhs =  run_extract_two(ins, 5);
-        *rhs =  run_extract_two(ins, 3);
+        *lhs =  util_extract_two_bytes(ins, 5);
+        *rhs =  util_extract_two_bytes(ins, 3);
     }
-}
-
-// -----------------------------------------------------
-//
-// -----------------------------------------------------
-
-double run_convert_to_double(int64_t val)
-{
-    // Extract from our value
-    union deval
-    {
-        uint64_t val;
-        double d;
-    };
-
-    union deval d; d.val = (uint64_t)val;
-
-    // Return double
-    return d.d;
-}
-
-// -----------------------------------------------------
-//
-// -----------------------------------------------------
-
-uint64_t run_convert_double_to_uint64(double val)
-{
-    // Extract from our value
-    union deval
-    {
-        uint64_t val;
-        double d;
-    };
-
-    union deval d; d.d = val;
-
-    // Return uint64_t
-    return d.val;
-}
-
-// -----------------------------------------------------
-//
-// -----------------------------------------------------
-
-uint8_t run_check_double_equal(double lhs, double rhs)
-{
-    double precision = 0.00001;
-    if (((lhs - precision) < rhs) && 
-        ((lhs + precision) > rhs))
-    {
-        return 1;
-    }
-    return 0;
 }
 
 // -----------------------------------------------------
@@ -275,7 +207,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
         }
 
         // The full first byte of the instruction
-        uint8_t operation =  run_extract_one(ins, 7);
+        uint8_t operation =  util_extract_byte(ins, 7);
 
         // The 'opcode' of the instruction (first 6 bits)
         uint8_t op = (operation & 0xFC);
@@ -301,7 +233,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }
             case INS_LSH :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = (lhs << rhs);
 
@@ -313,7 +245,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
 
             case INS_RSH :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = (lhs >> rhs);
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
@@ -324,7 +256,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
 
             case INS_AND :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = (lhs & rhs);
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
@@ -335,7 +267,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
 
             case INS_OR  :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = (lhs | rhs);
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
@@ -346,7 +278,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
 
             case INS_XOR :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = (lhs ^ rhs);
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
@@ -357,7 +289,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
 
             case INS_NOT :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = (~lhs);
 
@@ -369,7 +301,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
 
             case INS_ADD  :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 assert(dest < 16);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = lhs+rhs;
@@ -381,7 +313,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }          
             case INS_SUB  :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 assert(dest < 16);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = lhs-rhs;
@@ -393,7 +325,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }          
             case INS_MUL  :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 assert(dest < 16);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = lhs*rhs;
@@ -405,7 +337,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }          
             case INS_DIV  :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 assert(dest < 16);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
 
@@ -419,214 +351,214 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }          
             case INS_ADDD :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 assert(dest < 16);
 
                 run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
             
-                vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) + run_convert_to_double(rhs));
+                vm->registers[dest] = util_convert_double_to_uint64( util_convert_uint64_to_double(lhs) + util_convert_uint64_to_double(rhs));
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Result : %f\n", run_convert_to_double(lhs) + run_convert_to_double(rhs));
+                printf("Result : %f\n", util_convert_uint64_to_double(lhs) + util_convert_uint64_to_double(rhs));
 #endif
                 break;
             }          
             case INS_SUBD :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 assert(dest < 16);
 
                 run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
             
-                vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) - run_convert_to_double(rhs));
+                vm->registers[dest] = util_convert_double_to_uint64( util_convert_uint64_to_double(lhs) - util_convert_uint64_to_double(rhs));
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Result : %f\n", run_convert_to_double(lhs) - run_convert_to_double(rhs));
+                printf("Result : %f\n", util_convert_uint64_to_double(lhs) - util_convert_uint64_to_double(rhs));
 #endif
                 break;
             }          
             case INS_MULD :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 assert(dest < 16);
 
                 run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
             
-                vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) * run_convert_to_double(rhs));
+                vm->registers[dest] = util_convert_double_to_uint64( util_convert_uint64_to_double(lhs) * util_convert_uint64_to_double(rhs));
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Result : %f\n", run_convert_to_double(lhs) * run_convert_to_double(rhs));
+                printf("Result : %f\n", util_convert_uint64_to_double(lhs) * util_convert_uint64_to_double(rhs));
 #endif
                 break;
             }          
             case INS_DIVD :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
                 assert(dest < 16);
 
                 run_get_arith_lhs_rhs(vm, 0, ins, &lhs, &rhs);
             
-                vm->registers[dest] = run_convert_double_to_uint64( run_convert_to_double(lhs) / run_convert_to_double(rhs));
+                vm->registers[dest] = util_convert_double_to_uint64( util_convert_uint64_to_double(lhs) / util_convert_uint64_to_double(rhs));
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Result : %f\n", run_convert_to_double(lhs) / run_convert_to_double(rhs));
+                printf("Result : %f\n", util_convert_uint64_to_double(lhs) / util_convert_uint64_to_double(rhs));
 #endif
                 break;
             }          
             case INS_BGT  :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
                 
                 if(lhs > rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BGTE :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
                 
                 if(lhs >= rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BLT  :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
                 
                 if(lhs < rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BLTE :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
                 
                 if(lhs <= rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BEQ  :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
 
                 if(lhs == rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BNE  :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
 
                 if(lhs != rhs){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BGTD :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                double lhs_d = run_convert_to_double(lhs);
-                double rhs_d = run_convert_to_double(rhs);
+                double lhs_d = util_convert_uint64_to_double(lhs);
+                double rhs_d = util_convert_uint64_to_double(rhs);
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
 
                 if(lhs_d > rhs_d){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BGTED:
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                double lhs_d = run_convert_to_double(lhs);
-                double rhs_d = run_convert_to_double(rhs);
+                double lhs_d = util_convert_uint64_to_double(lhs);
+                double rhs_d = util_convert_uint64_to_double(rhs);
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
 
                 if(lhs_d >= rhs_d){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BLTD :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                double lhs_d = run_convert_to_double(lhs);
-                double rhs_d = run_convert_to_double(rhs);
+                double lhs_d = util_convert_uint64_to_double(lhs);
+                double rhs_d = util_convert_uint64_to_double(rhs);
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
 
                 if(lhs_d < rhs_d){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BLTED:
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                double lhs_d = run_convert_to_double(lhs);
-                double rhs_d = run_convert_to_double(rhs);
+                double lhs_d = util_convert_uint64_to_double(lhs);
+                double rhs_d = util_convert_uint64_to_double(rhs);
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
 
                 if(lhs_d <= rhs_d){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BEQD :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                double lhs_d = run_convert_to_double(lhs);
-                double rhs_d = run_convert_to_double(rhs);
+                double lhs_d = util_convert_uint64_to_double(lhs);
+                double rhs_d = util_convert_uint64_to_double(rhs);
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
 
-                if(run_check_double_equal(lhs_d, rhs_d)){ vm->functions[vm->fp].ip = branchAddr; continue; }
+                if(util_check_double_equal(lhs_d, rhs_d)){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_BNED :
             {
-                lhs = vm->registers[run_extract_one(ins, 6)];
-                rhs = vm->registers[run_extract_one(ins, 5)];
+                lhs = vm->registers[util_extract_byte(ins, 6)];
+                rhs = vm->registers[util_extract_byte(ins, 5)];
 
-                double lhs_d = run_convert_to_double(lhs);
-                double rhs_d = run_convert_to_double(rhs);
+                double lhs_d = util_convert_uint64_to_double(lhs);
+                double rhs_d = util_convert_uint64_to_double(rhs);
 
-                uint64_t branchAddr = (uint64_t)run_extract_two(ins, 4) << 16 | 
-                                      (uint64_t)run_extract_two(ins, 2);
+                uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
+                                      (uint64_t)util_extract_two_bytes(ins, 2);
 
-                if(!run_check_double_equal(lhs_d, rhs_d)){ vm->functions[vm->fp].ip = branchAddr; continue; }
+                if(!util_check_double_equal(lhs_d, rhs_d)){ vm->functions[vm->fp].ip = branchAddr; continue; }
                 break;
             }          
             case INS_MOV  :
             {
-                lhs = run_extract_one(ins, 6);
-                rhs = run_extract_one(ins, 5);
+                lhs = util_extract_byte(ins, 6);
+                rhs = util_extract_byte(ins, 5);
 
                 // Move register value into another register
                 if(id == 0)
@@ -649,12 +581,12 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }
             case INS_LDB  :
             {
-                uint8_t dest =  run_extract_one(ins, 6);
+                uint8_t dest =  util_extract_byte(ins, 6);
 
-                uint8_t stackSouce = run_extract_one(ins, 5);
+                uint8_t stackSouce = util_extract_byte(ins, 5);
 
-                uint64_t sourceAddress = (uint64_t)run_extract_two(ins, 4) << 16| 
-                                         (uint64_t)run_extract_two(ins, 2);
+                uint64_t sourceAddress = (uint64_t)util_extract_two_bytes(ins, 4) << 16| 
+                                         (uint64_t)util_extract_two_bytes(ins, 2);
 
                 int okay = -255;
                 if(stackSouce == GLOBAL_STACK)
@@ -670,12 +602,12 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }          
             case INS_STB  :
             {
-                uint8_t sourceReg =  run_extract_one(ins, 1);
+                uint8_t sourceReg =  util_extract_byte(ins, 1);
 
-                uint8_t stackDest = run_extract_one(ins, 6);
+                uint8_t stackDest = util_extract_byte(ins, 6);
 
-                uint64_t desAddress = (uint64_t)run_extract_two(ins, 5) << 16| 
-                                      (uint64_t)run_extract_two(ins, 3);
+                uint64_t desAddress = (uint64_t)util_extract_two_bytes(ins, 5) << 16| 
+                                      (uint64_t)util_extract_two_bytes(ins, 3);
 
                 int okay = -255;
                 if(stackDest == GLOBAL_STACK)
@@ -692,8 +624,8 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }          
             case INS_PUSH :
             {
-                uint8_t destStack = run_extract_one(ins, 6);
-                uint8_t sourceReg = run_extract_one(ins, 5);
+                uint8_t destStack = util_extract_byte(ins, 6);
+                uint8_t sourceReg = util_extract_byte(ins, 5);
 
                 int okay = -255;
                 if(destStack == GLOBAL_STACK)
@@ -709,8 +641,8 @@ int vm_cycle(struct VM* vm, uint64_t n)
             }          
             case INS_POP  :
             {
-                uint8_t destReg     = run_extract_one(ins, 6);
-                uint8_t sourceStack = run_extract_one(ins, 5);
+                uint8_t destReg     = util_extract_byte(ins, 6);
+                uint8_t sourceStack = util_extract_byte(ins, 5);
 
                 int okay = -255;
                 if(sourceStack == GLOBAL_STACK)
@@ -721,13 +653,17 @@ int vm_cycle(struct VM* vm, uint64_t n)
                 {
                     vm->registers[destReg] = stack_pop(vm->functions[vm->fp].localStack, &okay);
                 }
+                
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Pop Result : %lu\n", vm->registers[destReg]);
+#endif
                 assert(okay == STACK_OKAY);
                 break;
             }          
             case INS_JUMP :
             {
-                uint64_t destAddress = (uint64_t)run_extract_two(ins, 6) << 16| 
-                                       (uint64_t)run_extract_two(ins, 4);
+                uint64_t destAddress = (uint64_t)util_extract_two_bytes(ins, 6) << 16| 
+                                       (uint64_t)util_extract_two_bytes(ins, 4);
 
                 vm->functions[vm->fp].ip = destAddress; 
                 continue;
@@ -736,8 +672,8 @@ int vm_cycle(struct VM* vm, uint64_t n)
             case INS_CS_SF :
             {
                 // Call Stack Store function ( The function to return to when next return hits)
-                uint64_t func_from =  (uint64_t)run_extract_two(ins, 6) << 16| 
-                                      (uint64_t)run_extract_two(ins, 4);
+                uint64_t func_from =  (uint64_t)util_extract_two_bytes(ins, 6) << 16| 
+                                      (uint64_t)util_extract_two_bytes(ins, 4);
 
                 int cssfOkay = 0;
                 stack_push(func_from, vm->callStack, &cssfOkay);
@@ -749,8 +685,8 @@ int vm_cycle(struct VM* vm, uint64_t n)
             case INS_CS_SR :
             {
                 // Call Stack Store Region Of Interest ( Instruction Pointer )
-                uint64_t roi =  (uint64_t)run_extract_two(ins, 6) << 16| 
-                                (uint64_t)run_extract_two(ins, 4);
+                uint64_t roi =  (uint64_t)util_extract_two_bytes(ins, 6) << 16| 
+                                (uint64_t)util_extract_two_bytes(ins, 4);
                                     
                 int cssrOkay = 0;
                 stack_push(roi, vm->callStack, &cssrOkay);
@@ -762,8 +698,8 @@ int vm_cycle(struct VM* vm, uint64_t n)
             case INS_CALL :
             {
                 // Call
-                uint64_t destAddress =  (uint64_t)run_extract_two(ins, 6) << 16| 
-                                        (uint64_t)run_extract_two(ins, 4);
+                uint64_t destAddress =  (uint64_t)util_extract_two_bytes(ins, 6) << 16| 
+                                        (uint64_t)util_extract_two_bytes(ins, 4);
 
                 vm->fp = destAddress;
 
@@ -827,6 +763,28 @@ vm_attempt_force_return:
                 break; 
             }
         }
+
+        // Check action registers to see if a device needs to be called
+        // ----------------------------------------------------------------------------
+
+        if(vm->registers[10] != 0)
+        {
+            if(vm->registers[10] == 1)
+            {
+                int result = io_stdin(vm);
+            }
+            else if (vm->registers[10] == 2)
+            {
+                int result = io_stdout(vm);
+            }
+            else if (vm->registers[10] == 3)
+            {
+                int result = io_stderr(vm);
+            }
+
+        }
+
+        // ----------------------------------------------------------------------------
 
         //  Increase the instruction pointer if we aren't explicitly told not to
         //

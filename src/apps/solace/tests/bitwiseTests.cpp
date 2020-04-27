@@ -115,7 +115,7 @@ TEST(BitwiseTests, AllBitwiseTests)
         {
             setup = NABLA::Bytegen::ArithmaticSetup::NUM_REG; 
             arg1 = getRandom16(0, 60000);   // NUM
-            arg2 = getRandom16(0, 15);      // REG
+            arg2 = getRandom16(0, 9);      // REG
 
             expectedIns.bytes[1] = integerToRegister(destReg);
 
@@ -136,7 +136,7 @@ TEST(BitwiseTests, AllBitwiseTests)
         if(setupMod == 3)
         {
             setup = NABLA::Bytegen::ArithmaticSetup::REG_NUM; 
-            arg1 = getRandom16(0, 15);      // REG
+            arg1 = getRandom16(0, 9);      // REG
             arg2 = getRandom16(0, 60000);   // NUM
 
             expectedIns.bytes[1] = integerToRegister(destReg);
@@ -152,8 +152,8 @@ TEST(BitwiseTests, AllBitwiseTests)
         if(setupMod == 4)
         {
             setup = NABLA::Bytegen::ArithmaticSetup::REG_REG; 
-            arg1 = getRandom16(0, 15);      // REG
-            arg2 = getRandom16(0, 15);      // REG
+            arg1 = getRandom16(0, 9);      // REG
+            arg2 = getRandom16(0, 9);      // REG
 
             expectedIns.bytes[1] = integerToRegister(destReg);
             expectedIns.bytes[2] = integerToRegister(arg1);

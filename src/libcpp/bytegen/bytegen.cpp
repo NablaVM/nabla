@@ -135,7 +135,7 @@ namespace NABLA
     {
         std::vector<uint8_t> result;
 
-        //std::cout << "Bytegen::createConstantString(" << val << ")" << std::endl;
+//        std::cout << "Bytegen::createConstantString(" << val << ")" << std::endl;
         
         result.push_back( CONST_STR );
 

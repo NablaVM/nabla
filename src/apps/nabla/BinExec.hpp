@@ -9,7 +9,7 @@
 
 extern "C" 
 {
-    #include "VmCommon.h"
+    #include "vm.h"
     #include "VmInstructions.h"
 }
 
