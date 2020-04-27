@@ -846,7 +846,7 @@ vm_attempt_force_return:
             {
                 printf("invoke io\n");
 
-                int result = io_invoke(vm);
+                int result = io_stdin(vm);
             }
             else if (vm->registers[10] < 600)
             {

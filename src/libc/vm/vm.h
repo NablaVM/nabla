@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 // Set if to 0 to disable debug
-#if 0
+#if 1
     #define NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
 #endif
 
