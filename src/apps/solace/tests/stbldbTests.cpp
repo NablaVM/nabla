@@ -96,7 +96,7 @@ TEST(StbLdbTests, Stb)
         expectedIns.bytes[3] = (location & 0x00FF0000) >> 16 ;
         expectedIns.bytes[4] = (location & 0x0000FF00) >> 8  ;
         expectedIns.bytes[5] = (location & 0x000000FF) >> 0  ;
-        expectedIns.bytes[6] = integerToRegister(getRandom8(0, 15));
+        expectedIns.bytes[6] = integerToRegister(getRandom8(0, 9));
         expectedIns.bytes[7] = 0xFF;
         
         NABLA::Bytegen::Instruction ins = byteGen.createStbInstruction(
@@ -134,7 +134,7 @@ TEST(StbLdbTests, Ldb)
         uint32_t location = getRandom32(0, 0xFFFFFFF);
 
         expectedIns.bytes[0] = INS_LDB;
-        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 15));
+        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9));
         expectedIns.bytes[2] = getStackAddress(stackType);
         expectedIns.bytes[3] = (location & 0xFF000000) >> 24 ;
         expectedIns.bytes[4] = (location & 0x00FF0000) >> 16 ;

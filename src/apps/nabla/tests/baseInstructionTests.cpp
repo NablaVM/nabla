@@ -219,7 +219,7 @@ TEST(NablaInstructionTests, standardArith)
 
             NABLA::Bytegen::ArithmaticSetup arithSetup = static_cast<NABLA::Bytegen::ArithmaticSetup>(setupItr);
 
-            int16_t dest_reg    = getRandom16(0, 15);
+            int16_t dest_reg    = getRandom16(0, 9);
             uint64_t arg1;
             uint64_t arg2;
 
@@ -228,21 +228,21 @@ TEST(NablaInstructionTests, standardArith)
             switch(arithSetup)
             {
                 case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
-                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65000); // random reg with random val
-                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65000); // random reg with random val
+                    arg1 = getRandom16(0, 9); vm->registers[arg1] = getRandom16(0, 65000); // random reg with random val
+                    arg2 = getRandom16(0, 9); vm->registers[arg2] = getRandom16(0, 65000); // random reg with random val
 
                     expectedResult = calculateArith(arithType, vm->registers[arg1], vm->registers[arg2]);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
-                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65000); // Random reg with random val
+                    arg1 = getRandom16(0, 9); vm->registers[arg1] = getRandom16(0, 65000); // Random reg with random val
                     arg2 = getRandom16(0, 65000);                                            // Random val
 
                     expectedResult = calculateArith(arithType, vm->registers[arg1], arg2);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
-                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65000); // Random reg with random val
+                    arg2 = getRandom16(0, 9); vm->registers[arg2] = getRandom16(0, 65000); // Random reg with random val
                     arg1 = getRandom16(0, 65000);                                           // Random val
 
                     expectedResult = calculateArith(arithType, arg1, vm->registers[arg2]);
@@ -291,13 +291,13 @@ TEST(NablaInstructionTests, standardBranchIns)
 
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
 
-        // Registers for comparisons will be 1-15
-        uint16_t reg1 = getRandom16(1,15);
-        uint16_t reg2 = getRandom16(1,15);
+        // Registers for comparisons will be 1-9
+        uint16_t reg1 = getRandom16(1,9);
+        uint16_t reg2 = getRandom16(1,9);
 
         while(reg1 == reg2)
         {
-            reg2 = getRandom16(1,15);
+            reg2 = getRandom16(1,9);
         }
 
         if(type == NABLA::Bytegen::BranchTypes::BGT)
@@ -385,13 +385,13 @@ TEST(NablaInstructionTests, standardBranchInsExpectedFails)
 
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
 
-        // Registers for comparisons will be 1-15
-        uint16_t reg1 = getRandom16(1,15);
-        uint16_t reg2 = getRandom16(1,15);
+        // Registers for comparisons will be 1-9
+        uint16_t reg1 = getRandom16(1,9);
+        uint16_t reg2 = getRandom16(1,9);
 
         while(reg1 == reg2)
         {
-            reg2 = getRandom16(1,15);
+            reg2 = getRandom16(1,9);
         }
 
         if(type == NABLA::Bytegen::BranchTypes::BGT)
@@ -483,7 +483,7 @@ TEST(NablaInstructionTests, doubleArith)
         // The only valid double arith
         NABLA::Bytegen::ArithmaticSetup arithSetup = NABLA::Bytegen::ArithmaticSetup::REG_REG;
 
-        int16_t dest_reg    = getRandom16(0, 15);
+        int16_t dest_reg    = getRandom16(0, 9);
         uint64_t arg1;
         uint64_t arg2;
 
@@ -492,21 +492,21 @@ TEST(NablaInstructionTests, doubleArith)
         switch(arithSetup)
         {
             case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
-                arg1 = getRandom16(0, 15); vm->registers[arg1] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // random reg with random val
-                arg2 = getRandom16(0, 15); vm->registers[arg2] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // random reg with random val
+                arg1 = getRandom16(0, 9); vm->registers[arg1] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // random reg with random val
+                arg2 = getRandom16(0, 9); vm->registers[arg2] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // random reg with random val
 
                 expectedResult = calculateArith(arithType, vm->registers[arg1], vm->registers[arg2]);
                 break;
 
             case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
-                arg1 = getRandom16(0, 15); vm->registers[arg1] =doubleToUint64(getRandomDouble(0.0, 65000.0)); // Random reg with random val
+                arg1 = getRandom16(0, 9); vm->registers[arg1] =doubleToUint64(getRandomDouble(0.0, 65000.0)); // Random reg with random val
                 arg2 = doubleToUint64(getRandomDouble(0.0, 65000.0));                                          // Random val
 
                 expectedResult = calculateArith(arithType, vm->registers[arg1], arg2);
                 break;
 
             case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
-                arg2 = getRandom16(0, 15); vm->registers[arg2] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // Random reg with random val
+                arg2 = getRandom16(0, 9); vm->registers[arg2] = doubleToUint64(getRandomDouble(0.0, 65000.0)); // Random reg with random val
                 arg1 = doubleToUint64(getRandomDouble(0.0, 65000.0));                                           // Random val
 
                 expectedResult = calculateArith(arithType, arg1, vm->registers[arg2]);
@@ -554,13 +554,13 @@ TEST(NablaInstructionTests, doubleBranchIns)
 
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
 
-        // Registers for comparisons will be 1-15
-        uint16_t reg1 = getRandom16(1,15);
-        uint16_t reg2 = getRandom16(1,15);
+        // Registers for comparisons will be 1-9
+        uint16_t reg1 = getRandom16(1,9);
+        uint16_t reg2 = getRandom16(1,9);
 
         while(reg1 == reg2)
         {
-            reg2 = getRandom16(1,15);
+            reg2 = getRandom16(1,9);
         }
 
         if(type == NABLA::Bytegen::BranchTypes::BGTD)
@@ -648,13 +648,13 @@ TEST(NablaInstructionTests, doubleBranchInsFails)
 
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
 
-        // Registers for comparisons will be 1-15
-        uint16_t reg1 = getRandom16(1,15);
-        uint16_t reg2 = getRandom16(1,15);
+        // Registers for comparisons will be 1-9
+        uint16_t reg1 = getRandom16(1,9);
+        uint16_t reg2 = getRandom16(1,9);
 
         while(reg1 == reg2)
         {
-            reg2 = getRandom16(1,15);
+            reg2 = getRandom16(1,9);
         }
 
         if(type == NABLA::Bytegen::BranchTypes::BGTD)
@@ -742,13 +742,13 @@ TEST(NablaInstructionTests, pushPopIns)
 
         NABLA::Bytegen::Stacks stackLoc = static_cast<NABLA::Bytegen::Stacks>(getRandom16(0,1));
 
-        uint16_t pushReg = getRandom16(0,15);
-        uint16_t popReg  = getRandom16(0,15);
+        uint16_t pushReg = getRandom16(0, 9);
+        uint16_t popReg  = getRandom16(0, 9);
 
         // Ensure push and pop reg differ
         while(pushReg == popReg)
         {
-            popReg = getRandom16(0,15);
+            popReg = getRandom16(0, 9);
         }
 
         vm->registers[pushReg] = getRandom16(0, 65530);
@@ -799,7 +799,6 @@ TEST(NablaInstructionTests, pushPopIns)
         vm_delete(vm);
     }
 }
-
 // ---------------------------------------------------------------
 // 
 // ---------------------------------------------------------------
@@ -870,12 +869,12 @@ TEST(NablaInstructionTests, jumpInsHigh)
             1   // Inc reg1 by 1 every time this instruction is called
         );
         
-        vm->registers[10]    = 0;
+        vm->registers[9]    = 0;
 
         NABLA::Bytegen::Instruction baseIns1 = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
             NABLA::Bytegen::ArithmaticSetup::REG_NUM,
-            10,  // Destination register
+            9,  // Destination register
             0,  // reg 0
             1   // Inc reg1 by 1 every time this instruction is called
         );
@@ -903,7 +902,7 @@ TEST(NablaInstructionTests, jumpInsHigh)
         // Sanity
         CHECK_EQUAL(0, vm->registers[0]);   // Hopefully skipped
 
-        CHECK_EQUAL(1, vm->registers[10]);  // Hopefully added 2
+        CHECK_EQUAL(1, vm->registers[9]);  // Hopefully added 2
 
         // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
         vm_delete(vm);
@@ -923,14 +922,14 @@ TEST(NablaInstructionTests, movIns)
 
         NABLA::Bytegen::MovSetup setup = static_cast<NABLA::Bytegen::MovSetup>(getRandom16(0,1));
 
-        int16_t dest_reg    = getRandom16(0, 15);
+        int16_t dest_reg    = getRandom16(0, 9);
 
         uint64_t arg1;
         uint64_t expectedResult;
 
         if(setup == NABLA::Bytegen::MovSetup::REG_REG)
         {
-            arg1 = getRandom16(0, 15); 
+            arg1 = getRandom16(0, 9); 
             expectedResult = getRandom16(0, 254);
             vm->registers[arg1] = expectedResult;
         }
@@ -969,7 +968,7 @@ TEST(NablaInstructionTests, stbLdbIns)
 
         NABLA::Bytegen::Stacks stackLoc = static_cast<NABLA::Bytegen::Stacks>(getRandom16(0,1));
 
-        uint16_t reg = getRandom16(0,14);
+        uint16_t reg = getRandom16(0, 8);
 
         vm->registers[reg] = getRandom16(0, 65530);
 
@@ -1242,8 +1241,6 @@ TEST(NablaInstructionTests, nopIns)
 
 TEST(NablaInstructionTests, bitwiseIns)
 {
-    std::cout << "(NablaInstructionTests, bitwiseIns)\t This test needs to be written here" << std::endl;
-
     // Each of the arithmatic types (ADD ,MUL, DIV, SUB)
     for(int typesItr = 0x01; typesItr <= 0x06; typesItr++)
     {
@@ -1267,7 +1264,7 @@ TEST(NablaInstructionTests, bitwiseIns)
             NablaVirtualMachine vm = vm_new();
 
 
-            int16_t dest_reg    = getRandom16(0, 15);
+            int16_t dest_reg    = getRandom16(0, 9);
             uint64_t arg1;
             uint64_t arg2;
 
@@ -1276,21 +1273,21 @@ TEST(NablaInstructionTests, bitwiseIns)
             switch(arithSetup)
             {
                 case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
-                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65000); // random reg with random val
-                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65000); // random reg with random val
+                    arg1 = getRandom16(0, 9); vm->registers[arg1] = getRandom16(0, 65000); // random reg with random val
+                    arg2 = getRandom16(0, 9); vm->registers[arg2] = getRandom16(0, 65000); // random reg with random val
 
                     expectedResult = calculateBitwise(arithType, vm->registers[arg1], vm->registers[arg2]);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
-                    arg1 = getRandom16(0, 15); vm->registers[arg1] = getRandom16(0, 65000); // Random reg with random val
+                    arg1 = getRandom16(0, 9); vm->registers[arg1] = getRandom16(0, 65000); // Random reg with random val
                     arg2 = getRandom16(0, 65000);                                            // Random val
 
                     expectedResult = calculateBitwise(arithType, vm->registers[arg1], arg2);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
-                    arg2 = getRandom16(0, 15); vm->registers[arg2] = getRandom16(0, 65000); // Random reg with random val
+                    arg2 = getRandom16(0, 9); vm->registers[arg2] = getRandom16(0, 65000); // Random reg with random val
                     arg1 = getRandom16(0, 65000);                                           // Random val
 
                     expectedResult = calculateBitwise(arithType, arg1, vm->registers[arg2]);

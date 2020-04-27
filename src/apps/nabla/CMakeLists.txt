@@ -11,6 +11,7 @@ set(NABLA_APP_SOURCES
     ${CMAKE_SOURCE_DIR}/libc/stack/stack.c
     ${CMAKE_SOURCE_DIR}/libc/binloader/binloader.c
     ${CMAKE_SOURCE_DIR}/libc/vm/vm.c
+    ${CMAKE_SOURCE_DIR}/libc/vm/io.c
 
 )
 

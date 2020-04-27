@@ -1,17 +1,7 @@
 # TODO
 
-Add in some hooks for automating some tests with the vm. Given a certain compile option, the vm should
-throw out tokens about what its doing. We could load code that we expect a certain token pattern from
-and ensure that the operations are going as we intend.
+Need to write up documentation on how the VM functions, and what all the aspects of the VM are for. Especially important is how the devices will work, and what the registers are used for
 
-
---Remove '"' from string constants in solace... i thought i did that, but apparently not... 
-
-## After above, but sooner than later 
-
-DONE: Write simple util to dump nabla binaries so we can debug easier as things get rolling
-
-This tool will eventually become the decompiler, but at first it really just needs to dump shit out
 
 ## Later
 

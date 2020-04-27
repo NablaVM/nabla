@@ -69,8 +69,8 @@ TEST(BranchTests, AllBranchTests)
         NABLA::Bytegen::Instruction expectedIns;
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(getRandom8(1,12));
 
-        uint8_t reg1   = getRandom8(0, 15);
-        uint8_t reg2   = getRandom8(0, 15);
+        uint8_t reg1   = getRandom8(0, 9);
+        uint8_t reg2   = getRandom8(0, 9);
         uint32_t label = getRandomLabelNumber();
 
         switch(type)

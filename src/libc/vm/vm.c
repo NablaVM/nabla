@@ -9,6 +9,9 @@
 
 #include "vm.h"     // Vm header
 #include "VmInstructions.h"
+
+#include "io.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -721,6 +724,10 @@ int vm_cycle(struct VM* vm, uint64_t n)
                 {
                     vm->registers[destReg] = stack_pop(vm->functions[vm->fp].localStack, &okay);
                 }
+                
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Pop Result : %lu\n", vm->registers[destReg]);
+#endif
                 assert(okay == STACK_OKAY);
                 break;
             }          
@@ -827,6 +834,30 @@ vm_attempt_force_return:
                 break; 
             }
         }
+
+        // Check action registers to see if a device needs to be called
+        // ----------------------------------------------------------------------------
+
+        if(vm->registers[10] != 0)
+        {
+            printf("We need to invoke something...%lu \n", vm->registers[14]);
+
+            if(vm->registers[10] < 400)
+            {
+                printf("invoke io\n");
+
+                int result = io_invoke(vm);
+            }
+            else if (vm->registers[10] < 600)
+            {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Invoke net (NYD)\n");
+#endif
+            }
+
+        }
+
+        // ----------------------------------------------------------------------------
 
         //  Increase the instruction pointer if we aren't explicitly told not to
         //

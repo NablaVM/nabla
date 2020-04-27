@@ -82,7 +82,7 @@ TEST(PushPop, Push)
 
         expectedIns.bytes[0] = INS_PUSH;
         expectedIns.bytes[1] = getStackAddress(stackType);
-        expectedIns.bytes[2] = integerToRegister(getRandom8(0, 15)) ;
+        expectedIns.bytes[2] = integerToRegister(getRandom8(0, 9)) ;
         expectedIns.bytes[3] = 0xFF;
         expectedIns.bytes[4] = 0xFF;
         expectedIns.bytes[5] = 0xFF;
@@ -119,7 +119,7 @@ TEST(PushPop, Pop)
         NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
 
         expectedIns.bytes[0] = INS_POP;
-        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 15)) ;
+        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9)) ;
         expectedIns.bytes[2] = getStackAddress(stackType);
         expectedIns.bytes[3] = 0xFF;
         expectedIns.bytes[4] = 0xFF;
