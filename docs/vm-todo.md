@@ -2,6 +2,10 @@
 
 Need to write up documentation on how the VM functions, and what all the aspects of the VM are for. Especially important is how the devices will work, and what the registers are used for
 
+io_stdin triggerd by '1' in register 10. Bytes count for read in foes in r11, Frames produced count in r12
+io_stdout triggerd by '2' in register 10. Writes byte-by-byte what is in r11 starting with MSB
+
+Registers r10 - r15 Shouldn't be touched unless something is intended to be done with a device
 
 ## Later
 

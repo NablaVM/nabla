@@ -4,8 +4,9 @@
 #include "stack.h"
 #include <stdint.h>
 
-// Set if to 0 to disable debug
-#if 1
+// This is set by CMake now, but being left in case someone wonders where it came from
+// and naturally decides to look here
+#if 0
     #define NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
 #endif
 

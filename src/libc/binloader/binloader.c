@@ -390,8 +390,9 @@ int bin_load_vm(FILE* file, NVM * vm)
         // in the order that they are defined in the asm file 
         else if(currentStatus == EXPECT_CONSTANT)
         {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
             printf("Expecting %lu constants\n", numberOfConstants);
-
+#endif
             // Chop off the bottom 2 bits to see what operation is indicated
             uint8_t op = (currentByte & 0xFC);
 

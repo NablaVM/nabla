@@ -2,6 +2,37 @@
 
 Virtual machine information that needs to be shared by multiple applications
 
+# String storage
+
+All strings within global/stack frame are encoded high->low in the 8-byte storage unit
+
+
+Stack Frame
+
+    11111111 | 11111111 | 11111111 | 11111111 | 11111111 | 11111111 | 11111111 | 11111111
+
+String 
+
+    Nabla!!!
+
+Encoded Stack
+
+        N          a         b         l          a          !          !          !
+
+    01110100 | 10001101 | 10001110 | 01101100 | 10001101 | 00101001 | 00101001 | 00101001
+
+With Empty Chars (no '!')
+
+        N          a         b         l          a          
+
+    01110100 | 10001101 | 10001110 | 01101100 | 10001101 | 00000000 | 00000000 | 00000000
+
+
+# Numerical Storage
+
+Binary encoding (from file) will treat numerical values the same as strings. That-is constant numbers
+
+...... < FINISH THIS >
 
 # Valid Instructions
 

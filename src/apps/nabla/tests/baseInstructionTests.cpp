@@ -122,6 +122,7 @@ namespace
                           (uint64_t)ied.ieee.exponent  << 52|
                           (uint64_t)ied.ieee.mantissa0 << 32|
                           (uint64_t)ied.ieee.mantissa1 << 0;
+        return packed;
     }
 
     // ---------------------------------------------------------------

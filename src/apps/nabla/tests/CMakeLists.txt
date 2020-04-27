@@ -6,14 +6,12 @@ link_directories(${CPPUTEST_LIBRARIES})
 
 include_directories(../)
 include_directories(${CMAKE_CURRENT_LIST_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/libcpp/bytegen/)
-include_directories(${CMAKE_SOURCE_DIR}/libc/binloader)
-include_directories(${CMAKE_SOURCE_DIR}/libc/stack)
-include_directories(${CMAKE_SOURCE_DIR}/libc/vm)
+include_directories(${NABLA_LIBCPP_INCLUDES})
+include_directories(${NABLA_LIBC_INCLUDES})
 
 add_executable(nablaVmTests
-        ${NABLA_APP_SOURCES}
-        ${CMAKE_SOURCE_DIR}/libcpp/bytegen/bytegen.cpp
+        ${NABLA_LIBC_SOURCES}
+        ${NABLA_LIBCPP_SOURCES}
         baseInstructionTests.cpp
         main.cpp
 )
