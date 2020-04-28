@@ -1,11 +1,3 @@
-/*
-    These are tests for the NABLA VM, but they are placed here so we can leverage CPPUTEST. 
-
-    For each group of instructions, we create a VM loaded with instructions. Tell it to execute, 
-    and check the resulting calculations to ensure that instructions that the VM executes are doing 
-    so as we expect.
-*/
-
 #include <iostream>
 #include "bytegen.hpp"
 #include <random>

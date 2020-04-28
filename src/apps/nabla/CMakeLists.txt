@@ -10,8 +10,4 @@ set(NABLA_APP_SOURCES
     BinExec.cpp
 )
 
-if(COMPILE_TESTS)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests/)
-endif()
-
 add_executable(nabla main.cpp ${NABLA_APP_SOURCES})

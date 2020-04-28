@@ -5,11 +5,12 @@
 link_directories(${CPPUTEST_LIBRARIES})
 
 include_directories(../)
-include_directories(${CMAKE_SOURCE_DIR}/libc/vm)
-include_directories(${CMAKE_SOURCE_DIR}/libcpp/bytegen)
 
-add_executable(nablaInsTest
-        ${SOLACE_COMPILER_SOURCES}
+include_directories(${NABLA_LIBC_INCLUDES})
+include_directories(${NABLA_LIBCPP_INCLUDES})
+
+add_executable(nablaBytegenTests
+        ${NABLA_LIBCPP_SOURCES}
         arithmaticTests.cpp
         bitwiseTests.cpp
         branchTests.cpp
@@ -26,7 +27,7 @@ add_executable(nablaInsTest
         main.cpp
 )
 
-target_link_libraries(nablaInsTest 
+target_link_libraries(nablaBytegenTests 
                       ${CPPUTEST_LDFLAGS})
 
-add_custom_command(TARGET nablaInsTest COMMAND ./nablaInsTest POST_BUILD)
+add_custom_command(TARGET nablaBytegenTests COMMAND ./nablaBytegenTests POST_BUILD)
