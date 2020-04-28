@@ -30,7 +30,7 @@ if(BUILD_SOLACE)
 endif()
 
 # -------------------------------------------------
-#   Harp decompiler
+#   Harp Analyzer
 # -------------------------------------------------
 if(BUILD_HARP)
     add_subdirectory(apps/harp)
@@ -44,8 +44,8 @@ if(BUILD_NABLA)
 endif()
 
 # -------------------------------------------------
-#   libc tests (Non-CPPU Tests)
+#   All Nabla tests
 # -------------------------------------------------
 if(COMPILE_TESTS)
-    add_subdirectory(libc/stack/test)
+    add_subdirectory(tests)
 endif()

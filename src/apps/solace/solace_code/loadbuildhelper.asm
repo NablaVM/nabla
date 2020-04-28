@@ -57,12 +57,12 @@
     ; div r1 r0 $2       ; 25
     ; div r1 $100 r1     ; 4
 
-    ; ldb r9  $5(gs)       
-    ; ldb r10 $6(gs)      
-    ; add.d r0 r9 r10      ; 11.5
-    ; sub.d r0 r9 r10      ; 8.5
-    ; mul.d r0 r10 r9      ; 15.0
-    ; div.d r0 r9 r10      ; 6.66
+    ldb r9  $5(gs)       
+    ldb r10 $6(gs)      
+    add.d r0 r9 r10      ; 11.5
+    sub.d r0 r9 r10      ; 8.5
+    mul.d r0 r10 r9      ; 15.0
+    div.d r0 r9 r10      ; 6.66
 
     ; ldb r1 $0(gs)
     ; stb $10(gs) r1
@@ -79,12 +79,12 @@
 ;    add r15 r15 $1
 ;
 ;    jmp jumpLabel
-    
-    ldb r15 $0(gs)
-
-    mov r0 r15
-
-    mov r1 $55
+;    
+;    ldb r15 $0(gs)
+;
+;    mov r0 r15
+;
+;    mov r1 $55
 
     ; Branch tests 
 
