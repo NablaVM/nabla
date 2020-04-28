@@ -22,6 +22,12 @@ if(SOLACE_DEBUG_OUTPUT)
     add_definitions(-DNABLA_SOLACE_DEBUG_OUTPUT)
 endif()
 
+# Get version info
+include(${CMAKE_SOURCE_DIR}/cmake/NablaVersion.cmake)
+
+# Discover the platform that we are building on
+include(${CMAKE_SOURCE_DIR}/cmake/Platform.cmake)
+
 # Set Cmake Variables for CPPUTest
 include(${CMAKE_SOURCE_DIR}/cmake/FindCppuTest.cmake)
 

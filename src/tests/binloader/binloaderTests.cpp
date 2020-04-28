@@ -25,9 +25,13 @@ extern "C"
 
 namespace
 {
+#ifdef TARGET_PLATFORM_IS_WINDOWS
+    const std::string asm_file = "tmp_binloader_test_file.asm";
+    const std::string bin_file = "tmp_binloader_test_binary.out";
+#else 
     const std::string asm_file = "/tmp/binloader_test_file.asm";
     const std::string bin_file = "/tmp/binloader_test_binary.out";
-
+#endif
     //  Tests for binloader require a bin file. Here we use solace to assemble a binary, write it out to
     //  bin_file location and return true if all goes well. Then the test can carry on loading the binary
     //  and ensuring that the vm is populated correctly
