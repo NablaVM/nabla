@@ -121,6 +121,15 @@ namespace NABLA
         };
 
         //!
+        //! \brief Setup configuration for load store commands
+        //!
+        enum class LoadStoreSetup
+        {
+            NUMBER_BASED    = 0x00,
+            REGISTER_BASED  = 0x01
+        };
+
+        //!
         //! \brief Create a bytegen
         //!
         Bytegen();
@@ -195,15 +204,17 @@ namespace NABLA
 
         //! \brief Create a pop instruction
         //! \param stack The stack to put data in
+        //! \param setup Indicate what location is to be encoded as (number or register)
         //! \param location The location in the stack to put the data
         //! \param reg   The register to get the data
-        Instruction createStbInstruction(Stacks stack, uint32_t location, uint8_t reg);
+        Instruction createStbInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg);
 
         //! \brief Create a pop instruction
         //! \param stack The stack to get data from
+        //! \param setup Indicate what location is to be encoded as (number or register)
         //! \param location The location in the stack to get the data
         //! \param reg   The register to put the data
-        Instruction createLdbInstruction(Stacks stack, uint32_t location, uint8_t reg);
+        Instruction createLdbInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg);
 
         //! \brief Create return instruction
         Instruction createReturnInstruction();
@@ -237,6 +248,11 @@ namespace NABLA
 
         //! \brief Create a no-op instruction
         Instruction createNopInstruction();
+
+        //! \brief Create a 'size' instruction
+        //! \param reg The destination register
+        //! \param stack The stack to get the size of
+        Instruction createSizeInstruction(uint8_t reg, Stacks stack);
 
     private:
 

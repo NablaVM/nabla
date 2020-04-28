@@ -582,12 +582,29 @@ int vm_cycle(struct VM* vm, uint64_t n)
             case INS_LDB  :
             {
                 uint8_t dest =  util_extract_byte(ins, 6);
-
                 uint8_t stackSouce = util_extract_byte(ins, 5);
+                uint64_t sourceAddress;
 
-                uint64_t sourceAddress = (uint64_t)util_extract_two_bytes(ins, 4) << 16| 
-                                         (uint64_t)util_extract_two_bytes(ins, 2);
+                // Depending on the 'id' of the instruction we need to change where we are getting the value
+                // for the stack offset.
+                if(id == 0)
+                {
+                    sourceAddress = (uint64_t)util_extract_two_bytes(ins, 4) << 16| 
+                                    (uint64_t)util_extract_two_bytes(ins, 2);
 
+                }
+                else if (id == 1)
+                {
+                    uint8_t sourceReg  = util_extract_byte(ins, 4);
+                    sourceAddress = vm->registers[sourceReg];
+                }
+                else
+                {
+                    printf("Invalid 'ldb' instruction id : ID= %u\n", id);
+                    return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+                }
+                
+                // Now that we have the source address and other required information, we can move on and actually do the load
                 int okay = -255;
                 if(stackSouce == GLOBAL_STACK)
                 {
@@ -598,26 +615,48 @@ int vm_cycle(struct VM* vm, uint64_t n)
                     vm->registers[dest] = stack_value_at(sourceAddress, vm->functions[vm->fp].localStack, &okay);
                 }
                 assert(okay == STACK_OKAY);
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("Ldb Result: %lu\n", vm->registers[dest]);
+#endif
                 break;
             }          
             case INS_STB  :
             {
-                uint8_t sourceReg =  util_extract_byte(ins, 1);
+                uint8_t  stackDest = util_extract_byte(ins, 6);
+                uint64_t destAddress;
+                uint8_t  sourceReg;
 
-                uint8_t stackDest = util_extract_byte(ins, 6);
+                // Depending on the 'id' of the instruction we need to change where we are getting the value
+                // for the stack offset.
+                if(id == 0)
+                {
+                    sourceReg =  util_extract_byte(ins, 1);
+                    destAddress = (uint64_t)util_extract_two_bytes(ins, 5) << 16| 
+                                 (uint64_t)util_extract_two_bytes(ins, 3);
+                }
+                else if (id == 1)
+                {
+                    sourceReg = util_extract_byte(ins, 4);
+                    uint8_t destReg   = util_extract_byte(ins, 5);
+                    destAddress = vm->registers[destReg];
+                }
+                else
+                {
+                    printf("Invalid 'stb' instruction id : ID= %u\n", id);
+                    return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+                }
 
-                uint64_t desAddress = (uint64_t)util_extract_two_bytes(ins, 5) << 16| 
-                                      (uint64_t)util_extract_two_bytes(ins, 3);
-
+                // Now that we have the destination information, perform the store
                 int okay = -255;
                 if(stackDest == GLOBAL_STACK)
                 {
-                    stack_set_value_at(desAddress, vm->registers[sourceReg], vm->globalStack, &okay);
+                    stack_set_value_at(destAddress, vm->registers[sourceReg], vm->globalStack, &okay);
                 }
                 else if ( stackDest == LOCAL_STACK )
                 {
                     // If they haven't made the local stack big enough this could fail. Hope they know what they're doing
-                    stack_set_value_at(desAddress, vm->registers[sourceReg], vm->functions[vm->fp].localStack, &okay);
+                    stack_set_value_at(destAddress, vm->registers[sourceReg], vm->functions[vm->fp].localStack, &okay);
                 }
                 assert(okay == STACK_OKAY);
                 break;
@@ -660,6 +699,30 @@ int vm_cycle(struct VM* vm, uint64_t n)
                 assert(okay == STACK_OKAY);
                 break;
             }          
+            case INS_SIZE :
+            {
+                uint8_t destReg         = util_extract_byte(ins, 6);
+                uint8_t stackInQuestion = util_extract_byte(ins, 5);
+
+                if(stackInQuestion == GLOBAL_STACK)
+                {
+                    vm->registers[destReg] = stack_get_size(vm->globalStack);
+                }
+                else if (stackInQuestion == LOCAL_STACK )
+                {
+                    vm->registers[destReg] = stack_get_size(vm->functions[vm->fp].localStack);
+                }
+                else
+                {
+                    printf("Invalid 'size' instruction!\n");
+                    return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+                }
+                
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Size Result : %lu\n", vm->registers[destReg]);
+#endif
+                break;
+            }
             case INS_JUMP :
             {
                 uint64_t destAddress = (uint64_t)util_extract_two_bytes(ins, 6) << 16| 

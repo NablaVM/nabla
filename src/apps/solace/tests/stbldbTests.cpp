@@ -80,7 +80,7 @@ TEST_GROUP(StbLdbTests)
 // 
 // ---------------------------------------------------------------
 
-TEST(StbLdbTests, Stb)
+TEST(StbLdbTests, StbNumberBased)
 {
     for(int16_t j = 0; j < 50; j++)
     {
@@ -101,6 +101,7 @@ TEST(StbLdbTests, Stb)
         
         NABLA::Bytegen::Instruction ins = byteGen.createStbInstruction(
             stackType,
+            NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED,
             location,
             expectedIns.bytes[6]
         );
@@ -123,7 +124,47 @@ TEST(StbLdbTests, Stb)
 // 
 // ---------------------------------------------------------------
 
-TEST(StbLdbTests, Ldb)
+TEST(StbLdbTests, StbRegisterBased)
+{
+    for(int16_t j = 0; j < 50; j++)
+    {
+        NABLA::Bytegen::Instruction expectedIns;
+
+        NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
+
+        expectedIns.bytes[0] = (INS_STB | 0x01);
+        expectedIns.bytes[1] = getStackAddress(stackType);
+        expectedIns.bytes[2] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[3] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[4] = 0xFF;
+        expectedIns.bytes[5] = 0xFF;
+        expectedIns.bytes[6] = 0xFF;
+        expectedIns.bytes[7] = 0xFF;
+        
+        NABLA::Bytegen::Instruction ins = byteGen.createStbInstruction(
+            stackType,
+            NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED,
+            expectedIns.bytes[2],
+            expectedIns.bytes[3]
+        );
+
+        // Build expected ins
+        CHECK_EQUAL_TEXT(ins.bytes[0], expectedIns.bytes[0], "Opcode fail");
+        CHECK_EQUAL_TEXT(ins.bytes[1], expectedIns.bytes[1], "Incorrect Stack");
+        CHECK_EQUAL_TEXT(ins.bytes[2], expectedIns.bytes[2], "Byte 1 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[3], expectedIns.bytes[3], "Byte 3 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[4], expectedIns.bytes[4], "Byte 4 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[5], expectedIns.bytes[5], "Byte 5 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Byte 6 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
+    }   
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(StbLdbTests, LdbNumberBased)
 {
     for(int16_t j = 0; j < 50; j++)
     {
@@ -144,6 +185,7 @@ TEST(StbLdbTests, Ldb)
         
         NABLA::Bytegen::Instruction ins = byteGen.createLdbInstruction(
             stackType,
+            NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED,
             location,
             expectedIns.bytes[1]
         );
@@ -158,6 +200,44 @@ TEST(StbLdbTests, Ldb)
         CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Byte 6 fail");
         CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
     }
+}
 
-    
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(StbLdbTests, LdbRegisterBased)
+{
+    for(int16_t j = 0; j < 50; j++)
+    {
+        NABLA::Bytegen::Instruction expectedIns;
+
+        NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
+        
+        expectedIns.bytes[0] = (INS_LDB | 0x01);
+        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[2] = getStackAddress(stackType);
+        expectedIns.bytes[3] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[4] = 0xFF;
+        expectedIns.bytes[5] = 0xFF;
+        expectedIns.bytes[6] = 0xFF;
+        expectedIns.bytes[7] = 0xFF;
+        
+        NABLA::Bytegen::Instruction ins = byteGen.createLdbInstruction(
+            stackType,
+            NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED,
+            expectedIns.bytes[3],
+            expectedIns.bytes[1]
+        );
+
+        // Build expected ins
+        CHECK_EQUAL_TEXT(ins.bytes[0], expectedIns.bytes[0], "Opcode fail");
+        CHECK_EQUAL_TEXT(ins.bytes[1], expectedIns.bytes[1], "Incorrect Register");
+        CHECK_EQUAL_TEXT(ins.bytes[2], expectedIns.bytes[2], "Incorrect stack");
+        CHECK_EQUAL_TEXT(ins.bytes[3], expectedIns.bytes[3], "Byte 3 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[4], expectedIns.bytes[4], "Byte 4 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[5], expectedIns.bytes[5], "Byte 5 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Byte 6 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
+    }
 }

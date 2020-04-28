@@ -39,8 +39,6 @@ Binary encoding (from file) will treat numerical values the same as strings. Tha
     Possible Instructions   ( lowest 2 bits must be 0 )
 
 
-    0	| 00000000
-    4	| 00000100
     8	| 00001000
     c	| 00001100
     10	| 00010000
@@ -64,6 +62,7 @@ Binary encoding (from file) will treat numerical values the same as strings. Tha
     
 
     [ BELOW ARE CURRENT INSTRUCTIONS ]
+    4	| 00000100
     0	| 00000000
     44	| 01000100
     48	| 01001000

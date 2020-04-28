@@ -52,13 +52,13 @@ Abbreviations :
 |      r       | register                               |
 |     *n       | in-place numerical value               |
 |     sp       | stack pointer   (ls, gs)               |
-|     *sp      | stack pointer offset  ($N(ls), $N(gs)) |
+|     *sp      | stack pointer offset  ($N(ls), $N(gs)) or rN(ls), rN(gs) for register-based offset |
 
 ## Misc Instructions
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
 |---              |---        |---            |---           |---                                           |
 |     nop         |    NA     |    NA         |   NA         |  No Operation                                |
-
+|     size        |    sp     |    NA         |   NA         |  Get size (number of elements) in stack      |
 
 ## Artihmatic Instructions
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
@@ -258,13 +258,27 @@ Indication Bits:
 
 **stb** - Store bytes
 
+Indication Bits:
+00 - Stack with numerical offset, Source Register
+01 - Stack with register-base offset, Source Register
+
     INS    ID    STACK       [ ---------------   ADDRESS  ---------------]   REGISTER    UNUSED
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
+    INS    ID    STACK      REGISTER     REGISTER   [ ------------------ UNUSED ----------------]
+    111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
 **ldb** - Load bytes
+
+Indication Bits:
+00 - Destination Register, Stack with numerical offset
+01 - Destination Register, Stack with register-base offset
 
     INS    ID   REGISTER      STACK     [ ---------------   ADDRESS  ---------------]    UNUSED
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+    INS    ID    REGISTER      STACK     REGISTER   [ ------------------ UNUSED ----------------]
+    111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 **push** - Push
 
@@ -349,6 +363,19 @@ The current maximum is 255 bytes for a string
 id bits ignored, size is 9 bytes fixed
 
     INS    ID   [ -------------------------------------- DOUBLE DATA -------------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+
+## Misc Instructions
+
+Nop
+
+    INS    ID   [ --------------------------------------   UNUSED  ---------------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+Size
+
+    INS    ID   REGISTER    STACK      [ ---------------------------- UNUSED -------------------------------]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 

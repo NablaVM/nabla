@@ -800,6 +800,7 @@ TEST(NablaInstructionTests, pushPopIns)
         vm_delete(vm);
     }
 }
+
 // ---------------------------------------------------------------
 // 
 // ---------------------------------------------------------------
@@ -973,14 +974,50 @@ TEST(NablaInstructionTests, stbLdbIns)
 
         vm->registers[reg] = getRandom16(0, 65530);
 
-        NABLA::Bytegen::Instruction storeIns = bytegen.createStbInstruction(
-            stackLoc, i, reg
-        );
+        NABLA::Bytegen::Instruction storeIns;
+        NABLA::Bytegen::Instruction loadIns;
 
-        NABLA::Bytegen::Instruction loadIns = bytegen.createLdbInstruction(
-            stackLoc, i, reg+1
-        );
+        // Randomly decide if we should use register based, or number based store / load instructions
+        if(getRandom16(0, 1) == 0)
+        {
+            // Number-based store instruction
+            storeIns = bytegen.createStbInstruction(
+                stackLoc, NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED, i, reg
+            );
 
+            loadIns = bytegen.createLdbInstruction(
+                stackLoc, NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED, i, reg+1
+            );
+        }
+        else
+        {
+            // Register-based store instruction
+
+            uint16_t sourceReg = getRandom16(0, 8);
+
+            while(reg == sourceReg)
+            {
+                sourceReg = getRandom16(0, 8);
+            }
+            
+            vm->registers[sourceReg] = i;
+
+            storeIns = bytegen.createStbInstruction(
+                stackLoc, NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED, sourceReg, reg
+            );
+
+            loadIns = bytegen.createLdbInstruction(
+                stackLoc, NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED, sourceReg, reg+1
+            );
+        }
+
+        /*
+            No matter where we are getting the information for store / load (register vs numerical constant)
+            the actual test is the same as we've populate a a source register if we've needed, and checking it
+            isn't necissary
+        */
+
+        // Get the bytes for the instruction
         std::vector<uint8_t> storeBytes = ins_to_vec(storeIns);
         std::vector<uint8_t> loadBytes  = ins_to_vec(loadIns);
 
@@ -1321,5 +1358,82 @@ TEST(NablaInstructionTests, bitwiseIns)
 
             vm_delete(vm);
         }
+    }
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaInstructionTests, sizeInstruction)
+{
+    for(int i = 0; i < 100; i++)
+    {
+        NABLA::Bytegen bytegen;
+        NablaVirtualMachine vm = vm_new();
+
+        NABLA::Bytegen::Stacks stackLoc = static_cast<NABLA::Bytegen::Stacks>(getRandom16(0,1));
+
+        // A register to get data from for push instructions used to grow the stack for testing
+        uint16_t pushReg = getRandom16(0, 9);
+
+        // Where the size instruction should be placing size once acquired
+        uint16_t dest_reg = getRandom16(0, 9);
+
+        // Ensure push and pop reg differ
+        while(pushReg == dest_reg)
+        {
+            dest_reg = getRandom16(0, 9);
+        }
+
+        // Put some random value, we really don't care what it is
+        vm->registers[pushReg] = getRandom16(0, 65530);
+
+        // Create a size instruction that should read '0' when called 
+        NABLA::Bytegen::Instruction sizeIns = bytegen.createSizeInstruction(dest_reg, stackLoc);
+
+        std::vector<uint8_t> sizeInsBytes = ins_to_vec(sizeIns);
+        build_test_vm(vm, sizeInsBytes);
+
+        // Grow the stack some number of sizes
+        uint8_t numPushs = getRandom16(0, 55);
+
+        for(int sp = 0; sp < numPushs; sp++)
+        {
+            NABLA::Bytegen::Instruction pushIns = bytegen.createPushInstruction(
+                stackLoc, pushReg
+            );
+
+            std::vector<uint8_t> pushBytes = ins_to_vec(pushIns);
+            build_test_vm(vm, pushBytes);
+        }
+
+        // Create a stack instruction that should read back numPushs
+        sizeInsBytes.clear();
+        sizeInsBytes = ins_to_vec(bytegen.createSizeInstruction(dest_reg, stackLoc));
+        build_test_vm(vm, sizeInsBytes);
+
+        // Init
+        vm_init(vm);
+
+        // Step 1 instruction (should be push)
+        vm_step(vm, 1);
+
+        // Size should have read 0
+        CHECK_EQUAL(0, vm->registers[dest_reg]);
+
+        // Step all of the push instructions
+        vm_step(vm, numPushs);
+     
+        // Sanity check
+        CHECK_EQUAL(0, vm->registers[dest_reg]);
+        
+        // Execute the 2nd size instruction
+        vm_step(vm, 1);
+
+        // Make sure its reading a size of 'numPushs'
+        CHECK_EQUAL(numPushs, vm->registers[dest_reg]);
+
+        vm_delete(vm);
     }
 }
