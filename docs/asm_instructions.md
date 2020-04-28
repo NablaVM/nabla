@@ -1,4 +1,4 @@
-# This will be expanded as things move along, 
+# Nabla Byte Code
 
 ## Registers
 
@@ -7,10 +7,6 @@ These registers are used to read/write any data to/from.
 The addresses for the registers are [0b, 15b]
 
 [128 bytes overhead]
-
-## Addresses
-
-An address is comprised of 4 bytes, giving us 2^32 possible addresses.
 
 ## Comments
 
@@ -36,14 +32,14 @@ To access a function, a 'call' must occur, you can not jump to a function. Furth
 
 ### In-place numerical values
 
-For arithmatic operations a drop-in numerical value can be given to an instruction. This drop-in is the numerical value prefixed
+For arithmetic operations a drop-in numerical value can be given to an instruction. This drop-in is the numerical value prefixed
 with a '$'. These numerical drop-ins are unsigned and encoded directly into the instruction. The valid range for an in-place value
 is the maximum number able to be stored by 2 bytes (2^16) 
 
 ### Constants
 
 Upon startup all constants listed will be loaded directly into the global stack. These constants will be loaded in the order by which they 
-are defined in the file. Ints and dobuel
+are defined in the file. Ints and double
 
 ## Instructions
 Abbreviations : 
@@ -60,7 +56,7 @@ Abbreviations :
 |     nop         |    NA     |    NA         |   NA         |  No Operation                                |
 |     size        |    sp     |    NA         |   NA         |  Get size (number of elements) in stack      |
 
-## Artihmatic Instructions
+## Artihmetic Instructions
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
 |---              |---        |---            |---           |---                                           |
 |     add         |        r  |    r , *n     |   r , *n     |  Add Arg2 and Arg3, Store in Arg1            |
@@ -72,8 +68,8 @@ Abbreviations :
 |     mul.d       |        r  |      r        |     r        |  Mul (double) Arg2 and Arg3, Store in Arg1   |
 |     div.d       |        r  |      r        |     r        |  Div (double) Arg3 by  Arg2, Store    in Arg1   |
    
-Arithmatic instructions that specify 'd' assumes that the values being operated on are double-precision floating point
-numbers, if the value in a given 'd' register is not a floating point, the behaviour is undefined.
+Arithmetic instructions that specify 'd' assumes that the values being operated on are double-precision floating point
+numbers, if the value in a given 'd' register is not a floating point, the behavior is undefined.
 
 ## Bitwise Instructions
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
@@ -104,7 +100,7 @@ numbers, if the value in a given 'd' register is not a floating point, the behav
 |      bne.d    |  r             |   r              |   label            | Branch (double) to Arg3 if Arg1 != Arg2   |
 
 Branch instructions assume that the conditional values stored in registers are integer values unless 'd' is specified. 
-If 'd' is specified and the value in a given register is not a floating point, the behaviour is undefined.
+If 'd' is specified and the value in a given register is not a floating point, the behavior is undefined.
 
 ## Loading / Storing Instructions
 |  Instruction     |  Arg1     |  Arg2    |  Description                                 |
@@ -145,7 +141,7 @@ If 'd' is specified and the value in a given register is not a floating point, t
 
 Each full instruction is 8 bytes. 
 
-### Arithmatic operations
+### Arithmetic operations
 
 [Byte 1]
 The first 6 bits represent the specific instruction (add / mul/ etc)
@@ -162,11 +158,11 @@ The second byte is the destination register
 
 Unaccounted bytes will be unused, and marked as '1'
 
-**Note:** Since drop-ins are not allowed on double-based arithmatic operations, the id bits listed above
-and displayed below are not applicable. Instead, double-based arithmatic operations will default to the 
+**Note:** Since drop-ins are not allowed on double-based arithmetic operations, the id bits listed above
+and displayed below are not applicable. Instead, double-based arithmetic operations will default to the 
 '00' case listed below.
 
-Here is an example of the bit layout given an arithmatic operation. Note: All but ID here are filled
+Here is an example of the bit layout given an arithmetic operation. Note: All but ID here are filled
 with '1' just for the sake of demonstration
 
     Case 00:
@@ -302,7 +298,7 @@ The jump operation is straight forward. The only data in the jump is the address
 
 **call** - Call
 
-Upon executing the call instruction, the address immediatly after call's address will be stored in
+Upon executing the call instruction, the address immediately after call's address will be stored in
 the system stack. 
 
     INS    ID   [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
@@ -335,9 +331,22 @@ to tell the VM how to structure its self.
     INS    ID   [ ---------------------------------- UNUSED ----------------------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
+
+## Misc Instructions
+
+Nop
+
+    INS    ID   [ --------------------------------------   UNUSED  ---------------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+Size
+
+    INS    ID   REGISTER    STACK      [ ---------------------------- UNUSED -------------------------------]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
 ## Constants
 
-Constant creation instructions dont follow standard instruction layout which is why they were saved for last.
+Constant creation instructions don't follow standard instruction layout which is why they were saved for last.
 
 **.int**
 
@@ -365,23 +374,9 @@ id bits ignored, size is 9 bytes fixed
     INS    ID   [ -------------------------------------- DOUBLE DATA -------------------------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-
-## Misc Instructions
-
-Nop
-
-    INS    ID   [ --------------------------------------   UNUSED  ---------------------------------------- ]
-    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
-
-Size
-
-    INS    ID   REGISTER    STACK      [ ---------------------------- UNUSED -------------------------------]
-    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
-
-
 ## The stack
 
-In this system, there are multiple stacks, but only 2 that can be accessed at any given time programatically. The functional stack, and the global stack. Each slot of each stack is 8 bytes. 
+In this system, there are multiple stacks, but only 2 that can be accessed at any given time programatically. The local stack, and the global stack. Each slot of each stack is 8 bytes. 
 
 ### Local stack
 
@@ -421,7 +416,7 @@ by the byte gen to tell the system to put the function and region the call came 
 
 Tell the system that the following area is the binary is constants
 
-      INS      [ ---------------------------------- Number of consants ----------------------------------- ]
+      INS      [ ---------------------------------- Number of constants ---------------------------------- ]
     11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 **begin_function_segment**
@@ -433,7 +428,7 @@ Tell the system that the following are is functions.
 
 **binary_end**
 
-Right now the data is unused, but eventualy the unused section will contain a binary checksum
+Right now the data is unused, but eventually the unused section will contain a binary checksum
 
       INS      [ ----------------------------------- Unused ---------------------------------- ]
     11111111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
