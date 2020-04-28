@@ -1,13 +1,6 @@
 /*
     Josh. A Bosley
 
-
-    Planned updates:
-            Things that I would like to do in the future for specific types have a large comment in them
-            describing the update along with a 'DEVELOPMENT_NOTE' tag so it can be found easily.
-            Once solace and byte gen get working these should be put onto a project board
-
-
     This parser is a bit long and in need of explanation. The basic gist is this :
 
         A file name is given to parse. We open the file and iterate over each line.
@@ -32,10 +25,6 @@
 
         Once all of the bytes have been generated (end of the file) finalizePayload() is called to formulate the resulting binary in a way that
         libc/binloader can understand.
-
-    Implemented, and tested instruction list below. Fields indicate if the path for parsing in solace has been created, if the byte generator is being
-    called to formulate the instruction, and the status of a cpputest existing to ensure that the bytegenerator stays conforming to the nabla ASM spec.
-
 
     Argument          Parsed            Generated           Tested
     -----------------------------------------------------------------
@@ -80,7 +69,7 @@
 
 */
 
-#include "solace.hpp"
+#include "assembler.hpp"
 #include "bytegen.hpp"
 
 #include <algorithm>
@@ -94,7 +83,7 @@
 #include <map>
 #include <unordered_map>
 
-namespace SOLACE
+namespace ASSEMBLER
 {
 bool instruction_nop();
 bool instruction_size();
@@ -189,8 +178,35 @@ namespace
         std::function<bool()> call;
     };
 
-    std::vector<MatchCall> parserMethods = {
-        
+    // Regex to function mapping
+    std::vector<MatchCall> parserMethods;
+
+    //         Function             Label       value
+    std::map<std::string, std::map<std::string, uint32_t> > preProcessedLabels;
+
+    //        Function    Address
+    std::map<std::string, uint32_t> preProcessedFunctions;
+
+    // A temporary function instruction accumulator
+    struct FunctionInformation
+    {
+        std::string name;
+        std::vector<uint8_t> instructions;
+    };
+
+    FunctionInformation currentFunction;
+
+    bool isSystemBuildingFunction;
+
+    bool isParserVerbose;
+
+    std::vector<std::string> rawFile;
+}
+
+void populate_parser_map()
+{
+    parserMethods = {
+
         // Directives
         MatchCall{ std::regex("^\\.[a-z0-9]+(8|16|32|64)?$") , instruction_directive },
 
@@ -247,35 +263,13 @@ namespace
         MatchCall{ std::regex("^\\<[a-zA-Z0-9_]+:$") , instruction_create_function },
         MatchCall{ std::regex("^\\>$")       , instruction_end_function }
     };
-
-    //         Function             Label       value
-    std::map<std::string, std::map<std::string, uint32_t> > preProcessedLabels;
-
-    //        Function    Address
-    std::map<std::string, uint32_t> preProcessedFunctions;
-
-    // A temporary function instruction accumulator
-    struct FunctionInformation
-    {
-        std::string name;
-        std::vector<uint8_t> instructions;
-    };
-
-    FunctionInformation currentFunction;
-
-    bool isSystemBuildingFunction;
-
-    bool isParserVerbose;
-
-    std::vector<std::string> rawFile;
-
 }
 
 // -----------------------------------------------
 //
 // -----------------------------------------------
 
-inline static std::vector<std::string> chunkLine(std::string line) 
+inline std::vector<std::string> chunkLine(std::string line) 
 {
     std::vector<std::string> chunks;
 
@@ -314,7 +308,7 @@ inline static std::vector<std::string> chunkLine(std::string line)
 //
 // -----------------------------------------------
 
-inline static std::string rtrim(std::string &line) 
+inline std::string rtrim(std::string &line) 
 {
     line.erase(std::find_if(line.rbegin(), line.rend(), 
     [](int ch) 
@@ -328,7 +322,7 @@ inline static std::string rtrim(std::string &line)
 //
 // -----------------------------------------------
 
-inline static std::string ltrim (std::string &line)
+inline std::string ltrim (std::string &line)
 {
     line.erase(line.begin(),find_if_not(line.begin(),line.end(),
     [](int c)
@@ -342,7 +336,7 @@ inline static std::string ltrim (std::string &line)
 //
 // -----------------------------------------------
 
-inline static bool isFunctionInPayload(std::string name)
+inline bool isFunctionInPayload(std::string name)
 {
     return (preProcessedFunctions.find(name) != preProcessedFunctions.end());
 }
@@ -446,6 +440,7 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     preProcessedFunctions.clear();
     finalPayload.constants.clear();
     finalPayload.bytes.clear();
+    parserMethods.clear();
     return true;
 }
 
@@ -453,7 +448,7 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
 //
 // -----------------------------------------------
 
-inline static bool parseFile(std::string file)
+inline bool parseFile(std::string file)
 {
     std::ifstream ifs(file);
 
@@ -604,6 +599,8 @@ bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes, bool verbose)
     // Set verbosity
     isParserVerbose = verbose;
 
+    populate_parser_map();
+
     // Mark the entry point as undefined to start
     finalPayload.entryPoint = UNDEFINED_ENTRY_POINT;
 
@@ -629,7 +626,7 @@ bool ParseAsm(std::string asmFile, std::vector<uint8_t> &bytes, bool verbose)
 //
 // -----------------------------------------------
 
-inline static bool isBranchableLabel(std::string name)
+inline bool isBranchableLabel(std::string name)
 {
     return std::regex_match(name, std::regex("^[a-zA-Z_0-9]+$"));
 }
@@ -638,7 +635,7 @@ inline static bool isBranchableLabel(std::string name)
 //
 // -----------------------------------------------
 
-inline static bool isConstNameValid(std::string name)
+inline bool isConstNameValid(std::string name)
 {
     return std::regex_match(name, std::regex("^[a-zA-Z_0-9]+"));
 }
@@ -647,7 +644,7 @@ inline static bool isConstNameValid(std::string name)
 //
 // -----------------------------------------------
 
-inline static bool isInteger(std::string name)
+inline bool isInteger(std::string name)
 {
     return std::regex_match(name, std::regex("(^[0-9]+$|^\\-[0-9]+$)"));
 }
@@ -656,7 +653,7 @@ inline static bool isInteger(std::string name)
 //
 // -----------------------------------------------
 
-inline static bool isDouble(std::string piece)
+inline bool isDouble(std::string piece)
 {
     return std::regex_match(piece, std::regex("^[0-9]+.[0-9]+$"));
 }
@@ -665,7 +662,7 @@ inline static bool isDouble(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isRegister(std::string piece)
+inline bool isRegister(std::string piece)
 {
     return std::regex_match(piece, std::regex("^r{1}([0-9]|1[0-5])$"));
 }
@@ -674,7 +671,7 @@ inline static bool isRegister(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isSystemRegister(std::string piece)
+inline bool isSystemRegister(std::string piece)
 {
     return std::regex_match(piece, std::regex("^sys{1}[0-1]$"));
 }
@@ -683,7 +680,7 @@ inline static bool isSystemRegister(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isDirectLocalStackPointer(std::string piece)
+inline bool isDirectLocalStackPointer(std::string piece)
 {
     return std::regex_match(piece, std::regex("^ls$"));
 }
@@ -692,7 +689,7 @@ inline static bool isDirectLocalStackPointer(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isDirectGlobalStackPointer(std::string piece)
+inline bool isDirectGlobalStackPointer(std::string piece)
 {
     return std::regex_match(piece, std::regex("^gs$"));
 }
@@ -700,8 +697,7 @@ inline static bool isDirectGlobalStackPointer(std::string piece)
 // -----------------------------------------------
 //
 // -----------------------------------------------
-
-static inline uint32_t getOffsetFromStackOffset(std::string piece)
+ inline uint32_t getOffsetFromStackOffset(std::string piece)
 {
     std::string str = piece.substr(1, piece.size()-5);
 
@@ -714,7 +710,7 @@ static inline uint32_t getOffsetFromStackOffset(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isStackOffsetInRange(std::string piece)
+inline bool isStackOffsetInRange(std::string piece)
 {
     return ( getOffsetFromStackOffset(piece) < MAXIMUM_STACK_OFFSET );
 }
@@ -724,7 +720,7 @@ inline static bool isStackOffsetInRange(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isOffsetLocalStackpointer(std::string piece)
+inline bool isOffsetLocalStackpointer(std::string piece)
 {
     if( std::regex_match(piece, std::regex("^\\$[0-9]+\\(ls\\)$")) )
     {
@@ -737,7 +733,7 @@ inline static bool isOffsetLocalStackpointer(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isOffsetGlobalStackpointer(std::string piece)
+inline bool isOffsetGlobalStackpointer(std::string piece)
 {
     if( std::regex_match(piece, std::regex("^\\$[0-9]+\\(gs\\)$")) )
     {
@@ -750,7 +746,7 @@ inline static bool isOffsetGlobalStackpointer(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isRegisterBasedGlobalStackpointer(std::string piece)
+inline bool isRegisterBasedGlobalStackpointer(std::string piece)
 {
     if( std::regex_match(piece, std::regex("^r{1}([0-9]|1[0-5])\\(gs\\)$")) )
     {
@@ -763,7 +759,7 @@ inline static bool isRegisterBasedGlobalStackpointer(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isRegisterBasedLocalStackpointer(std::string piece)
+inline bool isRegisterBasedLocalStackpointer(std::string piece)
 {
     if( std::regex_match(piece, std::regex("^r{1}([0-9]|1[0-5])\\(ls\\)$")) )
     {
@@ -776,7 +772,7 @@ inline static bool isRegisterBasedLocalStackpointer(std::string piece)
 //
 // -----------------------------------------------
 
-inline static int getNumberFromNumericalOrRegister(std::string numerical)
+inline int getNumberFromNumericalOrRegister(std::string numerical)
 {
     std::string str = numerical.substr(1, numerical.size());
 
@@ -787,7 +783,7 @@ inline static int getNumberFromNumericalOrRegister(std::string numerical)
 //
 // -----------------------------------------------
 
-inline static bool isDirectNumericalInRange(std::string numerical)
+inline bool isDirectNumericalInRange(std::string numerical)
 {
     int n = getNumberFromNumericalOrRegister(numerical);
 
@@ -798,7 +794,7 @@ inline static bool isDirectNumericalInRange(std::string numerical)
 //
 // -----------------------------------------------
 
-inline static bool isDirectNumerical(std::string piece)
+inline bool isDirectNumerical(std::string piece)
 {
     if(std::regex_match(piece, std::regex("(^\\$[0-9]+$)|(^\\$\\-[0-9]+$)")))
     {
@@ -811,7 +807,7 @@ inline static bool isDirectNumerical(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isDirectNumericalDouble(std::string piece)
+inline bool isDirectNumericalDouble(std::string piece)
 {
     return std::regex_match(piece, std::regex("^\\$[0-9]+.[0-9]+$"));
 }
@@ -820,7 +816,7 @@ inline static bool isDirectNumericalDouble(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isReferencedConstant(std::string piece)
+inline bool isReferencedConstant(std::string piece)
 {
     return std::regex_match(piece, std::regex("^\\&[a-zA-Z_0-9]+$"));
 }
@@ -829,7 +825,7 @@ inline static bool isReferencedConstant(std::string piece)
 //
 // -----------------------------------------------
 
-inline static bool isString(std::string piece)
+inline bool isString(std::string piece)
 {
     return std::regex_match(piece, std::regex("^\".*\"$"));
 }
@@ -838,7 +834,7 @@ inline static bool isString(std::string piece)
 // Check if something is stored as a constant or not
 // -----------------------------------------------
 
-inline static bool isConstInPayload(std::string name)
+inline bool isConstInPayload(std::string name)
 {
     for(auto &c : finalPayload.constants)
     {
@@ -854,7 +850,7 @@ inline static bool isConstInPayload(std::string name)
 //  getConstIndex doesn't care if something exists or not. Do that yourself.
 // -----------------------------------------------
 
-inline static uint32_t getConstIndex(std::string name)
+inline uint32_t getConstIndex(std::string name)
 {
     uint32_t i = 0;
     for(auto &c : finalPayload.constants)
@@ -872,7 +868,7 @@ inline static uint32_t getConstIndex(std::string name)
 //
 // -----------------------------------------------
 
-inline static bool isLabelInCurrentFunction(std::string name)
+inline bool isLabelInCurrentFunction(std::string name)
 {
     return (preProcessedLabels[currentFunction.name].find(name) !=  preProcessedLabels[currentFunction.name].end());
 }
@@ -881,7 +877,7 @@ inline static bool isLabelInCurrentFunction(std::string name)
 //
 // -----------------------------------------------
 
-inline static void addBytegenInstructionToPayload(NABLA::Bytegen::Instruction ins)
+inline void addBytegenInstructionToPayload(NABLA::Bytegen::Instruction ins)
 {
     finalPayload.bytes.push_back(ins.bytes[0]); 
     finalPayload.bytes.push_back(ins.bytes[1]); 
@@ -897,7 +893,7 @@ inline static void addBytegenInstructionToPayload(NABLA::Bytegen::Instruction in
 //
 // -----------------------------------------------
 
-inline static void addBytegenInstructionToCurrentFunction(NABLA::Bytegen::Instruction ins)
+inline void addBytegenInstructionToCurrentFunction(NABLA::Bytegen::Instruction ins)
 {
     currentFunction.instructions.push_back(ins.bytes[0]); 
     currentFunction.instructions.push_back(ins.bytes[1]);
@@ -913,7 +909,7 @@ inline static void addBytegenInstructionToCurrentFunction(NABLA::Bytegen::Instru
 //
 // -----------------------------------------------
 
-inline static std::string convertArithToString(NABLA::Bytegen::ArithmaticTypes type)
+inline std::string convertArithToString(NABLA::Bytegen::ArithmaticTypes type)
 {
     switch(type)
     {
@@ -933,7 +929,7 @@ inline static std::string convertArithToString(NABLA::Bytegen::ArithmaticTypes t
 // 
 // -----------------------------------------------
 
-inline static bool arithmatic_instruction(NABLA::Bytegen::ArithmaticTypes type)
+inline bool arithmatic_instruction(NABLA::Bytegen::ArithmaticTypes type)
 {
     if(!isSystemBuildingFunction)
     {
@@ -1264,7 +1260,7 @@ bool instruction_stb()
         return false;
     }
 
-    std::cout << "stb : " << currentLine << std::endl;
+    if(isParserVerbose){ std::cout << "stb : " << currentLine << std::endl; }
 
     if(currentPieces.size() != 3)
     {
@@ -1288,7 +1284,6 @@ bool instruction_stb()
             std::cerr << "Stack offset [" << currentPieces[1] << "] is out of the acceptable range of offsets" << std::endl;
             return false;
         }
-    
     }
     else if (isOffsetLocalStackpointer(currentPieces[1]))
     {
@@ -1545,7 +1540,7 @@ bool instruction_pop()
 //
 // -----------------------------------------------
 
-inline static std::string convertBranchToString(NABLA::Bytegen::BranchTypes type)
+inline std::string convertBranchToString(NABLA::Bytegen::BranchTypes type)
 {
     switch(type)
     {
@@ -2268,7 +2263,7 @@ bool instruction_end_function()
 //
 // -----------------------------------------------
 
-inline static std::string convertBitwiseToString(NABLA::Bytegen::BitwiseTypes type)
+inline std::string convertBitwiseToString(NABLA::Bytegen::BitwiseTypes type)
 {
     switch(type)
     {
@@ -2600,4 +2595,4 @@ bool instruction_size()
     return true;
 }
 
-} // End namespace SOLACE
+} // End namespace ASSEMBLER
