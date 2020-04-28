@@ -14,7 +14,7 @@ extern "C"
 }
 
 #include "bytegen.hpp"
-#include "solace.hpp"
+#include "assembler.hpp"
 #include "testdata.hpp"
 
 #include <iostream>
@@ -53,7 +53,7 @@ namespace
         {
             std::vector<uint8_t> bytes;
 
-            if(!SOLACE::ParseAsm(asm_file, bytes, false))
+            if(!ASSEMBLER::ParseAsm(asm_file, bytes, false))
             {
                 std::cerr << "Solace failed to parse the asm" << std::endl;
                 return false;
@@ -113,7 +113,8 @@ namespace
 TEST_GROUP(BinloaderTests)
 {   
     // We disable memory stuff here because there are globally scoped things 
-    // in solace that causes cpputest to freak out
+    // in the assembler that causes cpputest to freak out because the memory
+    // isn't freed before the test exists. 
     void setup()
     {
         MemoryLeakWarningPlugin::turnOffNewDeleteOverloads();

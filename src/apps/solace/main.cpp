@@ -7,13 +7,13 @@
     a file to be executed later.
 */
 
-#include "solace.hpp"
+#include "assembler.hpp"
 #include <fstream>
 #include <iostream>
 
 namespace
 {
-// I really don't want to go through all of solace to change the debug statements to be macro wrapped,
+// I really don't want to go through all of the assembler code to change the debug statements to be macro wrapped,
 // so we're doing it here. Speed really isn't an issue so its okay for now. Maybe change this if boredom
 // comes and we want something to do
 #ifdef NABLA_SOLACE_DEBUG_OUTPUT
@@ -39,7 +39,7 @@ int main(int argc, char ** argv)
 
     std::vector<uint8_t> bytes;
 
-    if(!SOLACE::ParseAsm(argv[1], bytes, DEFAULT_VERBOSE))
+    if(!ASSEMBLER::ParseAsm(argv[1], bytes, DEFAULT_VERBOSE))
     {
         std::cerr << "Failed to parse asm. Goodbye." << std::endl;
         return 1;

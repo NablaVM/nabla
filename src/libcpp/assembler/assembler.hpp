@@ -1,22 +1,10 @@
-/*
-    Josh Bosley
-
-    This is the entry solace parser. It parses nabla asm and calls into the byte generator to generate the bytes
-    that the instructions represent, and then sends the bytes back to caller if everything goes well. 
-
-    Eventually I would like to step away from using raw ASM code and needing this parser all-together. The eventual 
-    idea is to create a higher-level language like C++ or something that compiles to nabla byte code.
-
-    For now, we can take solace in this parser / compiler.
-*/
-
-#ifndef SOLACE_PARSER_H
-#define SOLACE_PARSER_H
+#ifndef ASSEMBLER_PARSER_H
+#define ASSEMBLER_PARSER_H
 
 #include <string>
 #include <vector>
 
-namespace SOLACE
+namespace ASSEMBLER
 {
     //!
     //! \brief Start the parsing of an ASM file. Any included files will be handled internally
