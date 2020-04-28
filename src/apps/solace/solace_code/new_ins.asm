@@ -60,13 +60,14 @@
 
     stb r4(gs) r5  ; Store 33 into gs at index 4
 
-    ldb r11 $4(gs)
+    ldb r11 $4(gs) ; Should get 33 from gs
 >
 
 <testregrefls:
 
     mov r0 $99
 
+    ; Put a few 99s in the stack so we have something to work with
     push ls r0
     push ls r0
     push ls r0
@@ -76,6 +77,10 @@
     mov r7 $45
 
     stb r0(ls) r7  ; Store 45 into index 2 (spot 3) of ls
-    ldb r11 r0(ls) ; Load index 2 (spot 3) into rll
+    ldb r11 r0(ls) ; Load index 2 (spot 3) into rll -> Should be 45
+    ldb r11 $2(ls) ; Load index 2 (spot 3) into rll -> Should be 45
 
+    mov r0 $3
+    ldb r11 r0(ls) ; Load index 2 (spot 3) into rll -> Should be 99
+    ldb r11 $3(ls) ; Should be 99
 >
