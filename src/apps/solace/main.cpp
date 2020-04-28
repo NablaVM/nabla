@@ -13,7 +13,14 @@
 
 namespace
 {
+// I really don't want to go through all of solace to change the debug statements to be macro wrapped,
+// so we're doing it here. Speed really isn't an issue so its okay for now. Maybe change this if boredom
+// comes and we want something to do
+#ifdef NABLA_SOLACE_DEBUG_OUTPUT
     constexpr bool DEFAULT_VERBOSE = true;
+#else
+    constexpr bool DEFAULT_VERBOSE = false;
+#endif
 }
 
 int main(int argc, char ** argv)
@@ -38,8 +45,6 @@ int main(int argc, char ** argv)
         return 1;
     }
 
-    std::cout << "Complete. " << bytes.size() << " bytes were generated." << std::endl;
-
     std::ofstream out("solace.out", std::ios::out | std::ios::binary);
     if(!out.is_open())
     {
@@ -47,10 +52,9 @@ int main(int argc, char ** argv)
         return 1;
     }
 
-    std::cout << "Writing out to solace.out...";
-
     out.write(reinterpret_cast<const char*>(&bytes[0]), bytes.size());
+    out.close();
 
-    std::cout << "complete." << std::endl;
+    if(DEFAULT_VERBOSE){ std::cout << "Complete. " << bytes.size() << " bytes were generated." << std::endl; }
     return 0;
 }

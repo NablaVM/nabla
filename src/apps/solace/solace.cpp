@@ -426,7 +426,6 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
     {
         finalBytes.push_back(b);
     }
-    std::cout << "complete" << std::endl;
 
     /*
         Create the id that indicates the end of function
@@ -438,6 +437,15 @@ bool finalizePayload(std::vector<uint8_t> & finalBytes)
         finalBytes.push_back(b);
     }
 
+    /*
+        Clean up so parser can be reused
+    */
+    rawFile.clear();
+    currentPieces.clear();
+    preProcessedLabels.clear();
+    preProcessedFunctions.clear();
+    finalPayload.constants.clear();
+    finalPayload.bytes.clear();
     return true;
 }
 
@@ -555,7 +563,10 @@ inline static bool parseFile(std::string file)
     {
         currentLine = rawFile[cline];
 
-        std::cout << currentLine << std::endl;
+        if(isParserVerbose)
+        {
+            std::cout << currentLine << std::endl;
+        }
 
         currentPieces = chunkLine(currentLine);
 
@@ -1340,7 +1351,7 @@ bool instruction_ldb()
         return false;
     }
 
-    std::cout << "ldb : " << currentLine << std::endl;
+    if(isParserVerbose){  std::cout << "ldb : " << currentLine << std::endl; }
 
     if(currentPieces.size() != 3)
     {
@@ -1857,9 +1868,12 @@ bool instruction_call()
     uint32_t destination    = preProcessedFunctions[currentPieces[1]];
 
 
-    std::cout << "Creating call from : " <<
-     currentFunction.name << " @ " << currentAddress << " ret area : "
-      << returnArea << " dest : " << currentPieces[1] << " @ " << preProcessedFunctions[currentPieces[1]] << std::endl;
+   if(isParserVerbose)
+   {
+        std::cout << "Creating call from : " <<
+            currentFunction.name << " @ " << currentAddress << " ret area : "
+            << returnArea << " dest : " << currentPieces[1] << " @ " << preProcessedFunctions[currentPieces[1]] << std::endl;
+   }
 
 
     std::vector<NABLA::Bytegen::Instruction> ins = nablaByteGen.createCallInstruction(
