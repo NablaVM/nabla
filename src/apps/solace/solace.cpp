@@ -739,6 +739,32 @@ inline static bool isOffsetGlobalStackpointer(std::string piece)
 //
 // -----------------------------------------------
 
+inline static bool isRegisterBasedGlobalStackpointer(std::string piece)
+{
+    if( std::regex_match(piece, std::regex("^r{1}([0-9]|1[0-5])\\(gs\\)$")) )
+    {
+        return isStackOffsetInRange(piece);
+    }
+    return false;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline static bool isRegisterBasedLocalStackpointer(std::string piece)
+{
+    if( std::regex_match(piece, std::regex("^r{1}([0-9]|1[0-5])\\(ls\\)$")) )
+    {
+        return isStackOffsetInRange(piece);
+    }
+    return false;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
 inline static int getNumberFromNumericalOrRegister(std::string numerical)
 {
     std::string str = numerical.substr(1, numerical.size());
@@ -1236,6 +1262,7 @@ bool instruction_stb()
     }
 
     NABLA::Bytegen::Stacks stackType;
+    NABLA::Bytegen::LoadStoreSetup lsSetup;
 
     // Check argument 1 
     if(isOffsetGlobalStackpointer(currentPieces[1]))
@@ -1243,12 +1270,41 @@ bool instruction_stb()
         if(isParserVerbose){ std::cout << "Argument 1 is global spo : " << currentPieces[1] << std::endl; }
 
         stackType = NABLA::Bytegen::Stacks::GLOBAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED;
+
+        if(!isStackOffsetInRange(currentPieces[1]))
+        {
+            std::cerr << "Stack offset [" << currentPieces[1] << "] is out of the acceptable range of offsets" << std::endl;
+            return false;
+        }
+    
     }
     else if (isOffsetLocalStackpointer(currentPieces[1]))
     {
         if(isParserVerbose){ std::cout << "Argument 1 is local spo : " << currentPieces[1] << std::endl; }
         
         stackType = NABLA::Bytegen::Stacks::LOCAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED;
+        
+        if(!isStackOffsetInRange(currentPieces[1]))
+        {
+            std::cerr << "Stack offset [" << currentPieces[1] << "] is out of the acceptable range of offsets" << std::endl;
+            return false;
+        }
+    }
+    else if (isRegisterBasedGlobalStackpointer(currentPieces[1]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 1 -> register-based global_stack_pointer_offset " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED;
+    }
+    else if (isRegisterBasedLocalStackpointer(currentPieces[1]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 1 -> register-based local_stack_pointer_offset " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED;
     }
     else
     {
@@ -1256,12 +1312,6 @@ bool instruction_stb()
         return false;
     }
 
-    if(!isStackOffsetInRange(currentPieces[1]))
-    {
-        std::cerr << "Stack offset [" << currentPieces[1] << "] is out of the acceptable range of offsets" << std::endl;
-        return false;
-    }
-    
     if(!isRegister(currentPieces[2]))
     {
         std::cerr << "'stb' argument 2 must be a register, got : " << currentPieces[2] << " instead" << std::endl;
@@ -1272,7 +1322,7 @@ bool instruction_stb()
     uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[2]);
 
     addBytegenInstructionToCurrentFunction(
-        nablaByteGen.createStbInstruction(stackType, location, reg)
+        nablaByteGen.createStbInstruction(stackType, lsSetup, location, reg)
         );
 
     return true;
@@ -1305,12 +1355,21 @@ bool instruction_ldb()
     }
 
     NABLA::Bytegen::Stacks stackType;
+    NABLA::Bytegen::LoadStoreSetup lsSetup;
+
     // Check if its a global stack pointer
     if (isOffsetGlobalStackpointer(currentPieces[2]))
     {
         if(isParserVerbose){ std::cout << "Argument 2 -> global_stack_pointer_offset " << std::endl; }
     
         stackType = NABLA::Bytegen::Stacks::GLOBAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED;
+        
+        if(!isStackOffsetInRange(currentPieces[2]))
+        {
+            std::cerr << "Stack offset [" << currentPieces[2] << "] is out of the acceptable range of offsets" << std::endl;
+            return false;
+        }
     }
 
     // Check if its a local stack pointer
@@ -1319,6 +1378,27 @@ bool instruction_ldb()
         if(isParserVerbose){  std::cout << "Argument 2 -> local_stack_pointer_offset " << std::endl; }
         
         stackType = NABLA::Bytegen::Stacks::LOCAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED;
+        
+        if(!isStackOffsetInRange(currentPieces[2]))
+        {
+            std::cerr << "Stack offset [" << currentPieces[2] << "] is out of the acceptable range of offsets" << std::endl;
+            return false;
+        }
+    }
+    else if (isRegisterBasedGlobalStackpointer(currentPieces[2]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 2 -> register-based global_stack_pointer_offset " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED;
+    }
+    else if (isRegisterBasedLocalStackpointer(currentPieces[2]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 2 -> register-based local_stack_pointer_offset " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED;
     }
     else
     {
@@ -1329,9 +1409,9 @@ bool instruction_ldb()
     uint32_t location = getOffsetFromStackOffset(currentPieces[2]);
     uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[1]);
 
-    addBytegenInstructionToCurrentFunction(
-        nablaByteGen.createLdbInstruction(stackType, location, reg)
-        );
+     addBytegenInstructionToCurrentFunction(
+         nablaByteGen.createLdbInstruction(stackType, lsSetup, location, reg)
+         );
 
     return true;
 }

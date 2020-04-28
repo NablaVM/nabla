@@ -53,12 +53,14 @@
 
     mov r4 $0
 
-    ;ldb r11 r4(gs) ; Load the 0th item from global stack (should be constant 'test')
+    ldb r11 r4(gs) ; Load the 0th item from global stack (should be constant 'test')
 
     mov r4 $4
     mov r5 $33
 
-    ;stb r4(gs) r5  ; Store 33 into gs at index 4
+    stb r4(gs) r5  ; Store 33 into gs at index 4
+
+    ldb r11 $4(gs)
 >
 
 <testregrefls:
@@ -73,7 +75,7 @@
     mov r0 $2
     mov r7 $45
 
-    ;stb r0(ls) r7  ; Store 45 into index 2 (spot 3) of ls
-    ;ldb r11 r0(ls) ; Load index 2 (spot 3) into rll
+    stb r0(ls) r7  ; Store 45 into index 2 (spot 3) of ls
+    ldb r11 r0(ls) ; Load index 2 (spot 3) into rll
 
 >

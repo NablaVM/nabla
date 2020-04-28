@@ -974,14 +974,50 @@ TEST(NablaInstructionTests, stbLdbIns)
 
         vm->registers[reg] = getRandom16(0, 65530);
 
-        NABLA::Bytegen::Instruction storeIns = bytegen.createStbInstruction(
-            stackLoc, i, reg
-        );
+        NABLA::Bytegen::Instruction storeIns;
+        NABLA::Bytegen::Instruction loadIns;
 
-        NABLA::Bytegen::Instruction loadIns = bytegen.createLdbInstruction(
-            stackLoc, i, reg+1
-        );
+        // Randomly decide if we should use register based, or number based store / load instructions
+        if(getRandom16(0, 1) == 0)
+        {
+            // Number-based store instruction
+            storeIns = bytegen.createStbInstruction(
+                stackLoc, NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED, i, reg
+            );
 
+            loadIns = bytegen.createLdbInstruction(
+                stackLoc, NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED, i, reg+1
+            );
+        }
+        else
+        {
+            // Register-based store instruction
+
+            uint16_t sourceReg = getRandom16(0, 8);
+
+            while(reg == sourceReg)
+            {
+                sourceReg = getRandom16(0, 8);
+            }
+            
+            vm->registers[sourceReg] = i;
+
+            storeIns = bytegen.createStbInstruction(
+                stackLoc, NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED, sourceReg, reg
+            );
+
+            loadIns = bytegen.createLdbInstruction(
+                stackLoc, NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED, sourceReg, reg+1
+            );
+        }
+
+        /*
+            No matter where we are getting the information for store / load (register vs numerical constant)
+            the actual test is the same as we've populate a a source register if we've needed, and checking it
+            isn't necissary
+        */
+
+        // Get the bytes for the instruction
         std::vector<uint8_t> storeBytes = ins_to_vec(storeIns);
         std::vector<uint8_t> loadBytes  = ins_to_vec(loadIns);
 

@@ -582,44 +582,102 @@ int vm_cycle(struct VM* vm, uint64_t n)
             case INS_LDB  :
             {
                 uint8_t dest =  util_extract_byte(ins, 6);
-
-                uint8_t stackSouce = util_extract_byte(ins, 5);
-
-                uint64_t sourceAddress = (uint64_t)util_extract_two_bytes(ins, 4) << 16| 
-                                         (uint64_t)util_extract_two_bytes(ins, 2);
-
-                int okay = -255;
-                if(stackSouce == GLOBAL_STACK)
+                if(id == 0)
                 {
-                    vm->registers[dest] = stack_value_at(sourceAddress, vm->globalStack, &okay);
+                    uint8_t stackSouce = util_extract_byte(ins, 5);
+
+                    uint64_t sourceAddress = (uint64_t)util_extract_two_bytes(ins, 4) << 16| 
+                                            (uint64_t)util_extract_two_bytes(ins, 2);
+
+                    int okay = -255;
+                    if(stackSouce == GLOBAL_STACK)
+                    {
+                        vm->registers[dest] = stack_value_at(sourceAddress, vm->globalStack, &okay);
+                    }
+                    else if ( stackSouce == LOCAL_STACK )
+                    {
+                        vm->registers[dest] = stack_value_at(sourceAddress, vm->functions[vm->fp].localStack, &okay);
+                    }
+                    assert(okay == STACK_OKAY);
                 }
-                else if ( stackSouce == LOCAL_STACK )
+                else if (id == 1)
                 {
-                    vm->registers[dest] = stack_value_at(sourceAddress, vm->functions[vm->fp].localStack, &okay);
+
+                    uint8_t stackSouce = util_extract_byte(ins, 5);
+
+                    uint8_t sourceReg  = util_extract_byte(ins, 4);
+
+                    uint64_t sourceAddress = vm->registers[sourceReg];
+
+                    int okay = -255;
+                    if(stackSouce == GLOBAL_STACK)
+                    {
+                        vm->registers[dest] = stack_value_at(sourceAddress, vm->globalStack, &okay);
+                    }
+                    else if ( stackSouce == LOCAL_STACK )
+                    {
+                        vm->registers[dest] = stack_value_at(sourceAddress, vm->functions[vm->fp].localStack, &okay);
+                    }
+                    assert(okay == STACK_OKAY);
                 }
-                assert(okay == STACK_OKAY);
+                else
+                {
+                    printf("Invalid 'ldb' instruction id : ID= %u\n", id);
+                    return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+                }
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("Ldb Result: %lu\n", vm->registers[dest]);
+#endif
                 break;
             }          
             case INS_STB  :
             {
-                uint8_t sourceReg =  util_extract_byte(ins, 1);
-
-                uint8_t stackDest = util_extract_byte(ins, 6);
-
-                uint64_t desAddress = (uint64_t)util_extract_two_bytes(ins, 5) << 16| 
-                                      (uint64_t)util_extract_two_bytes(ins, 3);
-
-                int okay = -255;
-                if(stackDest == GLOBAL_STACK)
+                if(id == 0)
                 {
-                    stack_set_value_at(desAddress, vm->registers[sourceReg], vm->globalStack, &okay);
+                    uint8_t sourceReg =  util_extract_byte(ins, 1);
+
+                    uint8_t stackDest = util_extract_byte(ins, 6);
+
+                    uint64_t desAddress = (uint64_t)util_extract_two_bytes(ins, 5) << 16| 
+                                        (uint64_t)util_extract_two_bytes(ins, 3);
+
+                    int okay = -255;
+                    if(stackDest == GLOBAL_STACK)
+                    {
+                        stack_set_value_at(desAddress, vm->registers[sourceReg], vm->globalStack, &okay);
+                    }
+                    else if ( stackDest == LOCAL_STACK )
+                    {
+                        // If they haven't made the local stack big enough this could fail. Hope they know what they're doing
+                        stack_set_value_at(desAddress, vm->registers[sourceReg], vm->functions[vm->fp].localStack, &okay);
+                    }
+                    assert(okay == STACK_OKAY);
                 }
-                else if ( stackDest == LOCAL_STACK )
+                else if (id == 1)
                 {
-                    // If they haven't made the local stack big enough this could fail. Hope they know what they're doing
-                    stack_set_value_at(desAddress, vm->registers[sourceReg], vm->functions[vm->fp].localStack, &okay);
+                    uint8_t sourceReg = util_extract_byte(ins, 4);
+                    uint8_t stackDest = util_extract_byte(ins, 6);
+                    uint8_t destReg   = util_extract_byte(ins, 5);
+
+                    uint64_t desAddress = vm->registers[destReg];
+
+                    int okay = -255;
+                    if(stackDest == GLOBAL_STACK)
+                    {
+                        stack_set_value_at(desAddress, vm->registers[sourceReg], vm->globalStack, &okay);
+                    }
+                    else if ( stackDest == LOCAL_STACK )
+                    {
+                        // If they haven't made the local stack big enough this could fail. Hope they know what they're doing
+                        stack_set_value_at(desAddress, vm->registers[sourceReg], vm->functions[vm->fp].localStack, &okay);
+                    }
+                    assert(okay == STACK_OKAY);
                 }
-                assert(okay == STACK_OKAY);
+                else
+                {
+                    printf("Invalid 'stb' instruction id : ID= %u\n", id);
+                    return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+                }
                 break;
             }          
             case INS_PUSH :

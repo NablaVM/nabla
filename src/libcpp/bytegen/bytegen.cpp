@@ -493,18 +493,43 @@ namespace NABLA
     // createStbInstruction
     // ------------------------------------------------------------------------
     
-    Bytegen::Instruction Bytegen::createStbInstruction(Stacks stack, uint32_t location, uint8_t reg)
+    Bytegen::Instruction Bytegen::createStbInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg)
     {
         Instruction ins;
 
-        ins.bytes[0] = INS_STB;
-        ins.bytes[1] = getStackAddress(stack);
-        ins.bytes[2] = (location & 0xFF000000) >> 24 ;
-        ins.bytes[3] = (location & 0x00FF0000) >> 16 ;
-        ins.bytes[4] = (location & 0x0000FF00) >> 8  ;
-        ins.bytes[5] = (location & 0x000000FF) >> 0  ;
-        ins.bytes[6] = integerToRegister(reg);
-        ins.bytes[7] = 0xFF;
+        switch(setup)
+        {
+            case Bytegen::LoadStoreSetup::NUMBER_BASED:
+            {
+                ins.bytes[0] = INS_STB;
+                ins.bytes[1] = getStackAddress(stack);
+                ins.bytes[2] = (location & 0xFF000000) >> 24 ;
+                ins.bytes[3] = (location & 0x00FF0000) >> 16 ;
+                ins.bytes[4] = (location & 0x0000FF00) >> 8  ;
+                ins.bytes[5] = (location & 0x000000FF) >> 0  ;
+                ins.bytes[6] = integerToRegister(reg);
+                ins.bytes[7] = 0xFF;
+                break;
+            }
+
+            case Bytegen::LoadStoreSetup::REGISTER_BASED:
+            {
+                ins.bytes[0] = (INS_STB | 0x01);
+                ins.bytes[1] = getStackAddress(stack);
+                ins.bytes[2] = integerToRegister(location);
+                ins.bytes[3] = integerToRegister(reg);
+                ins.bytes[4] = 0xFF;
+                ins.bytes[5] = 0xFF;
+                ins.bytes[6] = 0xFF;
+                ins.bytes[7] = 0xFF;
+                break;
+            }
+            default:
+                std::cerr << "Someone is doing something wrong with bytegen createStbInstruction!" << std::endl;
+                exit(EXIT_FAILURE); 
+                break;
+        }
+
 
         //dumpInstruction(ins);
 
@@ -515,18 +540,43 @@ namespace NABLA
     // createLdbInstruction
     // ------------------------------------------------------------------------
     
-    Bytegen::Instruction Bytegen::createLdbInstruction(Stacks stack, uint32_t location, uint8_t reg)
+    Bytegen::Instruction Bytegen::createLdbInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg)
     {
         Instruction ins;
 
-        ins.bytes[0] = INS_LDB;
-        ins.bytes[1] = integerToRegister(reg);
-        ins.bytes[2] = getStackAddress(stack);
-        ins.bytes[3] = (location & 0xFF000000) >> 24 ;
-        ins.bytes[4] = (location & 0x00FF0000) >> 16 ;
-        ins.bytes[5] = (location & 0x0000FF00) >> 8  ;
-        ins.bytes[6] = (location & 0x000000FF) >> 0  ;
-        ins.bytes[7] = 0xFF;
+        switch(setup)
+        {
+            case Bytegen::LoadStoreSetup::NUMBER_BASED:
+            {
+                ins.bytes[0] = INS_LDB;
+                ins.bytes[1] = integerToRegister(reg);
+                ins.bytes[2] = getStackAddress(stack);
+                ins.bytes[3] = (location & 0xFF000000) >> 24 ;
+                ins.bytes[4] = (location & 0x00FF0000) >> 16 ;
+                ins.bytes[5] = (location & 0x0000FF00) >> 8  ;
+                ins.bytes[6] = (location & 0x000000FF) >> 0  ;
+                ins.bytes[7] = 0xFF;
+                break;
+            }
+
+            case Bytegen::LoadStoreSetup::REGISTER_BASED:
+            {
+                ins.bytes[0] = (INS_LDB | 0x01);
+                ins.bytes[1] = integerToRegister(reg);
+                ins.bytes[2] = getStackAddress(stack);
+                ins.bytes[3] = integerToRegister(location);
+                ins.bytes[4] = 0xFF;
+                ins.bytes[5] = 0xFF;
+                ins.bytes[6] = 0xFF;
+                ins.bytes[7] = 0xFF;
+                break;
+            }
+
+            default:
+                std::cerr << "Someone is doing something wrong with bytegen createLdbInstruction!" << std::endl;
+                exit(EXIT_FAILURE); 
+                break;
+        }
 
         //dumpInstruction(ins);
 
