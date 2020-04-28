@@ -660,6 +660,30 @@ int vm_cycle(struct VM* vm, uint64_t n)
                 assert(okay == STACK_OKAY);
                 break;
             }          
+            case INS_SIZE :
+            {
+                uint8_t destReg         = util_extract_byte(ins, 6);
+                uint8_t stackInQuestion = util_extract_byte(ins, 5);
+
+                if(stackInQuestion == GLOBAL_STACK)
+                {
+                    vm->registers[destReg] = stack_get_size(vm->globalStack);
+                }
+                else if (stackInQuestion == LOCAL_STACK )
+                {
+                    vm->registers[destReg] = stack_get_size(vm->functions[vm->fp].localStack);
+                }
+                else
+                {
+                    printf("Invalid 'size' instruction!\n");
+                    return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+                }
+                
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("Size Result : %lu\n", vm->registers[destReg]);
+#endif
+                break;
+            }
             case INS_JUMP :
             {
                 uint64_t destAddress = (uint64_t)util_extract_two_bytes(ins, 6) << 16| 

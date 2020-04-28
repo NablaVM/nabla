@@ -238,6 +238,11 @@ namespace NABLA
         //! \brief Create a no-op instruction
         Instruction createNopInstruction();
 
+        //! \brief Create a 'size' instruction
+        //! \param reg The destination register
+        //! \param stack The stack to get the size of
+        Instruction createSizeInstruction(uint8_t reg, Stacks stack);
+
     private:
 
         uint32_t functionCounter;

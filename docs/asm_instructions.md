@@ -58,7 +58,7 @@ Abbreviations :
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
 |---              |---        |---            |---           |---                                           |
 |     nop         |    NA     |    NA         |   NA         |  No Operation                                |
-
+|     size        |    sp     |    NA         |   NA         |  Get size (number of elements) in stack      |
 
 ## Artihmatic Instructions
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
@@ -349,6 +349,19 @@ The current maximum is 255 bytes for a string
 id bits ignored, size is 9 bytes fixed
 
     INS    ID   [ -------------------------------------- DOUBLE DATA -------------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+
+## Misc Instructions
+
+Nop
+
+    INS    ID   [ --------------------------------------   UNUSED  ---------------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+Size
+
+    INS    ID   REGISTER    STACK      [ ---------------------------- UNUSED -------------------------------]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 

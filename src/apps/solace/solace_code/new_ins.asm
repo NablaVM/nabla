@@ -36,8 +36,17 @@
 
 <testsize:
 
-    ;size r11 gs     ; Get the size of gs, and store in r11 
-    call println
+    size r11 gs     ; Get the size of gs, and store in r11 (should be 5)
+    size r11 ls     ; Should be 0 
+
+    push ls r0
+    push ls r0
+
+    size r11 ls     ; Should be 2
+
+    pop r0 ls 
+    
+    size r11 ls     ; Should be 1
 >
 
 <testregrefgs:

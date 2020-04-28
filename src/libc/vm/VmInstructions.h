@@ -1,6 +1,7 @@
 #ifndef VM_INSTRUCTIONS_H
 #define VM_INSTRUCTIONS_H
     #define INS_NOP             0x00
+    #define INS_SIZE            0x04
     #define INS_LSH             0x44
     #define INS_RSH             0x48
     #define INS_AND             0x4c

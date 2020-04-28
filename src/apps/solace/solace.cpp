@@ -74,7 +74,8 @@
         or              X                   X                  X
         xor             X                   X                  X
         not             X                   X                  X
-        nop
+        nop             X                   X                  X
+        size            X                   X                  X
         label           X                   NA                 NA
 
 */
@@ -96,6 +97,7 @@
 namespace SOLACE
 {
 bool instruction_nop();
+bool instruction_size();
 
 bool instruction_lsh();
 bool instruction_rsh();
@@ -193,6 +195,7 @@ namespace
         MatchCall{ std::regex("^\\.[a-z0-9]+(8|16|32|64)?$") , instruction_directive },
 
         MatchCall{ std::regex("^nop$")       , instruction_nop       },
+        MatchCall{ std::regex("^size$")      , instruction_size      },
 
         // Bitwise
         MatchCall{ std::regex("^lsh$")       , instruction_lsh       },
@@ -2436,7 +2439,7 @@ bool instruction_nop()
 
     if(currentPieces.size() != 1)
     {
-        std::cerr << "Invalid 'NOT' instruction : " << currentLine << std::endl;
+        std::cerr << "Invalid 'NOP' instruction : " << currentLine << std::endl;
         return false;
     }
 
@@ -2444,6 +2447,61 @@ bool instruction_nop()
 
 
     addBytegenInstructionToCurrentFunction(nablaByteGen.createNopInstruction());
+
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_size()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "Found stray size instruction. Not currently building a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 3)
+    {
+        std::cerr << "Invalid 'SIZE' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    // Argument 1
+    if(!isRegister(currentPieces[1]))
+    {
+        std::cerr << "First argument must be register, given :" << currentPieces[1] << std::endl;
+        return false;
+    }
+
+    // Argument 2
+    NABLA::Bytegen::Stacks stackType;
+
+    if(isDirectLocalStackPointer(currentPieces[2]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 2 is a local stack pointer " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+    }
+    else if (isDirectGlobalStackPointer(currentPieces[2]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 2 is a global stack pointer " << std::endl; }
+        
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+    }
+    else
+    {
+        std::cerr << "'size' instruction argument 2 must be a global or local stack pointer (not an offset)" << std::endl;
+        return false;
+    }
+    
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[1]);
+
+    if(isParserVerbose) { std::cout << "SIZE : " << currentLine << std::endl; }
+
+    addBytegenInstructionToCurrentFunction(nablaByteGen.createSizeInstruction(reg, stackType));
 
     return true;
 }

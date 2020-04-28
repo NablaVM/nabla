@@ -836,4 +836,24 @@ namespace NABLA
         return ins;
     }
 
+    // ------------------------------------------------------------------------
+    // 
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createSizeInstruction(uint8_t reg, Stacks stack)
+    {
+        Instruction ins;
+
+        ins.bytes[0] = INS_SIZE;
+        ins.bytes[1] = integerToRegister(reg);
+        ins.bytes[2] = getStackAddress(stack);
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        return ins;
+    }
+
 } // End of namespace

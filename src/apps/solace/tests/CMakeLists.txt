@@ -21,6 +21,7 @@ add_executable(nablaInsTest
         nopTests.cpp
         pushpopTests.cpp
         returnTests.cpp
+        sizeTests.cpp
         stbldbTests.cpp
         main.cpp
 )
