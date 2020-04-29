@@ -45,19 +45,6 @@ loop:
 
 >
 
-; This has brought to light some issues with the storage of constant strings. 
-; This will need to be evaluated on the next branch of updates
-<omgnopls:
-    ldb r11 $2(gs)
-    mov r10 $3
-
-    ldb r11 $3(gs)
-    mov r10 $3
-
-    ldb r11 $1(gs)
-    mov r10 $3
->
-
 <main:
     ;call omgnopls
 
