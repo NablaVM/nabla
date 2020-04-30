@@ -12,13 +12,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define NABLA_IO_DEVICE_STDIN     0
-#define NABLA_IO_DEVICE_STDOUT    1
-#define NABLA_IO_DEVICE_STDERR    2
-#define NABLA_IO_DEVICE_DISKIN    3
-#define NABLA_IO_DEVICE_DISCKOUT  4
-#define NABLA_IO_DEVICE_CLOSE     5
-#define NABLA_IO_DEVICE_NONE      6
+#define NABLA_IO_DEVICE_STDIN     0  
+#define NABLA_IO_DEVICE_STDOUT    1  
+#define NABLA_IO_DEVICE_STDERR    2  
+#define NABLA_IO_DEVICE_DISKIN    100
+#define NABLA_IO_DEVICE_DISCKOUT  101
+#define NABLA_IO_DEVICE_CLOSE     200
+#define NABLA_IO_DEVICE_NONE      250
 
 // --------------------------------------------------------------
 //
@@ -30,7 +30,7 @@ struct IODevice * io_new()
 
     assert(io);
 
-    io->target = IODeviceTarget_None;
+    io->target = IODeviceTarget_Close;
     io->isDeviceActive = 0;
     io->filePointer = NULL;
 }
@@ -53,15 +53,15 @@ void io_delete(struct IODevice * io)
 }
 
 // --------------------------------------------------------------
-//
+// Unset activation register, and close out the device
 // --------------------------------------------------------------
 
-void process_unset_io(struct IODevice * io, struct VM * vm)
+void process_close_io(struct IODevice * io, struct VM * vm)
 {
     vm->registers[10] = 0;
 
     // Indicate we io done
-    io->target = IODeviceTarget_None;
+    io->target = IODeviceTarget_Close;
     io->isDeviceActive = 0;
 
     // If they were using file pointer, close it
@@ -72,11 +72,28 @@ void process_unset_io(struct IODevice * io, struct VM * vm)
 }
 
 // --------------------------------------------------------------
+//  Unset activation register
+// --------------------------------------------------------------
+
+void process_unset_io(struct VM * vm)
+{
+    vm->registers[10] = 0;
+}
+
+// --------------------------------------------------------------
 //
 // --------------------------------------------------------------
 
 void process_stdin(struct IODevice * io, struct VM * vm)
 {
+    if(io->target != IODeviceTarget_Close)
+    {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+        printf("Request for stdin failed. IO Device in-use\n");
+        return;
+#endif
+    }
+
     // Get the number of bytes to read in
     uint32_t bytesToRead = util_extract_two_bytes(vm->registers[10], 5) << 16;
     bytesToRead |= util_extract_two_bytes(vm->registers[10], 3);
@@ -170,15 +187,23 @@ void process_stdin(struct IODevice * io, struct VM * vm)
     vm->registers[12] = framesProduced;
 
     // Unmark trigger flag
-    process_unset_io(io, vm);
+    process_close_io(io, vm);
 }
 
 // --------------------------------------------------------------
 //
 // --------------------------------------------------------------
 
-int process_io_out(struct IODevice * io, struct VM * vm, int stream)
+void process_io_out(struct IODevice * io, struct VM * vm, int stream)
 {
+    if(io->target != IODeviceTarget_Close)
+    {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+        printf("Request for std(out|err) failed. IO Device in-use\n");
+        return;
+#endif
+    }
+
     // Get the data to write out
     uint64_t out  = vm->registers[11];
 
@@ -192,11 +217,49 @@ int process_io_out(struct IODevice * io, struct VM * vm, int stream)
     }
 
     // Unmark trigger flag
-    process_unset_io(io, vm);
+    process_close_io(io, vm);
 }
 
 // --------------------------------------------------------------
 //
+// --------------------------------------------------------------
+
+void process_io_disk_in(struct IODevice * io, struct VM * vm)
+{
+    printf("Made it to process_io_disk_in\n");
+
+
+    // Check if command is to open
+    // If command is to open, ensure that the IO device is currently closed. Otherwise bail out
+        // Read the stack start and end address. Attempt to open. If opened, place 1 in r11, otherwise place 0, 
+        // and unset device to be closed
+        // Return
+
+    // If command isn't open, ensure that the IO device is already in DiskIn mode. Otherwise bail out
+
+    // If read - Get num bytes to read from instruction. Read those bytes into the stack
+    // If seek - Get seek location from isntruction. Seek. If fail r11 = 0 else r11 = 1
+    // If rewind - Rewind. If fail r11 = 0 else r11 = 1
+    // If tell - Place result value in r11
+
+    // Don't close, just unset
+    process_unset_io(vm);
+}
+
+// --------------------------------------------------------------
+//
+// --------------------------------------------------------------
+
+void process_io_disk_out(struct IODevice * io, struct VM * vm)
+{
+    // Check if command is to open
+    // If command is to open, ensure that the IO device is currently closed. Otherwise bail out
+
+    // etc
+}
+
+// --------------------------------------------------------------
+//  Entry point for IO process
 // --------------------------------------------------------------
 
 void io_process(struct IODevice * io, struct VM * vm)
@@ -247,32 +310,27 @@ void io_process(struct IODevice * io, struct VM * vm)
         case NABLA_IO_DEVICE_DISKIN  :
         {
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-            printf("io_process: NABLA_IO_DEVICE_DISKIN\n");
+            printf("process_io_disk_in\n");
 #endif
+            process_io_disk_in(io, vm);
             break;
         } 
 
         case NABLA_IO_DEVICE_DISCKOUT:
         {
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-            printf("io_process: NABLA_IO_DEVICE_DISCKOUT\n");
+            printf("process_io_disk_out\n");
 #endif
+            process_io_disk_out(io, vm);
             break;
         } 
 
         case NABLA_IO_DEVICE_CLOSE   :
         {
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-            printf("io_process: NABLA_IO_DEVICE_CLOSE\n");
+            printf("process_close_io\n");
 #endif
-            break;
-        } 
-
-        case NABLA_IO_DEVICE_NONE    :
-        {
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-            printf("io_process: NABLA_IO_DEVICE_NONE\n");
-#endif
+            process_close_io(io, vm);
             break;
         } 
 

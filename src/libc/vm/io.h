@@ -47,8 +47,7 @@ enum IODeviceTarget
     IODeviceTarget_Stderr,   // Standard error
     IODeviceTarget_DiskIn,   // Disk input
     IODeviceTarget_DiskOut,  // Disk output
-    IODeviceTarget_Close,    // Close instruction
-    IODeviceTarget_None      // No instruction 
+    IODeviceTarget_Close,    // Close target
 };
 
 // The input / output stream handler
