@@ -2,6 +2,10 @@
 #define NABLA_VM_IO_H
 
 #include "vm.h"
+#include <stdint.h>
+#include <stdio.h>
+
+#define NABLA_DEVICE_ADDRESS_IO 0x0A
 
 #define NABLA_VM_IO_INPUT_SETTINGS_MAX_IN   1024
 
@@ -34,37 +38,34 @@
 
 */
 
-/*
-    R10 - The device register
 
-        7           6           5           4           3           2           1           0
-
-    0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
-
-
-*/
-
-
+// Different target types for the IO Device
 enum IODeviceTarget
 {
-    IODeviceTarget_Stdin,
-    IODeviceTarget_Stdout,
-    IODeviceTarget_Stderr,
-    IODeviceTarget_DiskIn,
-    IODeviceTarget_DiskOut
+    IODeviceTarget_Stdin,    // Standard input
+    IODeviceTarget_Stdout,   // Standard output
+    IODeviceTarget_Stderr,   // Standard error
+    IODeviceTarget_DiskIn,   // Disk input
+    IODeviceTarget_DiskOut,  // Disk output
+    IODeviceTarget_Close,    // Close instruction
+    IODeviceTarget_None      // No instruction 
 };
 
 // The input / output stream handler
 struct IODevice
 {
-    enum IODeviceTarget target; // Target specified 
-    uint8_t isDeviceActive;     // Check if the device is active
+    enum    IODeviceTarget target;  // Target specified 
+    uint8_t isDeviceActive;         // Check if the device is active
+    FILE *  filePointer;            // File pointer for device
 };
-
 
 //! \brief Create a new io device
 //! \returns Device pointer
 struct IODevice * io_new();
+
+//! \brief Delete and clean-up an io device
+//! \post  The io memory will be freed
+void io_delete(struct IODevice * io);
 
 //! \brief Process an io event with the io device
 //! \param io The io device to process with

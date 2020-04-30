@@ -19,11 +19,35 @@ Don't use registers 10 - 15 without a clear goal. They are reserved for device o
 
 ## Register 10 Decodes
 
-MSB (Byte 7) 
+Which device to be triggered is the most significant byte of the register. The remainder of the register
+is different depending on the ID placed in the register. 
 
-        7           6           5           4           3           2           1           0
+**IO Device** - Input and output
+
+The IO device will switch to the target given if it differs from its current state. Care should be taken here to ensure nothing silly happend. Every open should have a matching close. Using this can be like playing with fire. 
+
+           ID         TARGET    [ ----------------------- UNUSED ---------------------------------- ]
         0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
+Targets: 
 
+| Target      | ID    | Description                  |  
+|---          |---    |---                           |  
+|    stdin    |  0    | Invoke standard in           |
+|    stdout   |  1    | Invoke standard out          |
+|    stderr   |  2    | Invoke standard error        |
+|    diskin   |  3    | Invoke disk in (file in)     |
+|    disckout |  4    | Invoke disk out (file out)   |
+|    close    |  5    | Close the current in/output  |
+|    none     |  6    | Not something you should set |
 
-IO Device
+IO Device will take the bytes in register r11 and output to whatever target is given for the TARGET byte until the target byte indicates a 'close.' Ensure that all data is passed before close, as once close is found, the device will be closed and the data currently in r11 will be ignored. 
+
+In the future, for file operations we might update the unused section to drive seek operations, but for now that functionality is being put off until a solid POC is implemented. 
+
+**Network Device** - Network device
+
+Networking hasn't been started let alone figured out. The plan is to have it be setup similar to IO with some socket action. This will come later. 
+
+           ID         TARGET    [ ----------------------- UNUSED ---------------------------------- ]
+        0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 

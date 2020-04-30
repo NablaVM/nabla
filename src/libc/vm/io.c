@@ -1,9 +1,138 @@
+
 #include "io.h"
 #include "util.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#define NABLA_IO_DEVICE_STDIN     0
+#define NABLA_IO_DEVICE_STDOUT    1
+#define NABLA_IO_DEVICE_STDERR    2
+#define NABLA_IO_DEVICE_DISKIN    3
+#define NABLA_IO_DEVICE_DISCKOUT  4
+#define NABLA_IO_DEVICE_CLOSE     5
+#define NABLA_IO_DEVICE_NONE      6
+
+// --------------------------------------------------------------
+//
+// --------------------------------------------------------------
+
+struct IODevice * io_new()
+{
+    struct IODevice * io = (struct IODevice*)malloc(sizeof(struct IODevice));
+
+    assert(io);
+
+    io->target = IODeviceTarget_None;
+    io->isDeviceActive = 0;
+    io->filePointer = NULL;
+}
+
+// --------------------------------------------------------------
+//
+// --------------------------------------------------------------
+
+void io_delete(struct IODevice * io)
+{
+    assert(io);
+
+    // Ensure this is closed
+    if(NULL != io->filePointer)
+    {
+        fclose(io->filePointer);
+    }
+
+    free(io);
+}
+
+// --------------------------------------------------------------
+//
+// --------------------------------------------------------------
+
+void io_process(struct IODevice * io, struct VM * vm)
+{
+    assert(io);
+    assert(vm);
+
+    uint8_t target = util_extract_byte(vm->registers[10], 6);
+
+    printf("TARGET: %u\n", target);
+
+    switch (target)
+    {
+        case NABLA_IO_DEVICE_STDIN   :
+        {
+            
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("io_process: NABLA_IO_DEVICE_STDIN\n");
+#endif
+            break;
+        } 
+
+        case NABLA_IO_DEVICE_STDOUT  :
+        {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("io_process: NABLA_IO_DEVICE_STDOUT\n");
+#endif
+            break;
+        } 
+
+        case NABLA_IO_DEVICE_STDERR  :
+        {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("io_process: NABLA_IO_DEVICE_STDERR\n");
+#endif
+            break;
+        } 
+
+        case NABLA_IO_DEVICE_DISKIN  :
+        {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("io_process: NABLA_IO_DEVICE_DISKIN\n");
+#endif
+            break;
+        } 
+
+        case NABLA_IO_DEVICE_DISCKOUT:
+        {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("io_process: NABLA_IO_DEVICE_DISCKOUT\n");
+#endif
+            break;
+        } 
+
+        case NABLA_IO_DEVICE_CLOSE   :
+        {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("io_process: NABLA_IO_DEVICE_CLOSE\n");
+#endif
+            break;
+        } 
+
+        case NABLA_IO_DEVICE_NONE    :
+        {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("io_process: NABLA_IO_DEVICE_NONE\n");
+#endif
+            break;
+        } 
+
+        default:
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            printf("io_process: Unknown target\n");
+#endif
+            return;
+    }
+}
+
+
+
+
+
+// ------------------------------ OLD IO - Left until iodevice is implemented ----------
+
+
 
 // --------------------------------------------------------------
 //

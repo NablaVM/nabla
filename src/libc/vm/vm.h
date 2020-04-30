@@ -55,6 +55,8 @@ struct VM
     NablaStack globalStack;  // Shared 'global' stack
     NablaStack callStack;    // Call stack
     struct FUNC * functions; 
+
+   // struct IODevice * io;
 };
 
 /*

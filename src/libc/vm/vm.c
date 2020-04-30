@@ -3,14 +3,14 @@
 
     Function naming:
         vm_*    functions are able to be accessed outside of this source 
-        load_*  functions are used internally during the 'loading' phase of operation
         run_*   functions are used internally during the 'running' phase of operation
 */
 
 #include "vm.h"     // Vm header
 #include "VmInstructions.h"
 
-#include "io.h"
+#include "io.h"     // IO Device
+#include "net.h"    // Network Device
 #include "util.h"
 
 #include <assert.h>
@@ -26,9 +26,11 @@ static uint8_t   FILE_GLOBAL_INVOKED_VM_COUNT  = 0;
 static uint8_t   FILE_GLOBAL_IS_VM_RUNNING     = 0;
 static uint8_t   FILE_GLOBAL_IS_VM_INITIALIZED = 0;
 
-
 // The current function to get instructions from
 static NFUNC * currentFunction;
+
+// The IO Device
+static struct IODevice * io_device;
 
 // Indicate if we are switching functions. When this is set, we don't want to increase the instruction pointer
 // as we have modified it as-per the guidance of an instruction. Either a call, or a return. In any case we want
@@ -66,6 +68,9 @@ NVM * vm_new()
     vm->functions = (NFUNC *)malloc(VM_SETTINGS_MAX_FUNCTIONS * sizeof(NFUNC));
 
     assert(vm->functions);
+
+    io_device = io_new();
+    assert(io_device);
 
     FILE_GLOBAL_INVOKED_VM_COUNT++;
 
@@ -110,6 +115,7 @@ void vm_delete(NVM * vm)
     free(vm->functions);
     stack_delete(vm->globalStack);
     stack_delete(vm->callStack);
+    io_delete(io_device);
     free(vm);
 
     // Should be, but lets be careful
@@ -832,18 +838,38 @@ vm_attempt_force_return:
 
         if(vm->registers[10] != 0)
         {
-            if(vm->registers[10] == 1)
+            uint8_t device_id = util_extract_byte(vm->registers[10], 7);
+
+            switch(device_id)
             {
-                int result = io_stdin(vm);
-            }
-            else if (vm->registers[10] == 2)
-            {
-                int result = io_stdout(vm);
-            }
-            else if (vm->registers[10] == 3)
-            {
-                int result = io_stderr(vm);
-            }
+            case NABLA_DEVICE_ADDRESS_IO:
+                io_process(io_device, vm);
+                break;
+
+            case NABLA_DEVICE_ADDRESS_NET:
+                printf("Network device has not yet been created\n");
+                vm->registers[10] = 0;
+                break;
+
+            default:
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("Invalid device id found in register 10.\n");
+#endif
+                return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+            };
+            
+           // if(vm->registers[10] == 1)
+           // {
+           //     int result = io_stdin(vm);
+           // }
+           // else if (vm->registers[10] == 2)
+           // {
+           //     int result = io_stdout(vm);
+           // }
+           // else if (vm->registers[10] == 3)
+           // {
+           //     int result = io_stderr(vm);
+           // }
 
         }
 
