@@ -26,7 +26,7 @@ is different depending on the ID placed in the register.
 
 The IO device will switch to the target given if it differs from its current state. Care should be taken here to ensure nothing silly happend. Every open should have a matching close. Using this can be like playing with fire. 
 
-           ID         TARGET    [ ----------------------- UNUSED ---------------------------------- ]
+           ID         TARGET    [ ----------------------- Varies by target  ----------------------- ]
         0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
 Targets: 
@@ -40,6 +40,27 @@ Targets:
 |    disckout |  4    | Invoke disk out (file out)   |
 |    close    |  5    | Close the current in/output  |
 |    none     |  6    | Not something you should set |
+
+
+stdin 
+
+Reads from standard input a up-to a specified number of bytes and won't return until TERMINATION byte is read in. Bytes read in will be pushed onto the global stack,
+with the number of bytes read in stored in r11, and number of stack frames generated in r12 Once bytes are read in, 
+r10 will be cleared and the IODevice will target nothing.
+
+           ID         TARGET    [ ---------- NUM BYTES TO READ ------------ ]   [ TERM  ]   [ UNUSED ]
+        0000 1010 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+stdout 
+
+           ID         TARGET    [ --------------------------- UNUSED -------------------------------]
+        0000 1010 | 0000 0001 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+stderr
+
+           ID         TARGET    [ --------------------------- UNUSED -------------------------------]
+        0000 1010 | 0000 0001 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
 
 IO Device will take the bytes in register r11 and output to whatever target is given for the TARGET byte until the target byte indicates a 'close.' Ensure that all data is passed before close, as once close is found, the device will be closed and the data currently in r11 will be ignored. 
 

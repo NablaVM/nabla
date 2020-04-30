@@ -1,41 +1,121 @@
 .file "io"
 .init main
 
+.string prompt "Please enter some text : " 
+
+
+;   STDIN Command structure 
+;
+;   ID         TARGET    [ ---------- NUM BYTES TO READ ------------ ]   [ TERM  ]   [ UNUSED ]
+; 0000 1010 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+;   STDOUT Command structure
+;
+;    ID         TARGET    [ --------------------------- UNUSED -------------------------------]
+; 0000 1010 | 0000 0001 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+;   STDERR Command structure
+;
+;    ID         TARGET    [ --------------------------- UNUSED -------------------------------]
+; 0000 1010 | 0000 0010 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+
+; -----------------------------------------
+;                   MAIN
+; -----------------------------------------
 <main:
 
-    call invoke_stdin
-
+    call display_prompt         ; Display the constant string for a prompt
+    call echo_invoke_stdin      ; Invoke stdin to get some user input
+    call echo_invoke_stdout     ; Invoke stdout to give the data back to the user
+    call nl_with_stderr         ; Print a new line using stderr to show how to use it
 >
 
-<invoke_stdin:
+; -----------------------------------------
+;            DISPLAY PROMPT
+; -----------------------------------------
+<display_prompt:
 
-    ;   We have to build a 'close' instruction so we can close the stdin
-    ;   with one instruction as stdin is invoked at the end of each cycle!
-    ;   
-    lsh r14 $10 $56    ; Load the STDIN ID into the MSB of some register
-    lsh r15 $5  $48    ; Load the TARGET 'close' into another register
-    or r14 r14 r15     ; OR them together so we have a close instruction targeted at stdin
+    lsh r0 $10 $56    ; Load 0x0A into MSB register 0
+    lsh r1 $1  $48    ; Target stdout
 
-    push ls r14        ; Push the close instruction to the local stack for later use
+    ; Make the stdout instruction seen in devices.md for stdout
+    or r0 r0 r1 
 
-    mov r0 $1
-    mov r1 $1
-    
-    lsh r10 $10 $56    ; Load 0x0A into register 10 to invoke stdin
+    size r1 gs 
+    mov  r2 $0
 
-    ; The means by-which the IO is invoked needs to be changed.
-    ; This won't be able to accuratly read in an arbitrary 'n' items :(
+loop_top:
 
-input_loop:
-    add r0 r0 $1
-    blt r0 r1 input_loop
+    ldb r11 r2(gs)  ; Load from gs index ( basicelly  gs[r1] )
 
+    mov r10 r0      ; Trigger stdout
 
+    add r2 r2 $1    ; add one to conuter 
 
-    pop r10 ls      
+    blt r2 r1 loop_top
+>
 
-    ; Do whatever
+; -----------------------------------------
+;             STDIN FOR ECHO
+; -----------------------------------------
+<echo_invoke_stdin:
 
+    ; This could be done better, but being verbose for testing
 
-    mov r10 $0      ; Disable io checks 
+    lsh r0 $10 $56    ; Load 0x0A into MSB register 0
+    lsh r1 $0  $48    ; Not really neaded with stdin 
+    lsh r2 $255 $16   ; Read up-to 255 chars
+    lsh r3 $10 $8     ; Load the terminating char '\n' 
+
+    ; Make the stdin instruction seen in devices.md for stdin
+
+    or r0 r0 r1       ; Pack into single register
+    or r0 r0 r2       ; Pack into single register
+    or r0 r0 r3       ; Pack into single register
+
+    mov r10 r0        ; Move the command into the trigger register 
+>
+
+; -----------------------------------------
+;           STDOUT FOR ECHO
+; -----------------------------------------
+<echo_invoke_stdout:
+
+    ; Print whatever was read in
+
+    lsh r0 $10 $56    ; Load 0x0A into MSB register 0
+    lsh r1 $1  $48    ; Target stdout
+
+    ; Make the stdout instruction seen in devices.md for stdout
+    or r0 r0 r1 
+
+    mov r2 $0         ; counter
+
+    mov r5 r12        ; Copy over the number of frames containing input
+
+output_loop:
+    add r2 r2 $1      ; counter += 1
+
+    pop r11 gs        ; Pop a piece of user input into output register
+
+    mov r10 r0        ; Trigger stdout
+
+    bne r2 r5 output_loop
+>
+
+; -----------------------------------------
+;         STDERR FOR NEW LINE 
+; -----------------------------------------
+<nl_with_stderr:
+
+    lsh r0 $10 $56    ; Load 0x0A into MSB register 0
+    lsh r1 $2  $48    ; Target stderr
+
+    ; Make the stderr instruction seen in devices.md for stderr
+    or r0 r0 r1 
+
+    mov r11 $10       ; 10 Happens to be the value of the NL character
+
+    mov r10 r0        ; Trigger stderr to display new line
 >

@@ -857,20 +857,6 @@ vm_attempt_force_return:
 #endif
                 return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
             };
-            
-           // if(vm->registers[10] == 1)
-           // {
-           //     int result = io_stdin(vm);
-           // }
-           // else if (vm->registers[10] == 2)
-           // {
-           //     int result = io_stdout(vm);
-           // }
-           // else if (vm->registers[10] == 3)
-           // {
-           //     int result = io_stderr(vm);
-           // }
-
         }
 
         // ----------------------------------------------------------------------------
