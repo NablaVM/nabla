@@ -20,6 +20,17 @@
 #define NABLA_IO_DEVICE_CLOSE     200
 #define NABLA_IO_DEVICE_NONE      250
 
+#define NABLA_IO_DEVICE_DISKIN_OPEN    1
+#define NABLA_IO_DEVICE_DISKIN_READ   10
+#define NABLA_IO_DEVICE_DISKIN_SEEK   20
+#define NABLA_IO_DEVICE_DISKIN_REWIND 30
+#define NABLA_IO_DEVICE_DISKIN_TELL   40
+
+#define NABLA_IO_DEVICE_DISKOUT_OPEN  1
+#define NABLA_IO_DEVICE_DISKOUT_WRITE 10
+
+
+
 // --------------------------------------------------------------
 //
 // --------------------------------------------------------------
@@ -224,9 +235,103 @@ void process_io_out(struct IODevice * io, struct VM * vm, int stream)
 //
 // --------------------------------------------------------------
 
+char * process_build_file_name(struct VM * vm)
+{
+    uint32_t startAddress  = util_extract_two_bytes(vm->registers[11], 7) << 16;
+                startAddress |= util_extract_two_bytes(vm->registers[11], 5);
+
+    uint32_t endAddress  = util_extract_two_bytes(vm->registers[11], 3) << 16;
+                endAddress |= util_extract_two_bytes(vm->registers[11], 1);
+
+    uint64_t fileNameSize = ((endAddress - startAddress) * 8);
+
+    char * fileNameBuf = (char *)malloc(sizeof(char) * fileNameSize);
+    assert(fileNameBuf);
+
+    uint64_t fileNameIdx = 0;
+
+    for(uint64_t i = startAddress; i < endAddress; i++)
+    {
+        int res = -255;
+        uint64_t curr = stack_value_at(i, vm->globalStack, &res);
+        assert(res == STACK_OKAY);
+
+        for(int i = 7; i >= 0; i--)
+        {
+            uint8_t c = curr >> i * 8;
+            fileNameBuf[fileNameIdx] = (char)c;
+            fileNameIdx++;
+        }
+    }
+
+    return fileNameBuf;
+}
+
+// --------------------------------------------------------------
+//
+// --------------------------------------------------------------
+
 void process_io_disk_in(struct IODevice * io, struct VM * vm)
 {
-    printf("Made it to process_io_disk_in\n");
+    uint8_t instruction = util_extract_byte(vm->registers[10], 5);
+
+    switch(instruction)
+    {
+        case NABLA_IO_DEVICE_DISKIN_OPEN  :
+        {
+            // Ensure that the device is closed before we continue
+            if(io->target != IODeviceTarget_Close)
+            {
+                vm->registers[11] = 0;
+                process_close_io(io, vm);
+                return;
+            }
+
+            // Get the file name - if it fails the system will die!!
+            char * fileNameBuf = process_build_file_name(vm);
+
+            printf("Loaded file name : %s\n", fileNameBuf);
+
+            // Open the io filePointer
+            io->filePointer = fopen(fileNameBuf, "r");
+
+            // We don't need this anymore
+            free(fileNameBuf);
+
+            // If open fails, indicate it
+            if(io->filePointer == NULL)
+            {
+                vm->registers[11] = 0;
+                process_close_io(io, vm);
+                return;
+            }
+
+            // Unset, but don't close
+            process_unset_io(vm);
+            break;
+        }
+        case NABLA_IO_DEVICE_DISKIN_READ  :
+        {
+            break;
+        }
+        case NABLA_IO_DEVICE_DISKIN_SEEK  :
+        {
+            break;
+        }
+        case NABLA_IO_DEVICE_DISKIN_REWIND:
+        {
+            break;
+        }
+        case NABLA_IO_DEVICE_DISKIN_TELL  :
+        {
+            break;
+        }
+        default:
+            // Illegal instruction
+            vm->registers[11] = 0;
+            process_close_io(io, vm);
+            break;
+    }
 
 
     // Check if command is to open
@@ -241,9 +346,6 @@ void process_io_disk_in(struct IODevice * io, struct VM * vm)
     // If seek - Get seek location from isntruction. Seek. If fail r11 = 0 else r11 = 1
     // If rewind - Rewind. If fail r11 = 0 else r11 = 1
     // If tell - Place result value in r11
-
-    // Don't close, just unset
-    process_unset_io(vm);
 }
 
 // --------------------------------------------------------------
@@ -252,10 +354,80 @@ void process_io_disk_in(struct IODevice * io, struct VM * vm)
 
 void process_io_disk_out(struct IODevice * io, struct VM * vm)
 {
-    // Check if command is to open
-    // If command is to open, ensure that the IO device is currently closed. Otherwise bail out
+    uint8_t instruction = util_extract_byte(vm->registers[10], 5);
+    uint8_t mode        = util_extract_byte(vm->registers[10], 4);
 
-    // etc
+    printf("process_io_disk_out\n");
+
+    switch(instruction)
+    {
+        case NABLA_IO_DEVICE_DISKOUT_OPEN:
+        {
+            // Ensure that the device is closed before we continue
+            if(io->target != IODeviceTarget_Close)
+            {
+                vm->registers[11] = 0;
+                process_close_io(io, vm);
+                return;
+            }
+
+             // Get the file name - if it fails the system will die!!
+            char * fileNameBuf = process_build_file_name(vm);
+
+            // Open the io filePointer
+            io->filePointer = fopen(fileNameBuf, "w");
+
+            // We don't need this anymore
+            free(fileNameBuf);
+
+            // If open fails, indicate it
+            if(io->filePointer == NULL)
+            {
+                vm->registers[11] = 0;
+                process_close_io(io, vm);
+                return;
+            }
+
+            // Indicate that we are doing disk out
+            io->target = IODeviceTarget_DiskOut;
+
+            // Indicate success
+            vm->registers[11] = 1;
+
+            // Unset, but don't close
+            process_unset_io(vm);
+            break;
+        }
+
+        case NABLA_IO_DEVICE_DISKOUT_WRITE:
+        {
+            // Ensure that the device is closed before we continue
+            if(io->target != IODeviceTarget_DiskOut)
+            {
+                vm->registers[11] = 0;
+                process_close_io(io, vm);
+                return;
+            }
+
+            // Write each byte in the register
+            for(int i = 7; i >= 0; i--)
+            {
+                uint8_t c =  util_extract_byte(vm->registers[11], i);
+                fputc((char)c, io->filePointer);
+            }
+
+            vm->registers[11] = 1;
+
+            // Indicate write complete
+            process_unset_io(vm);
+            break;
+        }
+
+        default:
+            vm->registers[11] = 0;
+            process_close_io(io, vm);
+            break;
+    }
 }
 
 // --------------------------------------------------------------
@@ -330,6 +502,7 @@ void io_process(struct IODevice * io, struct VM * vm)
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
             printf("process_close_io\n");
 #endif
+            printf("CLOSE\n");
             process_close_io(io, vm);
             break;
         } 

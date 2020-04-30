@@ -70,9 +70,9 @@ loop_top:
 
     ; Original stack size (before user input) is in r0
 
-    size r2 gs          ; Get current stack size 
+    size r2 gs         ; Get current stack size 
     sub r1 r2 r0       ; Subtract original size from current to get length of user input (in terms of stack addr)
-    push r1 ls         ; Save for later
+    push ls r1         ; Save for later
 
 
     ;
@@ -80,7 +80,7 @@ loop_top:
     ;
 
     lsh r5 $10  $56    ; Load 0x0A into MSB register 5
-    lsh r6 $100 $48    ; Set target to 'diskin'
+    lsh r6 $101 $48    ; Set target to 'diskout'
     lsh r7 $1   $40    ; Set instruction to 'open'
 
     or r5 r5 r6        ; Assemble the command
@@ -105,8 +105,37 @@ loop_top:
     ;  Write out the file 
     ;
 
+    lsh r5 $10  $56    ; Load 0x0A into MSB register 5
+    lsh r6 $101 $48    ; Set target to 'diskout'
+    lsh r7 $10  $40    ; Set instruction to 'write'
+
+    or r5 r5 r6        ; Assemble the command
+    or r5 r5 r7        ; Assemble the command
+
+    mov r0 r5          ; store in r0
+
+    mov r2 $0         ; counter
+
+    pop r5 ls
+
+output_loop:
+    add r2 r2 $1      ; counter += 1
+
+    pop r11 gs        ; Pop a piece of user input into output register
+
+    mov r10 r0        ; Trigger disk write
+
+    bne r2 r5 output_loop
 
 
+    ;
+    ;   Close the file
+    ;
+
+    lsh r5 $10  $56    ; Load 0x0A into MSB register 5
+    lsh r6 $200 $48    ; Set target to 'close'
+
+    or r10 r5 r6        ; Assemble the command into trigger register
 
 bottom_label:
     ret

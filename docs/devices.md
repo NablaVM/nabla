@@ -220,6 +220,8 @@ Open modes can be as follows :
 This will write whatever exists in r11 to file and unset register 10. Writing won't continue until register
 10 is given another disckout-write command. 
 
+Register 11 will be written to '1' upon completion
+
 
 ## Network Device
 
