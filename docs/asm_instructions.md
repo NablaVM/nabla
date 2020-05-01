@@ -316,22 +316,6 @@ Note: Implicit returns happen at the bottom of a function. If the bottom of the 
 a return will occur.
 
 
-### Functions / Labels
-
-Function start / end are special instructions that are scanned for upon initial program load
-to tell the VM how to structure its self. 
-
-**function start** - Currently allows 2^48 instructions per function
-
-    INS    ID   [ --------------------- NUM INSTRUCTIONS IN FUNC ------------------------------ ]
-    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
-
-**function end**
-
-    INS    ID   [ ---------------------------------- UNUSED ----------------------------------- ]
-    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
-
-
 ## Misc Instructions
 
 Nop
@@ -390,10 +374,26 @@ A stack accessed by 'gs' for 'global stack' that accesses the stack used across 
 
 Not able to be accessed by software directly. The system stack is pushed and popped by calls and returns.
 
+### Function Instructions 
+
 ## Forbidden Instructions 
 
 There are instructions that exist that are required by the system that the user does not need to worry about, but they need to be
 documented for the sake of the implementation.
+
+**function start** - Currently allows 2^48 instructions per function
+
+
+Function start / end are special instructions that are scanned for upon initial program load
+to tell the VM how to structure its self. 
+
+    INS    ID   [ --------------------- NUM INSTRUCTIONS IN FUNC ------------------------------ ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**function end**
+
+    INS    ID   [ ---------------------------------- UNUSED ----------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 **callstack_store_function**
 
