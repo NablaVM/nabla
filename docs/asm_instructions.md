@@ -162,6 +162,8 @@ Unaccounted bytes will be unused, and marked as '1'
 and displayed below are not applicable. Instead, double-based arithmetic operations will default to the 
 '00' case listed below.
 
+ **Note** : Numerical constants are limited to the range of a signed 16-bit integer
+ 
 Here is an example of the bit layout given an arithmetic operation. Note: All but ID here are filled
 with '1' just for the sake of demonstration
 
@@ -193,6 +195,8 @@ The indication bits are as follows:
 01 - Byte 3 will be a register, Byte 4/5 will be a 2-byte integer
 10 - Byte 3/4 will be a 2-byte integer, Byte 5 will be a register
 11 - Byte 3/4 will be a 2-byte integer, Byte 5/6 will be a 2-byte integer
+
+ **Note** : Numerical constants are limited to the range of a signed 16-bit integer
 
 [Byte 2]
 The second byte is the destination register

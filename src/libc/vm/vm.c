@@ -139,17 +139,17 @@ void run_get_arith_lhs_rhs(NVM * vm, uint8_t id, uint64_t ins, int64_t * lhs, in
     else if (id == 1)
     {
         *lhs =  vm->registers[util_extract_byte(ins, 5)];
-        *rhs = util_extract_two_bytes(ins, 4);
+        *rhs = (int16_t)util_extract_two_bytes(ins, 4);
     }
     else if (id == 2)
     {
-        *lhs =  util_extract_two_bytes(ins, 5);
+        *lhs =  (int16_t)util_extract_two_bytes(ins, 5);
         *rhs =  vm->registers[util_extract_byte(ins, 3)];
     }
     else if (id == 3)
     {
-        *lhs =  util_extract_two_bytes(ins, 5);
-        *rhs =  util_extract_two_bytes(ins, 3);
+        *lhs =  (int16_t)util_extract_two_bytes(ins, 5);
+        *rhs =  (int16_t)util_extract_two_bytes(ins, 3);
     }
 }
 
