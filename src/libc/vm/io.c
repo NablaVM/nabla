@@ -12,13 +12,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define NABLA_IO_DEVICE_STDIN     0  
-#define NABLA_IO_DEVICE_STDOUT    1  
-#define NABLA_IO_DEVICE_STDERR    2  
-#define NABLA_IO_DEVICE_DISKIN    100
-#define NABLA_IO_DEVICE_DISCKOUT  101
-#define NABLA_IO_DEVICE_CLOSE     200
-#define NABLA_IO_DEVICE_REPORT    255
+#define NABLA_IO_DEVICE_STDIN        0  
+#define NABLA_IO_DEVICE_STDOUT       1  
+#define NABLA_IO_DEVICE_STDERR       2  
+#define NABLA_IO_DEVICE_DISKIN       100
+#define NABLA_IO_DEVICE_DISCKOUT     101
+#define NABLA_IO_DEVICE_CLOSE        200
+#define NABLA_IO_DEVICE_REPORT       255
 
 #define NABLA_IO_DEVICE_DISKIN_OPEN    1
 #define NABLA_IO_DEVICE_DISKIN_READ   10
@@ -28,8 +28,6 @@
 
 #define NABLA_IO_DEVICE_DISKOUT_OPEN  1
 #define NABLA_IO_DEVICE_DISKOUT_WRITE 10
-
-
 
 // --------------------------------------------------------------
 //
