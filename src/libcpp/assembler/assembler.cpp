@@ -538,8 +538,15 @@ inline bool parseFile(std::string file)
                 }
                 else if (inFunc)
                 {
-                    // Increase the instruction count
-                    preprocessInsCount++;
+                    if( std::regex_match( currentPieces[0], std::regex("^call$")  ) )
+                    {
+                        preprocessInsCount += 3;
+                    }
+                    else
+                    {
+                        // Increase the instruction count
+                        preprocessInsCount++;
+                    }
                 }
 
                 // If we are to put the line in for actual processing (i.e not a label) add it to the rawFile

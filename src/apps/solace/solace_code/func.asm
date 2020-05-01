@@ -1,8 +1,6 @@
 .file "funcs"
 .init main
 
-.int8 FIX_THIS 0 ; Apparently no constants causes a crash =/
-
 <heyy:
     add r0 r0 $1
 
@@ -34,5 +32,5 @@
 
     call helper
 
-    add r10 $400 $20
+    add r9 $400 $20
 >

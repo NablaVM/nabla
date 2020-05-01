@@ -36,6 +36,9 @@ powerbottom:
 ;	Ex:  r0 = r1 % r2
 ;	Uses : r0, r1, r2, r3, r4
 <modulus:
+
+    blt r1 r2 modspecial
+
 	mov r3 $0   		; Init temp, and result
 	div r3 r1 r2		; Divide Num/Denom
     mov r4 $0
@@ -49,16 +52,19 @@ moduinz:
 		sub r0 r1 r3	; Sub result from num
 		jmp moddone
 moddone:
+    ret 
+modspecial:
+    mov r0 r1
 >
 
 
 <main:
 
-    ; mov r1 $2
-    ; mov r2 $8
-    ; call power
+    ;mov r1 $2
+    ;mov r2 $8
+    ;call power
 
-    mov r1 $10
-    mov r2 $3
-    call modulus
+     mov r1 $8
+     mov r2 $10
+     call modulus
 >
