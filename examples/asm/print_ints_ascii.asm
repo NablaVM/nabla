@@ -31,8 +31,12 @@
     
     mov r0 $0
     sub r0 r0 $400
-
-
+    call print_int_ascii
+    call print_nl
+    
+    ;   Print
+    ;
+    mov r0 $-100
     call print_int_ascii
     call print_nl
 >

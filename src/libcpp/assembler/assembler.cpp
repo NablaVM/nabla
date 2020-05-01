@@ -1234,6 +1234,16 @@ bool instruction_mov()
     }
     else if (isDirectNumerical(currentPieces[2]))
     {
+        // Ensure mov-specific constraint
+        int check = getNumberFromNumericalOrRegister(currentPieces[2]);
+
+        if(check > 127 || check < -128)
+        {
+            std::cerr << "MOV instruction is constrained to the range of a signed 8-bit int (-128, 127) : " 
+                      << check << " is out of range on line : " << currentLine << std::endl;
+            return false;
+        }
+
         setup = NABLA::Bytegen::MovSetup::REG_NUM;
     }
     else

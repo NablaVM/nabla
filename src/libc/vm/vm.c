@@ -139,7 +139,7 @@ void run_get_arith_lhs_rhs(NVM * vm, uint8_t id, uint64_t ins, int64_t * lhs, in
     else if (id == 1)
     {
         *lhs =  vm->registers[util_extract_byte(ins, 5)];
-        *rhs =  util_extract_two_bytes(ins, 4);
+        *rhs = util_extract_two_bytes(ins, 4);
     }
     else if (id == 2)
     {
@@ -564,17 +564,18 @@ int vm_cycle(struct VM* vm, uint64_t n)
             case INS_MOV  :
             {
                 lhs = util_extract_byte(ins, 6);
-                rhs = util_extract_byte(ins, 5);
 
                 // Move register value into another register
                 if(id == 0)
                 {
+                    rhs = util_extract_byte(ins, 5);
                     vm->registers[lhs] = vm->registers[rhs];
                 }
                 // Move numerival value into a register
                 else if (id == 1)
                 {
-                    vm->registers[lhs] = rhs;
+                    int8_t rval = util_extract_byte(ins, 5);
+                    vm->registers[lhs] =  rval;
                 }
                 else
                 {
@@ -583,6 +584,11 @@ int vm_cycle(struct VM* vm, uint64_t n)
 #endif
                     return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
                 }
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                printf("MOV result : %li\n", (int64_t)vm->registers[lhs]);
+#endif
+
                 break;
             }
             case INS_LDB  :

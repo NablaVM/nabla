@@ -244,7 +244,7 @@ Here is an example of a bit layout for a branch operation
 
 Indication Bits:
 00 - Register, Register
-01 - Register, Numerical Constant
+01 - Register, Numerical Constant - **Note** : This numerical constant is limited to the range of a signed 8-bit integer (-128 to 127)
 
     INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111

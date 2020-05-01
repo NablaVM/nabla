@@ -929,7 +929,8 @@ TEST(NablaInstructionTests, movIns)
         }
         else
         {
-            expectedResult =  getRandom16(0, 254);
+            // REG_NUM needs to ensure int8_t as the numerical encoding is limited to int8_t
+            expectedResult =  (int8_t)getRandom16(0, 254);
             arg1 = expectedResult;
         } 
 
@@ -942,6 +943,8 @@ TEST(NablaInstructionTests, movIns)
         build_test_vm(vm, ins_to_vec(ins));
 
         vm_run(vm);
+
+        std::cout << "DEST REG: " << dest_reg << " | Expected : " << expectedResult << " | actual : " << vm->registers[dest_reg] << std::endl;
 
         CHECK_TRUE(check_result(vm, dest_reg, expectedResult));
 
