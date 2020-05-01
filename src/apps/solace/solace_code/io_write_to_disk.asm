@@ -68,11 +68,8 @@ loop_top:
 ; --------------------------------------------------------
 <write_user_input_to_disk:
 
-    ; Original stack size (before user input) is in r0
-
-    size r2 gs         ; Get current stack size 
-    sub r1 r2 r0       ; Subtract original size from current to get length of user input (in terms of stack addr)
-    push ls r1         ; Save for later
+    ; Original global stack size (before user input) is in r0
+    push ls r0         
 
 
     ;
@@ -82,13 +79,15 @@ loop_top:
     lsh r5 $10  $56    ; Load 0x0A into MSB register 5
     lsh r6 $101 $48    ; Set target to 'diskout'
     lsh r7 $1   $40    ; Set instruction to 'open'
+    lsh r8 $1   $32    ; Set the mode to 'write / create'
 
     or r5 r5 r6        ; Assemble the command
     or r5 r5 r7        ; Assemble the command
+    or r5 r5 r8
 
     push ls r5         ; Store the command in ls 
 
-    lsh r5 $0 $40      ; Load the start address of the file string 
+    lsh r5 $0 $32      ; Load the start address of the file string 
     
     or r5 r5 $2        ; Load the end address of the file string
 
@@ -99,7 +98,6 @@ loop_top:
     mov r10 r5         ; Move command into trigger register
 
     beq r11 r10 bottom_label ; If fail happens r11 will be 0, and since r10 is zeroed by io device we can compare for err check
-
 
     ;
     ;  Write out the file 
@@ -114,16 +112,18 @@ loop_top:
 
     mov r0 r5          ; store in r0
 
-    mov r2 $0         ; counter
 
-    pop r5 ls
+    pop r2 ls          ; Pop the original stack size into r2 for counter globalStack[userInputIdx]
+
+    size r5 gs
 
 output_loop:
-    add r2 r2 $1      ; counter += 1
 
-    pop r11 gs        ; Pop a piece of user input into output register
+    ldb r11 r2(gs)    
 
     mov r10 r0        ; Trigger disk write
+
+    add r2 r2 $1      ; counter += 1
 
     bne r2 r5 output_loop
 
@@ -131,7 +131,7 @@ output_loop:
     ;
     ;   Close the file
     ;
-
+    
     lsh r5 $10  $56    ; Load 0x0A into MSB register 5
     lsh r6 $200 $48    ; Set target to 'close'
 

@@ -39,23 +39,23 @@
 */
 
 
-// Different target types for the IO Device
-enum IODeviceTarget
+// Different states for the IO Device
+enum IODeviceState
 {
-    IODeviceTarget_Stdin,    // Standard input
-    IODeviceTarget_Stdout,   // Standard output
-    IODeviceTarget_Stderr,   // Standard error
-    IODeviceTarget_DiskIn,   // Disk input
-    IODeviceTarget_DiskOut,  // Disk output
-    IODeviceTarget_Close,    // Close target
+    IODeviceState_Stdin,    // Standard input
+    IODeviceState_Stdout,   // Standard output
+    IODeviceState_Stderr,   // Standard error
+    IODeviceState_DiskIn,   // Disk input
+    IODeviceState_DiskOut,  // Disk output
+    IODeviceState_Close,    // Close state
 };
 
 // The input / output stream handler
 struct IODevice
 {
-    enum    IODeviceTarget target;  // Target specified 
-    uint8_t isDeviceActive;         // Check if the device is active
+    enum    IODeviceState state;  // Target specified 
     FILE *  filePointer;            // File pointer for device
+    int      gsByteIndex;
 };
 
 //! \brief Create a new io device

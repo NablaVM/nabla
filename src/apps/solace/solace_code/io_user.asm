@@ -26,7 +26,14 @@
 <main:
 
     call display_prompt         ; Display the constant string for a prompt
+
+    size r0 gs 
+    push ls r0
+
     call echo_invoke_stdin      ; Invoke stdin to get some user input
+    
+    pop r0 ls
+    
     call echo_invoke_stdout     ; Invoke stdout to give the data back to the user
     call nl_with_stderr         ; Print a new line using stderr to show how to use it
 >
@@ -82,6 +89,8 @@ loop_top:
 ; -----------------------------------------
 <echo_invoke_stdout:
 
+    mov r9 r0 ; Move the original stack size to r9
+
     ; Print whatever was read in
 
     lsh r0 $10 $56    ; Load 0x0A into MSB register 0
@@ -90,17 +99,18 @@ loop_top:
     ; Make the stdout instruction seen in devices.md for stdout
     or r0 r0 r1 
 
-    mov r2 $0         ; counter
+    mov r2 r9         ; counter - starting at globalStack[userInputIdx]
 
-    mov r5 r12        ; Copy over the number of frames containing input
+    size r5 gs        ; size of stack  - ending at globalStack.size()
 
 output_loop:
-    add r2 r2 $1      ; counter += 1
 
-    pop r11 gs        ; Pop a piece of user input into output register
+    ldb r11 r2(gs)
 
     mov r10 r0        ; Trigger stdout
 
+    add r2 r2 $1      ; counter += 1
+    
     bne r2 r5 output_loop
 >
 
