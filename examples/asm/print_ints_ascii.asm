@@ -5,7 +5,7 @@
 
 <main:
     
-    ;   Print
+    ;   Print (3201)
     ;
     mul r0 $16 $200 ; Move has a 2^8 limit for raw numericals, so we leverage math here to get big numbs
     add r0 r0 $1
@@ -13,20 +13,20 @@
     call print_nl
 
 
-    ;   Print
+    ;   Print  (126144)
     ;
     mul r0 $432 $292 ; Move has a 2^8 limit for raw numericals, so we leverage math here to get big numbs
     call print_int_ascii
     call print_nl
 
-    ;   Print
+    ;   Print  (0)
     ;
-    mov r0 $0
+    mov r0 $0 
     call print_int_ascii
     call print_nl
 
 
-    ;   Print
+    ;   Print  (-400)
     ;
     
     mov r0 $0
