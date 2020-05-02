@@ -705,9 +705,6 @@ int vm_cycle(struct VM* vm, uint64_t n)
                     vm->registers[destReg] = stack_pop(vm->functions[vm->fp].localStack, &okay);
                 }
                 
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                printf("Pop Result : %lu\n", vm->registers[destReg]);
-#endif
                 assert(okay == STACK_OKAY);
                 break;
             }          
@@ -743,6 +740,39 @@ int vm_cycle(struct VM* vm, uint64_t n)
                 vm->functions[vm->fp].ip = destAddress; 
                 continue;
             }          
+
+            case INS_YIELD:
+            {
+                if(stack_is_empty(vm->callStack))
+                {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("Callstack empty on yield. Exiting\n");
+#endif
+                    FILE_GLOBAL_IS_VM_RUNNING = 0;
+                    return 0;
+                }
+
+                int getYieldRetData = 0;
+
+                uint64_t ret_roi = stack_pop(vm->callStack, &getYieldRetData);
+                assert(getYieldRetData == STACK_OKAY);
+
+                uint64_t func_to = stack_pop(vm->callStack, &getYieldRetData);
+                assert(getYieldRetData == STACK_OKAY);
+
+                // Increase the current instruction pointer so when we're called again we start off where we left
+                currentFunction->ip++;
+
+                vm->fp = func_to;
+
+                currentFunction = &vm->functions[vm->fp];
+
+                currentFunction->ip = ret_roi;
+
+                switchingFunction = 1;
+
+                break;
+            }
 
             case INS_CS_SF :
             {
@@ -782,7 +812,6 @@ int vm_cycle(struct VM* vm, uint64_t n)
 
                 switchingFunction = 1;
 
-                currentFunction->ip = 0;
                 break;
             }          
             case INS_RET  :
@@ -810,6 +839,9 @@ vm_attempt_force_return:
                 {
                     int k; stack_pop(currentFunction->localStack, &k); assert(k == STACK_OKAY);
                 }
+
+                // Set the current function's return instruction back to 0
+                currentFunction->ip = 0;
 
                 vm->fp = func_to;
 

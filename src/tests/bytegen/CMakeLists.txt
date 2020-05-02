@@ -24,6 +24,7 @@ add_executable(nablaBytegenTests
         returnTests.cpp
         sizeTests.cpp
         stbldbTests.cpp
+        yieldTests.cpp
         main.cpp
 )
 

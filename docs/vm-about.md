@@ -53,7 +53,6 @@ Binary encoding (from file) will treat numerical values the same as strings. Tha
     34	| 00110100
     38	| 00111000
     3c	| 00111100
-    40	| 01000000
     
     
     
@@ -64,6 +63,7 @@ Binary encoding (from file) will treat numerical values the same as strings. Tha
     [ BELOW ARE CURRENT INSTRUCTIONS ]
     4	| 00000100
     0	| 00000000
+    40	| 01000000
     44	| 01000100
     48	| 01001000
     4c	| 01001100

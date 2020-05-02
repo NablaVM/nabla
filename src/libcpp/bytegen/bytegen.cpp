@@ -625,6 +625,27 @@ namespace NABLA
     }
 
     // ------------------------------------------------------------------------
+    // createYieldInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createYieldInstruction()
+    {
+        Instruction ins;
+        ins.bytes[0] = INS_YIELD;
+        ins.bytes[1] = 0xFF;
+        ins.bytes[2] = 0xFF;
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        //dumpInstruction(ins);
+        
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
     // createCallInstruction
     // ------------------------------------------------------------------------
 

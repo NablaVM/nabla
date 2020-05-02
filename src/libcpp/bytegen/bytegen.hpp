@@ -229,6 +229,9 @@ namespace NABLA
         //! \brief Create exit instruction
         Instruction createExitInstruction();
 
+        //! \brief Create exit instruction
+        Instruction createYieldInstruction();
+
         //! \brief Create segment const instruction
         std::vector<uint8_t> createSegConstInstruction(uint64_t count);
 
