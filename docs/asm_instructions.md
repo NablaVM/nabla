@@ -119,16 +119,15 @@ If 'd' is specified and the value in a given register is not a floating point, t
 | Instruction | Arg1     | Description                                       |
 |---          |---       |---                                                |
 | jmp         | label    | Jump to label                                     |
-| call        | function | Call function - return address stored sys stack   |
-| ret         |          | Return to the address stored on top of sys stack  |
-
+| call        | function | Call function - return address stored call stack  |
+| ret         |          | Return to the address stored on top of call stack |
+| yield       |          | Yield operation of function to caller             |
 
 ## Exit
 
 | Instruction | Description                                   |
 |---          |---                                            |
 | exit        | Quit execution of program                     |
-
 
 ## Functions / Labels
 
@@ -137,8 +136,6 @@ If 'd' is specified and the value in a given register is not a floating point, t
 | <funcName:     | Create function 'funcName'           |
 | >              | End of function declaration          |
 | labelName:     | Create label 'labelName'             |
-
-
 
 ## Instruction Data
 
@@ -186,7 +183,6 @@ with '1' just for the sake of demonstration
     INS    ID   REGISTER    [ ---- INTEGER ---- ]   [ ---- INTEGER ---- ]   [ ---- UNUSED ---- ]
     111111 11 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
     
-
 ## Bitwise Operations
 
 [Byte 1]
@@ -293,7 +289,6 @@ Indication Bits:
     INS    ID   REGISTER      STACK     [ --------------------   UNUSED  ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-
 ### Jump / return operation
 
 **jmp** - Jump
@@ -321,6 +316,17 @@ address is on the top of the system stack, and then pop it.
 
 Note: Implicit returns happen at the bottom of a function. If the bottom of the function is reached, 
 a return will occur.
+
+**yield** - Yield
+
+Yields execution back to caller. Upon detecting yeild, the function's instruction pointer and local
+stack is preserved and the caller continues execution as if a return occured. Upon the next call into
+the function that has yielded, execution will continue from the instruction immediately following the
+yeild. Multiple yeilds can me made, and if the bottom of the function occurs, or if a ret is executed
+the function will be reset. 
+
+    INS    ID  [ ----------------------------------- UNUSED ----------------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 
 ## Misc Instructions
@@ -380,8 +386,6 @@ A stack accessed by 'gs' for 'global stack' that accesses the stack used across 
 ### Call stack
 
 Not able to be accessed by software directly. The system stack is pushed and popped by calls and returns.
-
-### Function Instructions 
 
 ## Forbidden Instructions 
 
