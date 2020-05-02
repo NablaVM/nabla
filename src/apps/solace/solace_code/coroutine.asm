@@ -4,51 +4,43 @@
 
 <main:
 
-    mov r0 $33
-    mov r1 $22
+    mov r0 $1
 
-    call save_registers
+    call some_yield
 
     call some_other_method
 
-    call save_registers
+    call some_yield
 >
 
+<some_yield:
 
-<save_registers:
+    mov r0 $2 
 
-    push ls r0 
-    push ls r1 
-    push ls r2 
-    push ls r3 
-    push ls r4 
-    push ls r5 
-    push ls r6 
-    push ls r7 
-    push ls r8
-    push ls r9 
+    call other_yield
 
     yield
 
-    pop r9 ls 
-    pop r8 ls 
-    pop r7 ls 
-    pop r6 ls 
-    pop r5 ls 
-    pop r4 ls 
-    pop r3 ls 
-    pop r2 ls 
-    pop r1 ls
-    pop r0 ls 
+    mov r0 $7
 
     ret
 >
 
 <some_other_method:
 
-    mov r0 $33
-    mov r1 $22
+    mov r0 $4
 
-    add r3 r0 r1 
-    add r4 r2 $21
+    call other_yield
+
+    mov r0 $6
+>
+
+<other_yield:
+
+    mov r0 $3
+
+    yield 
+
+    mov r0 $5
+
 >
