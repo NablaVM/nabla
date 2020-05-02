@@ -17,6 +17,7 @@ struct nabla_socket * sockets_create_socket(int domain, int type,    int protoco
 
     assert(ns);
 
+    // socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
     ns->socket_desc = socket(domain, type, protocol);
 
     if(ns->socket_desc == -1)
