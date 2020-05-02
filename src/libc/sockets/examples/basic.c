@@ -3,7 +3,7 @@
     library to facilitate networking in the virtual machine
 */
 
-#include "sockets.h"
+#include "../sockets.h"
 
 #include <stdio.h>
 
@@ -26,7 +26,7 @@ int main(void)
 
 void tcp_client()
 {
-    printf("Starting TCP client\n");
+    printf("Starting basic tcp\n");
 
     //
     //      Create an NS socket that points to an ip and port over TCP
@@ -65,6 +65,11 @@ void tcp_client()
     printf("sockets_recv | result : %i\n", result);
 
     printf("\n >> %s \n", replyBuff);
+
+    //
+    //      Close the socket
+    //
+    sockets_close(ns);
 
     //
     //      Delete the socket

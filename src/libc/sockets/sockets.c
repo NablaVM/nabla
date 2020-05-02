@@ -42,6 +42,7 @@ struct nabla_socket * sockets_create_socket(int domain, int type,    int protoco
 void sockets_delete(struct nabla_socket* ns)
 {
     assert(ns);
+    close(ns->socket_desc);
     free(ns);
     ns = NULL;
 }
@@ -56,6 +57,35 @@ void sockets_connect(struct nabla_socket * ns, int *result)
     assert(result);
 
     if(connect(ns->socket_desc, (struct sockaddr *)&ns->saddr, sizeof(ns->saddr)) < 0)
+    {
+        *result = -1;
+        return;
+    }
+    *result = 0;
+    return;
+}
+
+// -------------------------------------------------
+//
+// -------------------------------------------------
+
+void sockets_close(struct nabla_socket *ns)
+{
+    assert(ns);
+
+    close(ns->socket_desc);
+}
+
+// -------------------------------------------------
+//
+// -------------------------------------------------
+
+void sockets_bind(struct nabla_socket *ns, int *result)
+{
+    assert(ns);
+    assert(result);
+
+    if(bind(ns->socket_desc, (struct sockaddr *)&ns->saddr, sizeof(ns->saddr)) < 0)
     {
         *result = -1;
         return;
@@ -106,9 +136,43 @@ void sockets_recv(struct nabla_socket *ns, char * buffer, unsigned bufferLen, in
 //
 // -------------------------------------------------
 
-void socket_close(struct nabla_socket *ns)
+void sockets_listen(struct nabla_socket *ns, int backlog, int *result)
 {
     assert(ns);
+    assert(result);
 
-    close(ns->socket_desc);
+    if(listen(ns->socket_desc, backlog) < 0)
+    {
+        *result = -1;
+        return;
+    }
+    *result = 0;
+    return;
+}
+
+// -------------------------------------------------
+//
+// -------------------------------------------------
+
+struct nabla_socket * sockets_blocking_accept(struct nabla_socket *ns, int *result)
+{
+    assert(ns);
+    assert(result);
+
+    struct nabla_socket * remote = (struct nabla_socket*)malloc(sizeof(struct nabla_socket));
+
+    assert(remote);
+
+    int sz = sizeof(struct sockaddr_in);
+    remote->socket_desc = accept(ns->socket_desc, (struct sockaddr *)&remote->saddr, (socklen_t*)&sz);
+
+    if(remote->socket_desc < 0)
+    {
+        free(remote);
+        *result = -1;
+        return NULL;
+    }
+
+    *result = 0;
+    return remote;
 }

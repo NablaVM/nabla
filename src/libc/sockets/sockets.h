@@ -24,15 +24,28 @@ struct nabla_socket
 struct nabla_socket * sockets_create_socket(int domain, int type,   int protocol, 
                                             char *addr, short port, int *result);
 
+// Free socket
 void sockets_delete(struct nabla_socket* ns);
 
 // Applies to SOCK_STREAM/TCP sockets.
 void sockets_connect(struct nabla_socket * ns, int *result);
 
+// Applies to listeners
+void sockets_bind(struct nabla_socket *ns, int *result);
+
+// Close the socket
+void sockets_close(struct nabla_socket *ns);
+
+// Send data 
 void sockets_send(struct nabla_socket * ns, char* data, int *result);
 
+// Recv data
 void sockets_recv(struct nabla_socket *ns, char * buffer, unsigned bufferLen, int *result);
 
-void socket_close(struct nabla_socket *ns);
+// Set the socket into listening mode
+void sockets_listen(struct nabla_socket *ns, int backlog, int *result);
+
+
+struct nabla_socket * sockets_blocking_accept(struct nabla_socket *ns, int *result);
 
 #endif
