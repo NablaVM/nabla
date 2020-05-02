@@ -65,6 +65,7 @@
         not             X                   X                  X
         nop             X                   X                  X
         size            X                   X                  X
+        yield           X                   X                  X
         label           X                   NA                 NA
 
 */
@@ -133,6 +134,8 @@ bool instruction_exit();
 bool instruction_directive();
 bool instruction_create_function();
 bool instruction_end_function();
+
+bool instruction_yield();
 
 namespace 
 {
@@ -256,6 +259,8 @@ void populate_parser_map()
         MatchCall{ std::regex("^jmp$")       , instruction_jmp       },
         MatchCall{ std::regex("^call$")      , instruction_call      },
         MatchCall{ std::regex("^ret$")       , instruction_return    },
+
+        MatchCall{ std::regex("^yield$")     , instruction_yield     },
 
         MatchCall{ std::regex("^exit$")      , instruction_exit      },
 
@@ -1946,6 +1951,31 @@ bool instruction_exit()
 
     addBytegenInstructionToCurrentFunction(
         nablaByteGen.createExitInstruction()
+        );
+
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_yield()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+    
+    if(currentPieces.size() != 1)
+    {
+        std::cerr << "Invalid yeild instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createYieldInstruction()
         );
 
     return true;

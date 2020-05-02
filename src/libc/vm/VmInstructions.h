@@ -37,6 +37,7 @@
     #define INS_CALL            0xE8
     #define INS_RET             0xEC
     #define INS_EXIT            0xF0 
+    #define INS_YIELD           0x40
     #define NINS_LABEL          0xFC
     #define REGISTER_0          0x00
     #define REGISTER_1          0x01
