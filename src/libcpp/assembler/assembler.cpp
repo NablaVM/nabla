@@ -2112,13 +2112,45 @@ bool instruction_directive()
         }
 
         // Get the int
-        uint64_t givenInt = std::stoll(currentPieces[2]);
+        int64_t givenInt = std::stoll(currentPieces[2]);
 
         NABLA::Bytegen::Integers integerType;
-        if(currentPieces[0] == ".int8")     { integerType = NABLA::Bytegen::Integers::EIGHT; }
-        else if(currentPieces[0] == ".int16"){ integerType = NABLA::Bytegen::Integers::SIXTEEN; }
-        else if(currentPieces[0] == ".int32"){ integerType = NABLA::Bytegen::Integers::THIRTY_TWO; }
-        else if(currentPieces[0] == ".int64"){ integerType = NABLA::Bytegen::Integers::SIXTY_FOUR; }
+        if(currentPieces[0] == ".int8")      
+        { 
+            if(givenInt > std::numeric_limits<int8_t>::max()|| givenInt < std::numeric_limits<int8_t>::min()) 
+            { 
+                std::cout << "Invalid const int8 size : " << currentLine <<  std::endl; 
+                return false;
+            } 
+            integerType = NABLA::Bytegen::Integers::EIGHT;  
+        }
+        else if(currentPieces[0] == ".int16")
+        { 
+            if(givenInt > std::numeric_limits<int16_t>::max()|| givenInt < std::numeric_limits<int16_t>::min()) 
+            { 
+                std::cout << "Invalid const int16 size : " << currentLine <<  std::endl; 
+                return false;
+            } 
+            integerType = NABLA::Bytegen::Integers::SIXTEEN; 
+        }
+        else if(currentPieces[0] == ".int32")
+        { 
+            if(givenInt > std::numeric_limits<int32_t>::max()|| givenInt < std::numeric_limits<int32_t>::min()) 
+            { 
+                std::cout << "Invalid const int32 size : " << currentLine <<  std::endl; 
+                return false;
+            } 
+            integerType = NABLA::Bytegen::Integers::THIRTY_TWO; 
+        }
+        else if(currentPieces[0] == ".int64")
+        { 
+            if(givenInt > std::numeric_limits<int64_t>::max()|| givenInt < std::numeric_limits<int64_t>::min()) 
+            { 
+                std::cout << "Invalid const int64 size : " << currentLine <<  std::endl; 
+                return false;
+            } 
+            integerType = NABLA::Bytegen::Integers::SIXTY_FOUR; 
+        }
         else {
             std::cerr << "Unknown interger type that was matched : " << currentLine << std::endl;
             return false;
@@ -2166,6 +2198,13 @@ bool instruction_directive()
 
         // Get the int
         double givenDouble = std::stod(currentPieces[2]);
+
+        if(givenDouble > std::numeric_limits<double>::max()|| givenDouble < std::numeric_limits<double>::min()) 
+        { 
+            std::cout << "Invalid const double size : " << currentLine <<  std::endl; 
+            return false;
+        } 
+
 
         // Store it
         finalPayload.constants.push_back({currentPieces[1], nablaByteGen.createConstantDouble(givenDouble)});

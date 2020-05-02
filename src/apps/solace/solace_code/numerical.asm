@@ -1,6 +1,9 @@
-.file "numbers"
 
 .init main
+
+.int8  a -120
+.int64 b  9223372036854775807
+.int64 c -9223372036854775807
 
 <main:
 
