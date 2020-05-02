@@ -12,7 +12,18 @@ include_directories(${NABLA_LIBC_INCLUDES})
 add_executable(nablaVmTests
         ${NABLA_LIBC_SOURCES}
         ${NABLA_LIBCPP_SOURCES}
-        instructionExecutionTests.cpp
+
+        arithTests.cpp
+        bitwiseTests.cpp
+        branchTests.cpp
+        callReturnExitTests.cpp
+        jumpTests.cpp
+        movTests.cpp
+        nopTests.cpp
+        pushPopTests.cpp
+        sizeTests.cpp
+        storeLoadTests.cpp
+        yieldTests.cpp
         main.cpp
 )
 
