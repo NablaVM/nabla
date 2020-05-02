@@ -139,8 +139,7 @@ namespace NABLA
         
         result.push_back( CONST_STR );
 
-        // If the string size is greater than max, then we will lop-off any extra.
-        uint8_t strSize = ( (val.size() > 255) ? 255 : val.size() );
+        uint8_t strSize = val.size();
 
         // Add the size
         result.push_back(strSize);

@@ -229,21 +229,21 @@ TEST(NablaInstructionTests, standardArith)
 
                 case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
                     arg1 = getRandom16(0, 9); vm->registers[arg1] = getRandom16(0, 65000); // Random reg with random val
-                    arg2 = getRandom16(0, 65000);                                            // Random val
+                    arg2 = (int16_t)getRandom16(0, 30000);                                            // Random val
 
                     expectedResult = calculateArith(arithType, vm->registers[arg1], arg2);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
                     arg2 = getRandom16(0, 9); vm->registers[arg2] = getRandom16(0, 65000); // Random reg with random val
-                    arg1 = getRandom16(0, 65000);                                           // Random val
+                    arg1 = (int16_t)getRandom16(0, 30000);                                       // Random val
 
                     expectedResult = calculateArith(arithType, arg1, vm->registers[arg2]);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_NUM: 
-                    arg1 = getRandom16(0, 65000);                                            // Random val
-                    arg2 = getRandom16(0, 65000);                                            // Random val
+                    arg1 = (int16_t)getRandom16(0, 30000);                                            // Random val
+                    arg2 = (int16_t)getRandom16(0, 30000);                                            // Random val
 
                     expectedResult = calculateArith(arithType, arg1, arg2);
                     break;
@@ -929,7 +929,8 @@ TEST(NablaInstructionTests, movIns)
         }
         else
         {
-            expectedResult =  getRandom16(0, 254);
+            // REG_NUM needs to ensure int8_t as the numerical encoding is limited to int8_t
+            expectedResult =  (int8_t)getRandom16(0, 254);
             arg1 = expectedResult;
         } 
 
@@ -1311,21 +1312,21 @@ TEST(NablaInstructionTests, bitwiseIns)
 
                 case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
                     arg1 = getRandom16(0, 9); vm->registers[arg1] = getRandom16(0, 65000); // Random reg with random val
-                    arg2 = getRandom16(0, 65000);                                            // Random val
+                    arg2 = (int16_t)getRandom16(0, 30000);                                            // Random val
 
                     expectedResult = calculateBitwise(arithType, vm->registers[arg1], arg2);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
                     arg2 = getRandom16(0, 9); vm->registers[arg2] = getRandom16(0, 65000); // Random reg with random val
-                    arg1 = getRandom16(0, 65000);                                           // Random val
+                    arg1 = (int16_t)getRandom16(0, 30000);                                            // Random val
 
                     expectedResult = calculateBitwise(arithType, arg1, vm->registers[arg2]);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_NUM: 
-                    arg1 = getRandom16(0, 65000);                                            // Random val
-                    arg2 = getRandom16(0, 65000);                                            // Random val
+                    arg1 = (int16_t)getRandom16(0, 30000);                                             // Random val
+                    arg2 = (int16_t)getRandom16(0, 30000);                                             // Random val
 
                     expectedResult = calculateBitwise(arithType, arg1, arg2);
                     break;

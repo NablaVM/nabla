@@ -39,7 +39,10 @@ is the maximum number able to be stored by 2 bytes (2^16)
 ### Constants
 
 Upon startup all constants listed will be loaded directly into the global stack. These constants will be loaded in the order by which they 
-are defined in the file. Ints and double
+are defined in the file. Ints and doubles that are loaded by const are checked to ensure that they are valid range. 
+Strings are not limited in size. Ints and doubles will need to be manually checked for sign, as once they're in the VM memory, they are just 
+bits and bytes. Strings are encoded into chunks of 8 bytes for storage in the stack frames with the left-most characters being encoded
+into the MSB. 
 
 ## Instructions
 Abbreviations : 
@@ -162,6 +165,8 @@ Unaccounted bytes will be unused, and marked as '1'
 and displayed below are not applicable. Instead, double-based arithmetic operations will default to the 
 '00' case listed below.
 
+ **Note** : Numerical constants are limited to the range of a signed 16-bit integer
+
 Here is an example of the bit layout given an arithmetic operation. Note: All but ID here are filled
 with '1' just for the sake of demonstration
 
@@ -193,6 +198,8 @@ The indication bits are as follows:
 01 - Byte 3 will be a register, Byte 4/5 will be a 2-byte integer
 10 - Byte 3/4 will be a 2-byte integer, Byte 5 will be a register
 11 - Byte 3/4 will be a 2-byte integer, Byte 5/6 will be a 2-byte integer
+
+ **Note** : Numerical constants are limited to the range of a signed 16-bit integer
 
 [Byte 2]
 The second byte is the destination register
@@ -244,7 +251,7 @@ Here is an example of a bit layout for a branch operation
 
 Indication Bits:
 00 - Register, Register
-01 - Register, Numerical Constant
+01 - Register, Numerical Constant - **Note** : This numerical constant is limited to the range of a signed 8-bit integer (-128 to 127)
 
     INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
