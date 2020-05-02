@@ -21,6 +21,7 @@ struct nabla_socket
 //! \retval  0 Success.
 //! \note Sockets are sockets. Client and server. If client, the address will be fore the remote
 //!       While, if its the server, it should be the address to bind to
+//!       NULL addr translates to INADDR_ANY
 struct nabla_socket * sockets_create_socket(int domain, int type,   int protocol, 
                                             char *addr, short port, int *result);
 
@@ -33,6 +34,9 @@ void sockets_connect(struct nabla_socket * ns, int *result);
 // Applies to listeners
 void sockets_bind(struct nabla_socket *ns, int *result);
 
+// Set the socket into listening mode
+void sockets_listen(struct nabla_socket *ns, int backlog, int *result);
+
 // Close the socket
 void sockets_close(struct nabla_socket *ns);
 
@@ -42,8 +46,11 @@ void sockets_send(struct nabla_socket * ns, char* data, int *result);
 // Recv data
 void sockets_recv(struct nabla_socket *ns, char * buffer, unsigned bufferLen, int *result);
 
-// Set the socket into listening mode
-void sockets_listen(struct nabla_socket *ns, int backlog, int *result);
+// Connectionless send (UDP)
+void sockets_connectionless_send(struct nabla_socket * sender, struct nabla_socket * recvr, char* data);
+
+// Connectionless recv (UDP)
+void sockets_connectionless_recv(struct nabla_socket * sender, struct nabla_socket * recvr, char *buffer, unsigned bufferLen, int *result);
 
 
 struct nabla_socket * sockets_blocking_accept(struct nabla_socket *ns, int *result);

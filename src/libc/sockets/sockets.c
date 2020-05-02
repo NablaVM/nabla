@@ -11,7 +11,6 @@
 struct nabla_socket * sockets_create_socket(int domain, int type,    int protocol, 
                                             char *addr, short port,  int *result)
 {
-    assert(addr);
     assert(result);
 
     struct nabla_socket * ns = (struct nabla_socket*)malloc(sizeof(struct nabla_socket));
@@ -27,7 +26,16 @@ struct nabla_socket * sockets_create_socket(int domain, int type,    int protoco
         return NULL;
     }
 
-    ns->saddr.sin_addr.s_addr = inet_addr(addr);
+    if(NULL == addr)
+    {
+        ns->saddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+    else
+    {
+        ns->saddr.sin_addr.s_addr = inet_addr(addr);
+    }
+
+
     ns->saddr.sin_family      = domain;
     ns->saddr.sin_port = htons( port );
 
@@ -175,4 +183,31 @@ struct nabla_socket * sockets_blocking_accept(struct nabla_socket *ns, int *resu
 
     *result = 0;
     return remote;
+}
+
+// -------------------------------------------------
+//
+// -------------------------------------------------
+
+void sockets_connectionless_send(struct nabla_socket * sender, struct nabla_socket * recvr, char* data)
+{
+    assert(sender);
+    assert(recvr);
+    assert(data);
+
+    sendto(sender->socket_desc, (const char *)data, strlen(data), 0, (const struct sockaddr *) &recvr->saddr,  sizeof(recvr->saddr)); 
+}
+
+// -------------------------------------------------
+//
+// -------------------------------------------------
+
+void sockets_connectionless_recv(struct nabla_socket * sender, struct nabla_socket * recvr, char *buffer, unsigned bufferLen, int *result)
+{
+    assert(sender);
+    assert(recvr);
+    assert(buffer);
+    assert(result);
+                                                            // might want MSG_DONTWAIT
+    *result = recvfrom(recvr->socket_desc, buffer, bufferLen,  MSG_WAITALL , (struct sockaddr *) &sender->saddr, &bufferLen);
 }
