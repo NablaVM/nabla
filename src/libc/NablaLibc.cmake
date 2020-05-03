@@ -2,6 +2,7 @@
 set(NABLA_LIBC_INCLUDES
     ${CMAKE_SOURCE_DIR}/libc/stack
     ${CMAKE_SOURCE_DIR}/libc/binloader
+    ${CMAKE_SOURCE_DIR}/libc/sockets
     ${CMAKE_SOURCE_DIR}/libc/util
     ${CMAKE_SOURCE_DIR}/libc/vm/io
     ${CMAKE_SOURCE_DIR}/libc/vm/net
@@ -11,6 +12,8 @@ set(NABLA_LIBC_INCLUDES
 set(NABLA_LIBC_HEADERS
     ${CMAKE_SOURCE_DIR}/libc/stack/stack.h
     ${CMAKE_SOURCE_DIR}/libc/binloader/binloader.h
+    ${CMAKE_SOURCE_DIR}/libc/sockets/sockets.h
+    ${CMAKE_SOURCE_DIR}/libc/sockets/sockpool.h
     ${CMAKE_SOURCE_DIR}/libc/util/util.h
     ${CMAKE_SOURCE_DIR}/libc/vm/io/io.h
     ${CMAKE_SOURCE_DIR}/libc/vm/net/net.h
@@ -20,6 +23,8 @@ set(NABLA_LIBC_HEADERS
 set(NABLA_LIBC_SOURCES
     ${CMAKE_SOURCE_DIR}/libc/stack/stack.c
     ${CMAKE_SOURCE_DIR}/libc/binloader/binloader.c
+    ${CMAKE_SOURCE_DIR}/libc/sockets/sockets.c
+    ${CMAKE_SOURCE_DIR}/libc/sockets/sockpool.c
     ${CMAKE_SOURCE_DIR}/libc/util/util.c
     ${CMAKE_SOURCE_DIR}/libc/vm/io/io.c
     ${CMAKE_SOURCE_DIR}/libc/vm/net/net.c

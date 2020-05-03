@@ -4,17 +4,25 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+struct nabla_socket
+{
+    int socket_desc;
+    struct sockaddr_in saddr;
+};
+
+typedef struct nabla_socket nabla_socket;
+
 // -------------------------------------------------
 //
 // -------------------------------------------------
 
-struct nabla_socket * sockets_create_socket(int domain, int type,    int protocol, 
+nabla_socket * sockets_create_socket(int domain, int type,    int protocol, 
                                             char *addr, short port,  unsigned setNonBlocking,
                                             int *result)
 {
     assert(result);
 
-    struct nabla_socket * ns = (struct nabla_socket*)malloc(sizeof(struct nabla_socket));
+    nabla_socket * ns = (nabla_socket*)malloc(sizeof(nabla_socket));
 
     assert(ns);
 
@@ -55,7 +63,7 @@ struct nabla_socket * sockets_create_socket(int domain, int type,    int protoco
 //
 // -------------------------------------------------
 
-void sockets_delete(struct nabla_socket* ns)
+void sockets_delete(nabla_socket* ns)
 {
     assert(ns);
     close(ns->socket_desc);
@@ -67,7 +75,7 @@ void sockets_delete(struct nabla_socket* ns)
 //
 // -------------------------------------------------
 
-void sockets_connect(struct nabla_socket * ns, int *result)
+void sockets_connect(nabla_socket * ns, int *result)
 {
     assert(ns);
     assert(result);
@@ -85,7 +93,7 @@ void sockets_connect(struct nabla_socket * ns, int *result)
 //
 // -------------------------------------------------
 
-void sockets_close(struct nabla_socket *ns)
+void sockets_close(nabla_socket *ns)
 {
     assert(ns);
 
@@ -96,7 +104,7 @@ void sockets_close(struct nabla_socket *ns)
 //
 // -------------------------------------------------
 
-void sockets_bind(struct nabla_socket *ns, int *result)
+void sockets_bind(nabla_socket *ns, int *result)
 {
     assert(ns);
     assert(result);
@@ -114,7 +122,7 @@ void sockets_bind(struct nabla_socket *ns, int *result)
 //
 // -------------------------------------------------
 
-void sockets_send(struct nabla_socket * ns, char* data, int *result)
+void sockets_send(nabla_socket * ns, char* data, int *result)
 {
     assert(ns);
     assert(data);
@@ -133,7 +141,7 @@ void sockets_send(struct nabla_socket * ns, char* data, int *result)
 //
 // -------------------------------------------------
 
-void sockets_recv(struct nabla_socket *ns, char * buffer, unsigned bufferLen, int *result)
+void sockets_recv(nabla_socket *ns, char * buffer, unsigned bufferLen, int *result)
 {
     assert(ns);
     assert(buffer);
@@ -152,7 +160,7 @@ void sockets_recv(struct nabla_socket *ns, char * buffer, unsigned bufferLen, in
 //
 // -------------------------------------------------
 
-void sockets_listen(struct nabla_socket *ns, int backlog, int *result)
+void sockets_listen(nabla_socket *ns, int backlog, int *result)
 {
     assert(ns);
     assert(result);
@@ -170,12 +178,12 @@ void sockets_listen(struct nabla_socket *ns, int backlog, int *result)
 //
 // -------------------------------------------------
 
-struct nabla_socket * sockets_accept(struct nabla_socket *ns, int *result)
+nabla_socket * sockets_accept(nabla_socket *ns, int *result)
 {
     assert(ns);
     assert(result);
 
-    struct nabla_socket * remote = (struct nabla_socket*)malloc(sizeof(struct nabla_socket));
+    nabla_socket * remote = (nabla_socket*)malloc(sizeof(nabla_socket));
 
     assert(remote);
 
@@ -197,7 +205,7 @@ struct nabla_socket * sockets_accept(struct nabla_socket *ns, int *result)
 //
 // -------------------------------------------------
 
-void sockets_connectionless_send(struct nabla_socket * sender, struct nabla_socket * recvr, char* data)
+void sockets_connectionless_send(nabla_socket * sender, nabla_socket * recvr, char* data)
 {
     assert(sender);
     assert(recvr);
@@ -210,7 +218,7 @@ void sockets_connectionless_send(struct nabla_socket * sender, struct nabla_sock
 //
 // -------------------------------------------------
 
-void sockets_connectionless_recv(struct nabla_socket * sender, struct nabla_socket * recvr, char *buffer, unsigned bufferLen, int *result)
+void sockets_connectionless_recv(nabla_socket * sender, nabla_socket * recvr, char *buffer, unsigned bufferLen, int *result)
 {
     assert(sender);
     assert(recvr);

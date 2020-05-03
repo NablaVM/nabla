@@ -5,6 +5,11 @@
 add_subdirectory(stack)
 
 #
+#   Socket tests
+#
+add_subdirectory(sockets)
+
+#
 #   Util tests
 #
 add_subdirectory(util)
