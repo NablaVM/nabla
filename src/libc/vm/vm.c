@@ -32,6 +32,9 @@ static NFUNC * currentFunction;
 // The IO Device
 static struct IODevice * io_device;
 
+// The NET Device
+static struct NETDevice * net_device;
+
 // Indicate if we are switching functions. When this is set, we don't want to increase the instruction pointer
 // as we have modified it as-per the guidance of an instruction. Either a call, or a return. In any case we want
 // to ensure the bottom of the loop doesn't increase the ip
@@ -71,6 +74,9 @@ NVM * vm_new()
 
     io_device = io_new();
     assert(io_device);
+
+    net_device = net_new();
+    assert(net_device);
 
     FILE_GLOBAL_INVOKED_VM_COUNT++;
 
@@ -116,6 +122,7 @@ void vm_delete(NVM * vm)
     stack_delete(vm->globalStack);
     stack_delete(vm->callStack);
     io_delete(io_device);
+    net_delete(net_device);
     free(vm);
 
     // Should be, but lets be careful
@@ -880,13 +887,12 @@ vm_attempt_force_return:
 
             switch(device_id)
             {
-            case NABLA_DEVICE_ADDRESS_IO:
+            case VM_SETTINGS_DEVICE_ADDRESS_IO:
                 io_process(io_device, vm);
                 break;
 
-            case NABLA_DEVICE_ADDRESS_NET:
-                printf("Network device has not yet been created\n");
-                vm->registers[10] = 0;
+            case VM_SETTINGS_DEVICE_ADDRESS_NET:
+                net_process(net_device, vm);
                 break;
 
             default:

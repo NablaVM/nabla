@@ -19,15 +19,32 @@
 #define NABLA_IO_DEVICE_DISCKOUT     101
 #define NABLA_IO_DEVICE_CLOSE        200
 #define NABLA_IO_DEVICE_REPORT       255
-
 #define NABLA_IO_DEVICE_DISKIN_OPEN    1
 #define NABLA_IO_DEVICE_DISKIN_READ   10
 #define NABLA_IO_DEVICE_DISKIN_SEEK   20
 #define NABLA_IO_DEVICE_DISKIN_REWIND 30
 #define NABLA_IO_DEVICE_DISKIN_TELL   40
-
 #define NABLA_IO_DEVICE_DISKOUT_OPEN  1
 #define NABLA_IO_DEVICE_DISKOUT_WRITE 10
+
+// Different states for the IO Device
+enum IODeviceState
+{
+    IODeviceState_Stdin,    // Standard input
+    IODeviceState_Stdout,   // Standard output
+    IODeviceState_Stderr,   // Standard error
+    IODeviceState_DiskIn,   // Disk input
+    IODeviceState_DiskOut,  // Disk output
+    IODeviceState_Close,    // Close state
+};
+
+// The input / output stream handler
+struct IODevice
+{
+    enum    IODeviceState state;  // Target specified 
+    FILE *  filePointer;            // File pointer for device
+    int      gsByteIndex;
+};
 
 // --------------------------------------------------------------
 //
@@ -560,10 +577,6 @@ void io_process(struct IODevice * io, struct VM * vm)
 
     // Get the target
     uint8_t target = util_extract_byte(vm->registers[10], 6);
-
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-    printf("TARGET: %u\n", target);
-#endif
 
     // Execute base on target
     switch (target)

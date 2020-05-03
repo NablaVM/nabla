@@ -44,6 +44,7 @@ SUB-IDs:
 |    netoutudp    |  10   | Network outbound using udp            |
 |    netinudp     |  11   | Network inbound  using udp            |
 |    shutdown     |  50   | Close and release all network objects |
+|    restart      |  55   | Shutdown, and reset network device    |
 
 **Overview**
 
@@ -364,3 +365,18 @@ r11 will contain '1' otherwise it will be '0'
 
            ID         SUB-ID    [ ----------------------------- UNUSED ---------------------------- ]
         0000 1011 | ‭0011 0010‬ | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+Closes and clears all network objects. Places the network device as 'inactive' and will not process any further 
+commands (except restart)
+
+## **restart**
+
+**restart**
+
+* Register 10
+
+           ID         SUB-ID    [ ----------------------------- UNUSED ---------------------------- ]
+        0000 1011 | ‭0011 0111‬ | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+Closes and clears all network connections. Restarts the device such-that the device can begin operating again. 
+All connections and connection info will be lost. 
