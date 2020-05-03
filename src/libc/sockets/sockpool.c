@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 struct sockpool
 {
@@ -31,6 +32,9 @@ sockpool * sockpool_create(uint16_t capacity)
     {
         sp->pool[i] = NULL;
     }
+
+    sp->capacity = capacity;
+    sp->size = 0;
 
     return sp;
 }
@@ -118,15 +122,13 @@ uint16_t sockpool_create_socket(sockpool * sp,
     sp->pool[idx] = sockets_create_socket(domain, type, protocol, addr, port, 
                                           setNonBlocking, result);
 
-    // There was a problem creating the socket. 
-    // The error has been sent to caller via result
     if(sp->pool[idx] == NULL)
     {
+        *result = -1;
         return 0;
     }
 
-    // If the socket was made return idx. result will prop back indicating 
-    // that everything was okay
+    sp->size++;
     return idx;
 }
 
@@ -150,6 +152,11 @@ void sockpool_delete_socket(sockpool * sp, uint16_t idx)
 {
     assert(sp);
 
+    if(sp->size == 0)
+    {
+        return;
+    }
+
     if(sp->pool[idx] == NULL)
     {
         return;
@@ -160,4 +167,6 @@ void sockpool_delete_socket(sockpool * sp, uint16_t idx)
     sockets_delete(sp->pool[idx]);
 
     sp->pool[idx] = NULL;
+
+    sp->size--;
 }

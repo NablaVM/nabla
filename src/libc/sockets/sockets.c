@@ -17,8 +17,8 @@ typedef struct nabla_socket nabla_socket;
 // -------------------------------------------------
 
 nabla_socket * sockets_create_socket(int domain, int type,    int protocol, 
-                                            char *addr, short port,  unsigned setNonBlocking,
-                                            int *result)
+                                     char *addr, short port,  unsigned setNonBlocking,
+                                     int *result)
 {
     assert(result);
 
