@@ -23,7 +23,8 @@ struct nabla_socket
 //!       While, if its the server, it should be the address to bind to
 //!       NULL addr translates to INADDR_ANY
 struct nabla_socket * sockets_create_socket(int domain, int type,   int protocol, 
-                                            char *addr, short port, int *result);
+                                            char *addr, short port, unsigned setNonBlocking, 
+                                            int  *result);
 
 // Free socket
 void sockets_delete(struct nabla_socket* ns);
@@ -52,7 +53,7 @@ void sockets_connectionless_send(struct nabla_socket * sender, struct nabla_sock
 // Connectionless recv (UDP)
 void sockets_connectionless_recv(struct nabla_socket * sender, struct nabla_socket * recvr, char *buffer, unsigned bufferLen, int *result);
 
-
-struct nabla_socket * sockets_blocking_accept(struct nabla_socket *ns, int *result);
+// Accepts a connection (TCP) If the given socket wasn't set to non-blocking, this call will block
+struct nabla_socket * sockets_accept(struct nabla_socket *ns, int *result);
 
 #endif

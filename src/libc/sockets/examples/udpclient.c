@@ -8,11 +8,11 @@ int main(void)
      printf("Starting UDP client\n");
 
     int result = -255;
-    struct nabla_socket * this_client = sockets_create_socket(AF_INET, SOCK_DGRAM, 0, NULL, 4098, &result);
+    struct nabla_socket * this_client = sockets_create_socket(AF_INET, SOCK_DGRAM, 0, NULL, 4098, 0, &result);
     printf("client: sockets_create_socket | result : %i\n", result);
 
     result = -255;
-    struct nabla_socket * remote_server = sockets_create_socket(AF_INET, SOCK_DGRAM, 0, NULL, 4098, &result);
+    struct nabla_socket * remote_server = sockets_create_socket(AF_INET, SOCK_DGRAM, 0, NULL, 4098, 0, &result);
     printf("server: sockets_create_socket | result : %i\n", result);
 
     char * data = "Hey, this is the UDP client!";

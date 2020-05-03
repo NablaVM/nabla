@@ -9,7 +9,8 @@
 // -------------------------------------------------
 
 struct nabla_socket * sockets_create_socket(int domain, int type,    int protocol, 
-                                            char *addr, short port,  int *result)
+                                            char *addr, short port,  unsigned setNonBlocking,
+                                            int *result)
 {
     assert(result);
 
@@ -17,8 +18,14 @@ struct nabla_socket * sockets_create_socket(int domain, int type,    int protoco
 
     assert(ns);
 
-    // socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-    ns->socket_desc = socket(domain, type, protocol);
+    if(0 == setNonBlocking)
+    {
+        ns->socket_desc = socket(domain, type, protocol);
+    }
+    else
+    {
+        ns->socket_desc = socket(domain, type | SOCK_NONBLOCK, protocol);
+    }
 
     if(ns->socket_desc == -1)
     {
@@ -163,7 +170,7 @@ void sockets_listen(struct nabla_socket *ns, int backlog, int *result)
 //
 // -------------------------------------------------
 
-struct nabla_socket * sockets_blocking_accept(struct nabla_socket *ns, int *result)
+struct nabla_socket * sockets_accept(struct nabla_socket *ns, int *result)
 {
     assert(ns);
     assert(result);

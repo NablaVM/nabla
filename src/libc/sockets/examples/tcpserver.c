@@ -12,7 +12,7 @@ int main(void)
     //      Create an NS socket that points to an ip and port over TCP
     //
     int result = -255;
-    struct nabla_socket * ns = sockets_create_socket(AF_INET, SOCK_STREAM, 0, "127.0.0.1", 4096, &result);
+    struct nabla_socket * ns = sockets_create_socket(AF_INET, SOCK_STREAM, 0, "127.0.0.1", 4096, 1, &result);
 
     printf("sockets_create_socket | result : %i\n", result);
 
@@ -42,9 +42,10 @@ int main(void)
         //      Accept client
         //
         result = -255;
-        struct nabla_socket * client = sockets_blocking_accept(ns, &result);
+        struct nabla_socket * client = sockets_accept(ns, &result);
 
-        printf("sockets_blocking_accept | result : %i\n", result);
+        // This just spams now that we aren't blocking .. eww
+        // printf("sockets_accept | result : %i\n", result);
 
         if(result == 0)
         {

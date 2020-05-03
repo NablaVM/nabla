@@ -12,7 +12,7 @@ int main(void)
     //      Create an NS socket that points to an ip and port over TCP
     //
     int result = -255;
-    struct nabla_socket * ns = sockets_create_socket(AF_INET, SOCK_STREAM, 0, "127.0.0.1", 4096, &result);
+    struct nabla_socket * ns = sockets_create_socket(AF_INET, SOCK_STREAM, 0, "127.0.0.1", 4096, 0, &result);
 
     printf("sockets_create_socket | result : %i\n", result);
 
