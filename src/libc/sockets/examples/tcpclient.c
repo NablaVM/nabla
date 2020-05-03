@@ -27,7 +27,7 @@ int main(void)
     //
     //      Send the server a hello
     //
-    char * message = "Hello server, I am client\n";
+    char * message = "Hello server, I am client\r\n";
 
     result = -255;
     sockets_send(ns, message, &result);

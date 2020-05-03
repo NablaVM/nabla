@@ -5,29 +5,58 @@
 
 #include <stdint.h>
 
+//! \brief The socket pool structure
 struct sockpool;
 
 typedef struct sockpool sockpool;
 
+//! \brief Creates a socket pool
+//! \param capacity The total capacity of the pool
+//! \returns A pointer to the new socket pool (null if an error in creation)
 sockpool * sockpool_create(uint16_t capacity);
 
+//! \brief Delete a socket pool. Closes and deletes all socket
+//!        objects in the pool.
+//! \post  The socket pool can no longer be used. Its gone
 void sockpool_delete(sockpool * sp);
 
+//! \brief Get the capacity of the pool
+//! \param sp The socket pool
+//! \returns The total capacity of the pool
 uint16_t sockpool_get_capacity(sockpool * sp);
 
+//! \brief Get the size of the socket pool
+//! \param sp The socket pool
+//! \returns The current size of the pool (number of elements)
 uint16_t sockpool_get_size(sockpool * sp);
 
-// Allocated a new socket in the pool, and runs sockets_create_socket
-// returns index of socket in pool
+//! \brief Creates a socket in the socket pool. 
+//! \param sp The socket pool
+//! \param domain The communication domain. Right now only supports AF_INET 
+//! \param type   Communication semantics. Supports SOCK_STREAM and SOCK_DGRAM
+//! \param protocol The particular protocol 
+//! \param addr   The address to hand the socket (outbound uses it as destination, inbound uses it as local setup)
+//!               A NULL address assigns INADDR_ANY
+//! \param port   The port to hand the socket (outbound uses it as destination, inbound uses it as local setup)
+//! \param setNonBlocking Assign the nonblocking flag to the socket (0 does nothing, 1 sets the flag)
+//! \param result[out] The result of the socket creation [ -1 failure, 0 success]
+//! \returns The index of the new socket in the pool 
 uint16_t sockpool_create_socket(sockpool * sp,
                                 int domain, int type,   int protocol, 
                                 char *addr, short port, unsigned setNonBlocking, 
                                 int  *result);
 
-// Get socket from the pool by index. If out of range, or non-exist will return NULL
+//! \brief Get socket pointer by index
+//! \param sp  The socket pool
+//! \param idx The index of the pool to get
+//! \returns The nabla_socket pointer from the pool if the index holds a socket.
+//!          If the index doesn't hold a socket, it will be NULL
 nabla_socket * sockpool_get_socket(sockpool * sp, uint16_t idx);
 
-// Closes and deletes a socket if idx is valid socket
+//! \brief Closes and deletes socket at the given index
+//! \param sp  The socket pool
+//! \param idx The index of socket to delete
+//! \post  The socket at the given index will be closed and deleted if it exists
 void sockpool_delete_socket(sockpool * sp, uint16_t idx);
 
 #endif

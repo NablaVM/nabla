@@ -6,7 +6,7 @@
 
 struct nabla_socket
 {
-    int socket_desc;
+    int    socket_desc;
     struct sockaddr_in saddr;
 };
 
@@ -147,13 +147,7 @@ void sockets_recv(nabla_socket *ns, char * buffer, unsigned bufferLen, int *resu
     assert(buffer);
     assert(result);
 
-    if(recv(ns->socket_desc, buffer, bufferLen, 0) < 0)
-    {
-        *result = -1;
-        return;
-    }
-    *result = 0;
-    return;
+    *result = recv(ns->socket_desc, buffer, bufferLen, 0);
 }
 
 // -------------------------------------------------
