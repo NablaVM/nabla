@@ -240,7 +240,7 @@ contain a '1' if it fails, it will be '0'
 * Register 11
 
         [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
-        0000 0000 | 0000 0000 | ‭0001 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+        0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
 In register 10 NUM BYTES is the number of bytes allocated to be received. Register 11 contains the start
 and end address of the global stack where the bytes will be stored. If NUM BYTES is larger than what 
@@ -260,21 +260,107 @@ r11 will contain '1' otherwise it will be '0'
 
 **bind**
 
+* Register 10
+
+           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ --------- UNUSED ------------ ]
+        0000 1011 | 0000 1011 | 0100 0110 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+Binds the given network object to a socket as-per the parameters of its initial creation. 
+
+If the bind command was a success, register 11 will read '1', otherwise '0'.
+
 **send**
 
+* Register 10
+
+           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ ---- NUM BYTES ---- ]   UNUSED
+        0000 1011 | 0000 1011 | 0100 0111 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+* Register 11
+
+        [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
+        0000 1011 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+In register 10 NUM BYTES is the number of bytes that are to be sent out. Register 11 contains the start
+and end address of the global stack where the bytes are stored. If NUM BYTES is larger than what could
+be contained by the start and end address given, the send will be cancelled and an error will be reported
+in r11.
+
+The network object will attempt to send the information given the settings. If it is a success, r11 will
+contain a '1' if it fails, it will be '0'
+
 **receive**
+
+* Register 10
+
+           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ ---- NUM BYTES ---- ]   UNUSED
+        0000 1011 | 0000 1011 | 0100 1000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+* Register 11
+
+        [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
+        0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+In register 10 NUM BYTES is the number of bytes allocated to be received. Register 11 contains the start
+and end address of the global stack where the bytes will be stored. If NUM BYTES is larger than what 
+could be contained by the global stack given the addresses, the receive will be cancelled and an error
+will be reported in r11.
+
+The network object will attempt to receive information up-to the size given in NUM BYTES. If it is a success
+r11 will contain '1' otherwise it will be '0'
 
 ## **netoutudp commands**
 
 | Command         | VALUE | Description             |  
 |---              |---    |---                      |  
-|    send         |  81   | Send data to a remote   |
-|    receive      |  82   | Receive from a remote   |
+|    send         |  80   | Send data to a remote   |
+|    receive      |  81   | Receive from a remote   |
 
 **send**
 
+* Register 10
+
+           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ ---- NUM BYTES ---- ]   UNUSED
+        0000 1011 | 0000 1010 | 0101 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+* Register 11
+
+        [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
+        0000 1011 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+In register 10 NUM BYTES is the number of bytes that are to be sent out. Register 11 contains the start
+and end address of the global stack where the bytes are stored. If NUM BYTES is larger than what could
+be contained by the start and end address given, the send will be cancelled and an error will be reported
+in r11.
+
+The network object will attempt to send the information given the settings. If it is a success, r11 will
+contain a '1' if it fails, it will be '0'
+
 **receive**
+
+* Register 10
+
+           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ ---- NUM BYTES ---- ]   UNUSED
+        0000 1011 | 0000 1010 | 0101 0001 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+* Register 11
+
+        [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
+        0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
+In register 10 NUM BYTES is the number of bytes allocated to be received. Register 11 contains the start
+and end address of the global stack where the bytes will be stored. If NUM BYTES is larger than what 
+could be contained by the global stack given the addresses, the receive will be cancelled and an error
+will be reported in r11.
+
+The network object will attempt to receive information up-to the size given in NUM BYTES. If it is a success
+r11 will contain '1' otherwise it will be '0'
 
 ## **shutdown**
 
 **shutdown**
+
+* Register 10
+
+           ID         SUB-ID    [ ----------------------------- UNUSED ---------------------------- ]
+        0000 1011 | ‭0011 0010‬ | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
