@@ -53,8 +53,8 @@ TEST(SocketPoolTests, sockpoolTests)
         for(uint16_t item = 0; item < size; item++)
         {
             int result = -255;
-
-            uint16_t n = sockpool_create_socket(sp, AF_INET, SOCK_STREAM, 0, (char*)"127.0.0.1", item, 1, &result);
+            //                                                               127.0.0.1
+            uint16_t n = sockpool_create_socket(sp, AF_INET, SOCK_STREAM, 0, 2130706433, item, 1, &result);
 
             CHECK_EQUAL(0, result);
 

@@ -103,7 +103,7 @@ uint16_t internal_locate_open_idx(sockpool * sp, int *okay)
 
 uint16_t sockpool_create_socket(sockpool * sp,
                                 int domain, int type,   int protocol, 
-                                char *addr, short port, unsigned setNonBlocking, 
+                                int addr, short port, unsigned setNonBlocking, 
                                 int  *result)
 {
     assert(sp);
@@ -119,8 +119,8 @@ uint16_t sockpool_create_socket(sockpool * sp,
         return 0;
     }
 
-    sp->pool[idx] = sockets_create_socket(domain, type, protocol, addr, port, 
-                                          setNonBlocking, result);
+    sp->pool[idx] = sockets_create_socket_raw_addr(domain, type, protocol, addr, port, 
+                                                   setNonBlocking, result);
 
     if(sp->pool[idx] == NULL)
     {
@@ -169,4 +169,52 @@ void sockpool_delete_socket(sockpool * sp, uint16_t idx)
     sp->pool[idx] = NULL;
 
     sp->size--;
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+void sockpool_close_socket(sockpool * sp, uint16_t idx)
+{
+    assert(sp);
+
+    if(sp->size == 0)
+    {
+        return;
+    }
+
+    if(sp->pool[idx] == NULL)
+    {
+        return;
+    }
+
+    sockets_close(sp->pool[idx]);
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+uint16_t sockpool_insert_new(sockpool * sp, nabla_socket * sock, int *result)
+{
+    assert(sp);
+
+    // Locate an index that we can use for the socket
+    int okay = -255;
+    uint16_t idx = internal_locate_open_idx(sp, &okay);
+
+    // Make sure we found a spot
+    if(okay != 1)
+    {
+        *result = -1;
+        return 0;
+    }
+
+    sp->pool[idx] = sock;
+
+    sp->size++;
+
+    *result = 0;
+    return idx;
 }

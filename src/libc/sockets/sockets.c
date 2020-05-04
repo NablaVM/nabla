@@ -12,13 +12,10 @@ struct nabla_socket
 
 typedef struct nabla_socket nabla_socket;
 
-// -------------------------------------------------
-//
-// -------------------------------------------------
 
-nabla_socket * sockets_create_socket(int domain, int type,    int protocol, 
-                                     char *addr, short port,  unsigned setNonBlocking,
-                                     int *result)
+nabla_socket * sockets_create_socket_raw_addr(int domain, int type,   int protocol, 
+                                              int raw_addr, short port, unsigned setNonBlocking, 
+                                              int  *result)
 {
     assert(result);
 
@@ -42,14 +39,7 @@ nabla_socket * sockets_create_socket(int domain, int type,    int protocol,
         return NULL;
     }
 
-    if(NULL == addr)
-    {
-        ns->saddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    }
-    else
-    {
-        ns->saddr.sin_addr.s_addr = inet_addr(addr);
-    }
+    ns->saddr.sin_addr.s_addr = raw_addr;
 
 
     ns->saddr.sin_family      = domain;
@@ -57,6 +47,30 @@ nabla_socket * sockets_create_socket(int domain, int type,    int protocol,
 
     *result = 0;
     return ns;
+}
+
+
+// -------------------------------------------------
+//
+// -------------------------------------------------
+
+nabla_socket * sockets_create_socket(int domain, int type,    int protocol, 
+                                     char *addr, short port,  unsigned setNonBlocking,
+                                     int *result)
+{
+
+    int raw_addr;
+
+    if(NULL == addr)
+    {
+        raw_addr = htonl(INADDR_ANY);
+    }
+    else
+    {
+        raw_addr = inet_addr(addr);
+    }
+
+    return sockets_create_socket_raw_addr(domain, type, protocol, raw_addr, port, setNonBlocking, result);
 }
 
 // -------------------------------------------------

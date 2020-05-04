@@ -44,6 +44,17 @@ struct NETDevice
 
 };
 
+// A create command 
+struct CommandCreate
+{
+    uint8_t  domain;
+    uint8_t  type;
+    uint8_t  protocol;
+    uint16_t port;
+    uint32_t ipAddress;
+    uint8_t  blocking;
+};
+
 // --------------------------------------------------------------
 //
 // --------------------------------------------------------------
@@ -88,7 +99,42 @@ void net_delete(struct NETDevice * nd)
 
 void process_unset_net(struct VM * vm)
 {
+    // Dont you dare clear register 11 here Mr. Future Josh
     vm->registers[10] = 0;
+}
+
+// --------------------------------------------------------------
+//
+// --------------------------------------------------------------
+
+struct CommandCreate process_assemble_command_create(struct VM * vm)
+{
+    struct CommandCreate cc;
+
+    cc.domain   = util_extract_byte(vm->registers[10], 4);
+    cc.type     = util_extract_byte(vm->registers[10], 3);
+    cc.protocol = util_extract_byte(vm->registers[10], 2);
+    cc.port     = util_extract_two_bytes(vm->registers[10], 1);
+
+    cc.ipAddress = (uint32_t)util_extract_two_bytes(vm->registers[11], 7) << 16 | 
+                   (uint32_t)util_extract_two_bytes(vm->registers[11], 5);
+
+    cc.blocking = util_extract_byte(vm->registers[11], 3);
+
+//#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+    printf(">>>>>>>>>>> New CommandCreate: \ndomain: %u\ntype: %u\nproto: %u\nport: %u\nAddr: %u\nBlocking: %u\n", 
+            cc.domain, cc.type, cc.protocol, cc.port, cc.ipAddress, cc.blocking);
+//#endif
+    return cc;
+}
+
+// --------------------------------------------------------------
+//
+// --------------------------------------------------------------
+
+void process_execute_poke_command(struct NETDevice * nd, struct VM * vm)
+{
+    printf("process_execute_poke_command - Not yet done\n");
 }
 
 // --------------------------------------------------------------
@@ -106,7 +152,183 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 
 void process_tcp_in(struct NETDevice * nd, struct VM * vm)
 {
+//#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("process_tcp_in\n");
+//#endif
+
+    uint8_t command = util_extract_byte(vm->registers[10], 5);
+
+    //  --------------------- Check 'shared' commands first ---------------------------
+    //
+    switch(command)
+    {
+        case NABLA_NET_DEVICE_COMMAND_CREATE:
+        {
+            struct CommandCreate cc = process_assemble_command_create(vm);
+
+            if(cc.domain != AF_INET)
+            {
+                // Right now we need to specify AF_INET, but we don't support anything else
+                // so this is an error.
+                printf("NETDevice Error : Incorrect domain given for socket create. Currently only supports AF_INET\n");
+                return;
+            }
+
+            if(cc.type != SOCK_STREAM)
+            {
+                printf("NETDevice Warning : Expected SOCK_STREAM for TCP IN got : %u . Ignoring command.", cc.type);
+                return;
+            }
+
+            int okay = -255;
+            uint16_t idx = sockpool_create_socket(nd->socket_pool, cc.domain, cc.type, cc.protocol, cc.ipAddress, cc.port, cc.blocking, &okay);
+
+            if(0 != okay)
+            {
+                // Error creating socket.
+                vm->registers[11] = 0;
+            }
+
+
+            printf(">>>>>>>>>>> new object id : %u\n", idx);
+
+            // Place '1' in the result byte of r11 and place idx in the following 2 bytes
+            vm->registers[11] = ( (uint64_t)1 << 56 ) | (uint64_t)idx << 40 ;
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_DELETE:
+        {
+            uint16_t id = util_extract_two_bytes(vm->registers[10], 4);
+
+            sockpool_delete_socket(nd->socket_pool, id);
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_CLOSE :
+        {
+            uint16_t id = util_extract_two_bytes(vm->registers[10], 4);
+
+            sockpool_close_socket(nd->socket_pool, id);
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_POKE  :
+        {
+            process_execute_poke_command(nd, vm);
+            return;
+        }
+        default:
+            // Just because this happens, doesn't mean much. It just means the command wasn't a 'shared' command
+            break;
+    }
+
+    // All of the specific commands for TCP IN has an 'id' associated
+    //
+    uint16_t object_id = util_extract_two_bytes(vm->registers[10], 4);
+    
+    //  --------------------- Check 'specific' commands second ---------------------------
+    //
+    switch(command)
+    {
+        case NABLA_NET_DEVICE_COMMAND_TCP_IN_BIND  :
+        {
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+
+                printf(">>>>>>>>>>> socket was null for id : %u\n", object_id);
+
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            int result = -255;
+            sockets_bind(ns, &result);
+
+            if(result < 0)
+            {
+                
+                
+                printf(">>>>>>>>>>> Bind fail\n");
+
+
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            // Success
+            vm->registers[11] = 1;
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_TCP_IN_LISTEN:
+        {
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            uint16_t back_log = util_extract_two_bytes(vm->registers[10], 4);
+
+            int result = -255;
+            sockets_listen(ns, back_log, &result);
+
+            if(result < 0)
+            {
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            // Success
+            vm->registers[11] = 1;
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_TCP_IN_ACCEPT:
+        {
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            int result = -255;
+            nabla_socket * new_connection = sockets_accept(ns, &result);
+
+            if(NULL == new_connection || result != 0)
+            {
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            result = -255;
+            uint16_t new_connection_id = sockpool_insert_new(nd->socket_pool, new_connection, &result);
+
+            // Sock pool doesn't nuke the connection if insert fails
+            if(result != 0)
+            {
+                sockets_close(new_connection);
+                sockets_delete(new_connection);
+                vm->registers[11] = 0;
+                return;
+            }
+
+            // Place '1' in the result byte of r11 and place new_connection_id in the following 2 bytes
+            vm->registers[11] = ( (uint64_t)1 << 56 ) | (uint64_t)new_connection_id << 40 ;
+            return;
+        }
+        default:
+            // We return now because there is nothing left to do. They sent us something dumb
+            return;
+    }
 }
 
 // --------------------------------------------------------------
@@ -200,7 +422,6 @@ void net_process(struct NETDevice * nd, struct VM * vm)
             process_unset_net(vm);
             return;
         }
-
         
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
         printf("Network device has been shut down and is no longer active\n");

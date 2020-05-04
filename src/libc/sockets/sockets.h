@@ -28,6 +28,19 @@ nabla_socket * sockets_create_socket(int domain, int type,   int protocol,
                                      char *addr, short port, unsigned setNonBlocking, 
                                      int  *result);
 
+//! \brief Creates a nabla socket 
+//! \param domain The communication domain. Right now only supports AF_INET 
+//! \param type   Communication semantics. Supports SOCK_STREAM and SOCK_DGRAM
+//! \param protocol The particular protocol 
+//! \param addr   The integer representation of an address. -1 assigns INADDR_ANY
+//! \param port   The port to hand the socket (outbound uses it as destination, inbound uses it as local setup)
+//! \param setNonBlocking Assign the nonblocking flag to the socket (0 does nothing, 1 sets the flag)
+//! \param result[out] The result of the socket creation [ -1 failure, 0 success]
+//! \returns Pointer to a new nabla socket is success, otherwise it will be NULL
+nabla_socket * sockets_create_socket_raw_addr(int domain, int type,   int protocol, 
+                                              int addr, short port, unsigned setNonBlocking, 
+                                              int  *result);
+
 //! \brief Closes and deletes a socket
 //! \param ns The network socket pointer
 //! \post  The given socket will be closed, freed, and no longer able to be used

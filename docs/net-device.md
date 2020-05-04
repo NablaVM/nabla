@@ -107,7 +107,7 @@ not exist, nothing will happen.
 
 * Register 10
 
-           ID         SUB-ID     COMMAND    [ ----------------------- UNUSED ---------------------- ]
+           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ --------- UNUSED ------------ ]
         0000 1011 | 0000 0000 | 0000 0010 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
 The close command will close-out whatever connection that the object is operating on and ready it to be
