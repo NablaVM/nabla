@@ -54,7 +54,7 @@ TEST(SocketPoolTests, sockpoolTests)
         {
             int result = -255;
             //                                                               127.0.0.1
-            uint16_t n = sockpool_create_socket(sp, AF_INET, SOCK_STREAM, 0, 2130706433, item, 1, &result);
+            uint16_t n = sockpool_create_socket(sp, AF_INET, SOCK_STREAM, 0, 16777343, item, 1, &result);
 
             CHECK_EQUAL(0, result);
 

@@ -7,17 +7,23 @@
 .string newConn    "New connection!"             ; 5 - 7
 .string createdSoc "Socket created!"             ; 7 - 9
 .string bindErr    "Error binding socket"        ; 9 - 12
+.string listenErr  "Error setting listen"        ; 12 - 15
+.string starting   "Starting server"             ; 15 - 17
 
 <main:
+
     ; Create the TCP socket - 127.0.0.1 , port 4096
     ; If success, the socket id will be added to gs
     call create_tcp_in
 
-    ; Setup socket 
-    call setup_tcp_in
+    ; Bind socket 
+    call bind_tcp
 
+    ; Set listen
+    call listen_tcp
 
-
+    ; Serve
+    call serve_tcp
 
     ; Shutdown
     call shutdown_network_device
@@ -25,13 +31,13 @@
     ; Tell the user we are exiting
     mov r5 $4
     mov r6 $4
-    call prompt_user
+    call println
 >
 
 ;
 ;   Display message to user. expects gs start in r5, and end in r6
 ;
-<prompt_user:
+<println:
 
     lsh r0 $10 $56    ; Load 0x0A into MSB register 0
     lsh r1 $1  $48    ; Target stdout
@@ -106,10 +112,10 @@ loop_top:
 
     ; Set IP address
 
-    lsh r1 $127 $56 
+    lsh r1 $1   $56 
     lsh r2 $0   $48
     lsh r3 $0   $40
-    lsh r4 $1   $32
+    lsh r4 $127 $32
 
     or r1 r1 r2     ; Assebme into r1
     or r1 r1 r3
@@ -136,12 +142,12 @@ loop_top:
     ; Tell the user we failed
     mov r5 $0 
     mov r6 $4
-    call prompt_user
+    call println
 
     ; Tell the user we are exiting
     mov r5 $4
     mov r6 $4
-    call prompt_user
+    call println
 
     exit 
 
@@ -157,15 +163,15 @@ success:
 
     mov r5 $7 
     mov r6 $9
-    call prompt_user
+    call println
 
     ret
 >
 
 ;
-;   Setup the socket (bind and listen)
+;   Bind socket
 ;
-<setup_tcp_in:
+<bind_tcp:
 
     pop r9 gs ; Get the socket object
 
@@ -189,15 +195,105 @@ success:
     ; Error binding socket - tell user
     mov r5 $9
     mov r6 $12
-    call prompt_user
+    call println
 
     ; Tell the user we are exiting
     mov r5 $4
     mov r6 $4
-    call prompt_user
+    call println
 
     exit
 
 success:
+    ret
+>
+
+;
+;  Set socket to listen
+;
+<listen_tcp:
+
+    pop r9 gs ; Get the socket object
+
+    lsh r0 $11 $56  ; Network device
+    lsh r1 $1  $48  ; net in tcp
+    lsh r2 $11 $40  ; listen 
+    lsh r3 r9  $24  ; socket id
+    lsh r4 $5  $8   ; backlog = 8
+
+    push gs r9 ; Store the object again
+
+    or r0 r0 r1 
+    or r0 r0 r2
+    or r0 r0 r3
+    or r0 r0 r4
+
+    mov r10 r0  ; Execute the listen command
+
+    ; Check result
+    mov r0 $0
+    bne r0 r11 success 
+
+    ; Error binding socket - tell user
+    mov r5 $12
+    mov r6 $15
+    call println
+
+    ; Tell the user we are exiting
+    mov r5 $4
+    mov r6 $4
+    call println
+
+    exit
+
+success:
+    ret
+>
+
+;
+;   Serve TCP connections
+;
+<serve_tcp:
+
+    ; Print 'starting'
+    mov r5 $15
+    mov r6 $17
+    call println
+
+    pop r9 gs ; Get the socket object
+
+    lsh r0 $11 $56  ; Network device
+    lsh r1 $1  $48  ; net in tcp
+    lsh r2 $12 $40  ; accept 
+    lsh r3 r9  $24  ; socket id
+
+    push gs r9 ; Store the object again
+
+    or r0 r0 r1 
+    or r0 r0 r2
+    or r0 r0 r3
+
+
+    ;  Loop while accept is 0
+    mov r8 $0
+
+loop:
+
+    ; Execute 'accept'
+    mov r10 r0
+
+    ; If r11 isn't 
+    bne r11 r8 success
+
+
+    jmp loop
+
+success:
+    
+    ; Print 'new connection'
+    mov r5 $5
+    mov r6 $7
+    call println
+
     ret
 >

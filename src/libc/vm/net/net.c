@@ -121,10 +121,10 @@ struct CommandCreate process_assemble_command_create(struct VM * vm)
 
     cc.blocking = util_extract_byte(vm->registers[11], 3);
 
-//#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf(">>>>>>>>>>> New CommandCreate: \ndomain: %u\ntype: %u\nproto: %u\nport: %u\nAddr: %u\nBlocking: %u\n", 
             cc.domain, cc.type, cc.protocol, cc.port, cc.ipAddress, cc.blocking);
-//#endif
+#endif
     return cc;
 }
 
@@ -152,9 +152,9 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 
 void process_tcp_in(struct NETDevice * nd, struct VM * vm)
 {
-//#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("process_tcp_in\n");
-//#endif
+#endif
 
     uint8_t command = util_extract_byte(vm->registers[10], 5);
 
@@ -187,10 +187,8 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
             {
                 // Error creating socket.
                 vm->registers[11] = 0;
+                return;
             }
-
-
-            printf(">>>>>>>>>>> new object id : %u\n", idx);
 
             // Place '1' in the result byte of r11 and place idx in the following 2 bytes
             vm->registers[11] = ( (uint64_t)1 << 56 ) | (uint64_t)idx << 40 ;
@@ -234,9 +232,6 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
 
             if(ns == NULL)
             {
-
-                printf(">>>>>>>>>>> socket was null for id : %u\n", object_id);
-
                 // Mark failure, return
                 vm->registers[11] = 0;
                 return;
@@ -247,11 +242,6 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
 
             if(result < 0)
             {
-                
-                
-                printf(">>>>>>>>>>> Bind fail\n");
-
-
                 // Mark failure, return
                 vm->registers[11] = 0;
                 return;
@@ -290,6 +280,7 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
         }
         case NABLA_NET_DEVICE_COMMAND_TCP_IN_ACCEPT:
         {
+
             nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
 
             if(ns == NULL)
