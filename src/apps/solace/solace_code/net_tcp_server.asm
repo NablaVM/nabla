@@ -279,21 +279,42 @@ success:
 
 loop:
 
-    ; Execute 'accept'
+    ; Execute 'accept' -  We set the socket to non-blocking so we loop
     mov r10 r0
 
-    ; If r11 isn't 
-    bne r11 r8 success
-
+    ; If r11 isn't 0, a connection is had, add it to local stack
+    bne r11 r8 new_connection
 
     jmp loop
 
-success:
+new_connection:
     
+    call handle_connection
+
+    ; jmp loop ; We could jump back into the loop and get more
+
+    ret
+>
+
+;
+;   Handle a new connection from an accept. 
+;     Connection info in r11
+;
+<handle_connection:
+
     ; Print 'new connection'
     mov r5 $5
     mov r6 $7
     call println
 
-    ret
+    ; Get the socket id for new connection
+    lsh r1 r11  $8      ; Get rid of result byte
+    rsh r1 r1  $48      ; Move id to LSB
+
+    ; Socket id of new connection now in r1
+
+    ; TODO : Use the new connection to write some data
+
+    ; Wipe out new connection info
+    mov r11 $0
 >

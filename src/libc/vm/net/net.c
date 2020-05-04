@@ -280,7 +280,6 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
         }
         case NABLA_NET_DEVICE_COMMAND_TCP_IN_ACCEPT:
         {
-
             nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
 
             if(ns == NULL)
