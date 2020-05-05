@@ -30,6 +30,11 @@
 #define VM_SETTINGS_CALL_STACK_SIZE         VM_SETTINGS_MAX_FUNCTIONS * 3  // Each call requires 3 instructions, so allow one call for each function max
 #define VM_SETTINGS_MAX_IN_PER_FUCNTION      100000 // Each instruction is 8 bytes, so this could be X *VM_SETTINGS_MAX_FUNCTIONS * 8 bytes (currently 400mb)
 
+#define VM_SETTINGS_DEVICE_ADDRESS_IO  0x0A
+#define VM_SETTINGS_DEVICE_ADDRESS_NET 0x0B
+
+#define VM_SETTINGS_DEVICE_CONFIG_NET_MAX_CONNECTIONS 1000
+
 /*
     VM Structure - We need this public so binloader and other things can manipulate the specifics of the vm
 */
