@@ -58,7 +58,6 @@ Unlike the IO Device, the NET Device can operate multiple objects at once and th
 |    create       |  0    | Create an object                        |
 |    delete       |  1    | Delete an object                        |
 |    close        |  2    | Close the object                        |
-|    poke         |  3    | Poke the object and get its information |
 
 After the execution of each shard command, register 10 will be wiped. 
 
@@ -111,37 +110,6 @@ not exist, nothing will happen.
 
 The close command will close-out whatever connection that the object is operating on and ready it to be
 re-bound, re-connected, or whatever makes sense for that SUB-ID.
-
-**Shared command - poke**
-
-* Register 10
-
-           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ --------- UNUSED ------------ ]
-        0000 1011 | 0000 0000 | 0000 0011 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
-
-Poke the network object to get its connection type, information, etc. Result will be in r11 and r12.
-
-* Result - Register 11
-
-           RESULT     DOMAIN       TYPE       PROTOCOL   [ ----- PORT ------ ]     STATE      
-         0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
-
-If the object poked exits RESULT will be '1' othereise it will be '0'. If the result is '0' don't trust
-the remaining bytes, or r12. It will all be useless.
-
-The STATE byte will indicate one of the following :
-
-| STATE         | VALUE | Description                                    |  
-|---            |---    |---                                             |  
-|    none       |  0    | The object hasn't been bound or connected      |
-|    connected  |  1    | The object is connected to a remote            |
-|    bound      |  2    | The object is bound to a socket, not listening |
-|    listening  |  3    | The object is bound to a socket, and listening |
-
-* Result - Register 12
-
-         [ ---------------IP ADDRESS ----------------- ] [ ----------------- UNUSED ---------------- ]
-         0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
 
 ## **netintcp commands**

@@ -19,7 +19,6 @@
 #define NABLA_NET_DEVICE_COMMAND_CREATE   0
 #define NABLA_NET_DEVICE_COMMAND_DELETE   1
 #define NABLA_NET_DEVICE_COMMAND_CLOSE    2
-#define NABLA_NET_DEVICE_COMMAND_POKE     3
 
 #define NABLA_NET_DEVICE_COMMAND_TCP_IN_BIND   10
 #define NABLA_NET_DEVICE_COMMAND_TCP_IN_LISTEN 11
@@ -205,15 +204,6 @@ int process_decode_frame_from_data(struct VM * vm, char * data, uint16_t num_byt
 }
 
 // --------------------------------------------------------------
-//
-// --------------------------------------------------------------
-
-void process_execute_poke_command(struct NETDevice * nd, struct VM * vm)
-{
-    printf("process_execute_poke_command - Not yet done\n");
-}
-
-// --------------------------------------------------------------
 // Returns 1 if process should end
 // --------------------------------------------------------------
 
@@ -279,11 +269,6 @@ uint8_t process_check_for_common_command(struct NETDevice * nd, struct VM * vm, 
             uint16_t id = util_extract_two_bytes(vm->registers[10], 4);
 
             sockpool_close_socket(nd->socket_pool, id);
-            return 1;
-        }
-        case NABLA_NET_DEVICE_COMMAND_POKE  :
-        {
-            process_execute_poke_command(nd, vm);
             return 1;
         }
         default:
