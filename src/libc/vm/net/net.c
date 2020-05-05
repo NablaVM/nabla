@@ -723,11 +723,6 @@ void process_udp(struct NETDevice * nd, struct VM * vm)
             uint32_t gs_end_addr   = (uint32_t)util_extract_two_bytes(vm->registers[11], 3) << 16 |
                                      (uint32_t)util_extract_two_bytes(vm->registers[11], 1);
 
-
-
-            printf("obj_id %u | rem_obj_id %u | gs_start %u | gs_end %u\n",
-                   object_id, remote_object_id, gs_start_addr, gs_end_addr);
-
             // Error check
             /*
              If NUM BYTES is larger than what could be contained by the start and 

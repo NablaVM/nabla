@@ -15,7 +15,7 @@ int main(void)
     struct nabla_socket * remote_server = sockets_create_socket(AF_INET, SOCK_DGRAM, 0, NULL, 4098, 0, &result);
     printf("server: sockets_create_socket | result : %i\n", result);
 
-    char * data = "Hey, this is the UDP client!";
+    char * data = "Hey, this is the UDP client!\r\n";
 
     sockets_connectionless_send(this_client, remote_server, data);
 

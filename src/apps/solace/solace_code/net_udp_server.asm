@@ -1,3 +1,9 @@
+;
+;   This UDP server can receive a single connection. It receives upto 2000 bytes, 
+;   prints the data on the screen, and responds with "Hello client, I am server"
+;   This can be used with the libc/sockets/example/udpclient.c
+;
+
 .file "net_udp"
 
 .init main
@@ -248,12 +254,14 @@ expand_stack:
     lsh r1 $10 $48  ; netudp
     lsh r2 $72 $40  ; recv 
     lsh r3 r9  $24  ; socket id
+    lsh r4 $2000 $8 ; bytes to recv
 
     push gs r9 ; Store the object again
 
     or r0 r0 r1 
     or r0 r0 r2
     or r0 r0 r3
+    or r0 r0 r4
 
     mov r12 r8  ; Load send socket
 
@@ -270,11 +278,6 @@ loop:
     mov r11 r9  ; Load gs info
     mov r10 r0  ; Execute the recv command
 
-
-    ;ret         ; GET OUT WHILE TESTING
-    ; ---------------------------------
-
-
     ; If r11 isn't 0, a connection is had, add it to local stack
     bne r11 r8 new_connection
 
@@ -282,11 +285,41 @@ loop:
 
 new_connection:
 
-
     ; Tell the user we got data
     mov r5 $24
     mov r6 $28
     call println
 
+    ; Start of the gs data-in
+    mov r5 $28
+    add r6 $24 r11 ; Add number of stack frames produced to the start index
+
+    ; Print the data received to screen 
+    call println
+
+    ; Send data back
+
+    pop r8 ls ; recv socket 
+    pop r7 ls ; send socket 
+
+    lsh r0 $11 $56  ; Network device
+    lsh r1 $10 $48  ; netudp
+    lsh r2 $71 $40  ; send 
+    lsh r3 r8  $24  ; socket id
+    lsh r4 $32 $8   ; bytes to recv
+
+    or r0 r0 r1 
+    or r0 r0 r2
+    or r0 r0 r3
+    or r0 r0 r4
+
+    ; Build stack source info (constant str)
+    lsh r3 $17 $32
+    lsh r4 $21 $0
+    or r11 r3 r4
+
+    mov r12 r7
+
+    mov r10 r0
     ret
 >
