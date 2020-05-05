@@ -9,9 +9,11 @@
 .string bindErr    "Error binding socket"        ; 9 - 12
 .string listenErr  "Error setting listen"        ; 12 - 15
 .string starting   "Starting server"             ; 15 - 17
+.string serverStr  "Hello client, I am server"   ; 17 - 21
+.string recvErr    "Error receiving data"        ; 21 - 24
+.string recvGood   "Client sent us some data!"   ; 24 - 28
 
 <main:
-
     ; Create the TCP socket - 127.0.0.1 , port 4096
     ; If success, the socket id will be added to gs
     call create_tcp_in
@@ -307,14 +309,77 @@ new_connection:
     mov r6 $7
     call println
 
+    ; Get current size of gs
+    size r1 gs 
+    push ls r1 
+
+    ; Expand global stack to store data 
+    mov r1 $0
+    mov r2 $0
+    add r3 $200 $50
+
+expand_stack:
+    push gs r1
+    add r2 r2 $1
+    blt r2 r3 expand_stack
+
+    ; Get new size of gs
+    size r1 gs 
+    push ls r1 
+
     ; Get the socket id for new connection
-    lsh r1 r11  $8      ; Get rid of result byte
-    rsh r1 r1  $48      ; Move id to LSB
+    lsh r11 r11  $8      ; Get rid of result byte
+    rsh r11 r11  $48      ; Move id to LSB
 
-    ; Socket id of new connection now in r1
+    ; Socket id of new connection now in r11
 
-    ; TODO : Use the new connection to write some data
+    lsh r1 $11 $56  ; Network device
+    lsh r2 $0  $48  ; net out tcp
+    lsh r3 $22 $40  ; recv 
+    lsh r4 r11 $24  ; socket id
 
-    ; Wipe out new connection info
-    mov r11 $0
+    or r1 r1 r2 
+    or r1 r1 r3
+    or r1 r1 r4
+
+    ; r1 now contains the command to recv
+
+    ; store gs info for recv in r11 
+
+    pop r3 ls  ; end 
+    pop r4 ls  ; begin
+
+    lsh r4 r4 $32
+
+    or r11 r3 r4
+
+    mov r4 $0
+
+    mov r10 r1
+
+    bne r4 r11 success
+
+    ; Error, indicate it to user
+    mov r5 $21
+    mov r6 $24
+    call println
+
+    ; Tell the user we are exiting
+    mov r5 $4
+    mov r6 $4
+    call println
+
+    exit
+
+success:
+
+    ; Tell the user we got data
+    mov r5 $24
+    mov r6 $28
+    call println
+
+    ; Bring print functions in from user io to dump the 
+    ; data from the client to stdout
+
+    ret
 >

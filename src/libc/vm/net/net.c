@@ -2,6 +2,7 @@
 
 #include "sockets.h"
 #include "sockpool.h"
+#include "stack.h"
 #include "util.h"
 
 #include <assert.h>
@@ -122,10 +123,58 @@ struct CommandCreate process_assemble_command_create(struct VM * vm)
     cc.blocking = util_extract_byte(vm->registers[11], 3);
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-    printf(">>>>>>>>>>> New CommandCreate: \ndomain: %u\ntype: %u\nproto: %u\nport: %u\nAddr: %u\nBlocking: %u\n", 
+    printf("New CommandCreate: \ndomain: %u\ntype: %u\nproto: %u\nport: %u\nAddr: %u\nBlocking: %u\n", 
             cc.domain, cc.type, cc.protocol, cc.port, cc.ipAddress, cc.blocking);
 #endif
     return cc;
+}
+
+// --------------------------------------------------------------
+//  This method assumes that all validity checks on range information
+//  has taken place and is accurate
+// --------------------------------------------------------------
+
+char * process_encode_frame_data(struct VM * vm, uint16_t num_bytes, uint32_t gs_start_addr, uint32_t gs_end_addr)
+{
+    char * encoded = (char*) malloc(sizeof(char) * num_bytes);
+
+    if(encoded == NULL)
+    {
+        return NULL;
+    }
+
+    // Go through stack - and build the encoded array
+    uint64_t encoded_idx = 0;
+    for(uint64_t idx = gs_start_addr; idx <= gs_end_addr; idx++)
+    {
+        int result = -255;
+        int64_t frame = stack_value_at(idx, vm->globalStack, &result);
+
+        // Get rid of this assert after testing, just free the encoded array and
+        // indicate error in reg11
+        assert(result == STACK_OKAY);
+
+        for(int i = 7; i >= 0; i--)
+        {
+            uint8_t c = frame >> i * 8;
+
+            encoded[encoded_idx] = (char)c;
+            encoded_idx++;
+        }
+    }
+
+    return encoded;
+}
+
+// --------------------------------------------------------------
+//  This method assumes that all validity checks on range information
+//  has taken place and is accurate - [-1 - Failure, 0 - Success]
+// --------------------------------------------------------------
+
+int process_decode_frame_from_data(struct VM * vm, char * data, uint16_t num_bytes, uint32_t gs_start_addr, uint32_t gs_end_addr)
+{
+
+    return -1;
 }
 
 // --------------------------------------------------------------
@@ -138,12 +187,253 @@ void process_execute_poke_command(struct NETDevice * nd, struct VM * vm)
 }
 
 // --------------------------------------------------------------
+// Returns 1 if process should end
+// --------------------------------------------------------------
+
+uint8_t process_check_for_common_command(struct NETDevice * nd, struct VM * vm, uint8_t caller)
+{
+    uint8_t command = util_extract_byte(vm->registers[10], 5);
+
+    switch(command)
+    {
+        case NABLA_NET_DEVICE_COMMAND_CREATE:
+        {
+            struct CommandCreate cc = process_assemble_command_create(vm);
+
+            if(cc.domain != AF_INET)
+            {
+                // Right now we need to specify AF_INET, but we don't support anything else
+                // so this is an error.
+                printf("NETDevice Error : Incorrect domain given for socket create. Currently only supports AF_INET\n");
+                return 1;
+            }
+
+            if( caller == NABLA_NET_DEVICE_SUB_ID_TCP_OUT || caller == NABLA_NET_DEVICE_SUB_ID_TCP_IN )
+            {
+                if(cc.type != SOCK_STREAM)
+                {
+                    printf("NETDevice Warning : Expected SOCK_STREAM for TCP got : %u . Ignoring command.", cc.type);
+                    return 1;
+                }
+            }
+            else
+            {
+                if(cc.type != SOCK_DGRAM)
+                {
+                    printf("NETDevice Warning : Expected SOCK_DGRAM for UDP got : %u . Ignoring command.", cc.type);
+                    return 1;
+                } 
+            }
+
+            int okay = -255;
+            uint16_t idx = sockpool_create_socket(nd->socket_pool, cc.domain, cc.type, cc.protocol, cc.ipAddress, cc.port, cc.blocking, &okay);
+
+            if(0 != okay)
+            {
+                // Error creating socket.
+                vm->registers[11] = 0;
+                return 1;
+            }
+
+            // Place '1' in the result byte of r11 and place idx in the following 2 bytes
+            vm->registers[11] = ( (uint64_t)1 << 56 ) | (uint64_t)idx << 40 ;
+            return 1;
+        }
+        case NABLA_NET_DEVICE_COMMAND_DELETE:
+        {
+            uint16_t id = util_extract_two_bytes(vm->registers[10], 4);
+
+            sockpool_delete_socket(nd->socket_pool, id);
+            return 1;
+        }
+        case NABLA_NET_DEVICE_COMMAND_CLOSE :
+        {
+            uint16_t id = util_extract_two_bytes(vm->registers[10], 4);
+
+            sockpool_close_socket(nd->socket_pool, id);
+            return 1;
+        }
+        case NABLA_NET_DEVICE_COMMAND_POKE  :
+        {
+            process_execute_poke_command(nd, vm);
+            return 1;
+        }
+        default:
+            // Just because this happens, doesn't mean much. It just means the command wasn't a 'shared' command
+            break;
+    }
+
+    // If we make it here the command wasn't shared and the caller needs to attempt to decode it
+    return 0;
+}
+
+// --------------------------------------------------------------
 //
 // --------------------------------------------------------------
 
 void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 {
     printf("process_tcp_out\n");
+
+    //  --------------------- Check 'shared' commands first ---------------------------
+    //
+    if( 1 ==  process_check_for_common_command(nd, vm, NABLA_NET_DEVICE_SUB_ID_TCP_OUT) )
+    {
+        return;
+    }
+
+    uint8_t command = util_extract_byte(vm->registers[10], 5);
+    uint16_t object_id = util_extract_two_bytes(vm->registers[10], 4);
+
+    //  --------------------- Check 'specific' commands second ---------------------------
+    //
+    switch(command)
+    {
+        case NABLA_NET_DEVICE_COMMAND_TCP_OUT_CONNECT :
+        {
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            int result = -255;
+            sockets_connect(ns, &result);
+
+            if(-1 == result)
+            {
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            vm->registers[11] = 1;
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_TCP_OUT_SEND    :
+        {
+            // Get socket object.
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+                vm->registers[11] = 0;
+                return;
+            }
+            
+            // Extract information for send
+            uint16_t num_bytes = util_extract_two_bytes(vm->registers[10], 2);
+
+            uint32_t gs_start_addr = (uint32_t)util_extract_two_bytes(vm->registers[11], 7) << 16 |
+                                     (uint32_t)util_extract_two_bytes(vm->registers[11], 5);
+            uint32_t gs_end_addr   = (uint32_t)util_extract_two_bytes(vm->registers[11], 3) << 16 |
+                                     (uint32_t)util_extract_two_bytes(vm->registers[11], 1);
+
+            // Error check
+            /*
+             If NUM BYTES is larger than what could be contained by the start and 
+             end address given, the send will be cancelled and an error will be 
+             reported in r11.
+            */
+            if(num_bytes > abs(gs_start_addr - gs_end_addr)* 8)
+            {
+                vm->registers[11] = 0;
+                return;
+            }
+
+            char * encoded  = process_encode_frame_data(vm, num_bytes, gs_start_addr, gs_end_addr);
+
+            if(encoded == NULL)
+            {
+                vm->registers[11] = 0;
+                return;
+            }
+
+            // Send the data
+            int result = -255;
+            sockets_send(ns, encoded, &result);
+
+            free(encoded);
+
+            if(result == -1)
+            {
+                vm->registers[11] = 0;
+                return;
+            }
+
+            vm->registers[11] = 1;
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_TCP_OUT_RECEIVE :
+        {
+            // Extract information for recv
+            uint16_t num_bytes = util_extract_two_bytes(vm->registers[10], 2);
+
+            uint32_t gs_start_addr = (uint32_t)util_extract_two_bytes(vm->registers[11], 7) << 16 |
+                                     (uint32_t)util_extract_two_bytes(vm->registers[11], 5);
+            uint32_t gs_end_addr   = (uint32_t)util_extract_two_bytes(vm->registers[11], 3) << 16 |
+                                     (uint32_t)util_extract_two_bytes(vm->registers[11], 1);
+
+            // Error check
+            /*
+             If NUM BYTES is larger than what could be contained by the start and 
+             end address given, the send will be cancelled and an error will be 
+             reported in r11.
+            */
+            if(num_bytes > abs(gs_start_addr - gs_end_addr)* 8)
+            {
+                vm->registers[11] = 0;
+                return;
+            }
+
+            // Get socket object.
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+                vm->registers[11] = 0;
+                return;
+            }
+
+            // Build a buffer to receive data
+            char * recvBuffer = (char*)malloc(sizeof(char) * num_bytes);
+            if(recvBuffer == NULL)
+            {
+                vm->registers[11] = 0;
+                return;
+            }
+
+            // Attempt recv
+            int bytes_received = -255;
+            sockets_recv(ns, recvBuffer, num_bytes, &bytes_received);
+
+            // If we didn't get anything indicate it and return
+            if(bytes_received <= 0)
+            {
+                free(recvBuffer);
+                vm->registers[11] = 0;
+                return;
+            }
+
+            if( -1 == process_decode_frame_from_data(vm, recvBuffer, bytes_received, gs_start_addr, gs_end_addr) )
+            {
+                vm->registers[11] = 0;
+            }
+            else
+            {
+                // Bytes received guaranteed to be > 0 if this is reached
+                vm->registers[11] = (uint64_t)bytes_received;
+            }
+
+            free(recvBuffer);
+            return;
+        }
+        default:
+            return;
+    }
 }
 
 // --------------------------------------------------------------
@@ -156,67 +446,14 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
     printf("process_tcp_in\n");
 #endif
 
-    uint8_t command = util_extract_byte(vm->registers[10], 5);
-
     //  --------------------- Check 'shared' commands first ---------------------------
     //
-    switch(command)
+    if( 1 ==  process_check_for_common_command(nd, vm, NABLA_NET_DEVICE_SUB_ID_TCP_IN) )
     {
-        case NABLA_NET_DEVICE_COMMAND_CREATE:
-        {
-            struct CommandCreate cc = process_assemble_command_create(vm);
-
-            if(cc.domain != AF_INET)
-            {
-                // Right now we need to specify AF_INET, but we don't support anything else
-                // so this is an error.
-                printf("NETDevice Error : Incorrect domain given for socket create. Currently only supports AF_INET\n");
-                return;
-            }
-
-            if(cc.type != SOCK_STREAM)
-            {
-                printf("NETDevice Warning : Expected SOCK_STREAM for TCP IN got : %u . Ignoring command.", cc.type);
-                return;
-            }
-
-            int okay = -255;
-            uint16_t idx = sockpool_create_socket(nd->socket_pool, cc.domain, cc.type, cc.protocol, cc.ipAddress, cc.port, cc.blocking, &okay);
-
-            if(0 != okay)
-            {
-                // Error creating socket.
-                vm->registers[11] = 0;
-                return;
-            }
-
-            // Place '1' in the result byte of r11 and place idx in the following 2 bytes
-            vm->registers[11] = ( (uint64_t)1 << 56 ) | (uint64_t)idx << 40 ;
-            return;
-        }
-        case NABLA_NET_DEVICE_COMMAND_DELETE:
-        {
-            uint16_t id = util_extract_two_bytes(vm->registers[10], 4);
-
-            sockpool_delete_socket(nd->socket_pool, id);
-            return;
-        }
-        case NABLA_NET_DEVICE_COMMAND_CLOSE :
-        {
-            uint16_t id = util_extract_two_bytes(vm->registers[10], 4);
-
-            sockpool_close_socket(nd->socket_pool, id);
-            return;
-        }
-        case NABLA_NET_DEVICE_COMMAND_POKE  :
-        {
-            process_execute_poke_command(nd, vm);
-            return;
-        }
-        default:
-            // Just because this happens, doesn't mean much. It just means the command wasn't a 'shared' command
-            break;
+        return;
     }
+
+    uint8_t command = util_extract_byte(vm->registers[10], 5);
 
     // All of the specific commands for TCP IN has an 'id' associated
     //
@@ -328,6 +565,31 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
 void process_udp_out(struct NETDevice * nd, struct VM * vm)
 {
     printf("process_udp_out\n");
+    
+    //  --------------------- Check 'shared' commands first ---------------------------
+    //
+    if( 1 ==  process_check_for_common_command(nd, vm, NABLA_NET_DEVICE_SUB_ID_UDP_OUT) )
+    {
+        return;
+    }
+
+    uint8_t command = util_extract_byte(vm->registers[10], 5);
+
+    //  --------------------- Check 'specific' commands second ---------------------------
+    //
+    switch(command)
+    {
+        case NABLA_NET_DEVICE_COMMAND_UDP_OUT_SEND   :
+        {
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_UDP_OUT_RECEIVE:
+        {
+            return;
+        }
+        default:
+            return;
+    }
 }
 
 // --------------------------------------------------------------
@@ -337,6 +599,35 @@ void process_udp_out(struct NETDevice * nd, struct VM * vm)
 void process_udp_in(struct NETDevice * nd, struct VM * vm)
 {
     printf("process_udp_in\n");
+    
+    //  --------------------- Check 'shared' commands first ---------------------------
+    //
+    if( 1 ==  process_check_for_common_command(nd, vm, NABLA_NET_DEVICE_SUB_ID_UDP_IN) )
+    {
+        return;
+    }
+
+    uint8_t command = util_extract_byte(vm->registers[10], 5);
+
+    //  --------------------- Check 'specific' commands second ---------------------------
+    //
+    switch(command)
+    {
+        case NABLA_NET_DEVICE_COMMAND_UDP_IN_BIND   :
+        {
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_UDP_IN_SEND   :
+        {
+            return;
+        }
+        case NABLA_NET_DEVICE_COMMAND_UDP_IN_RECEIVE:
+        {
+            return;
+        }
+        default:
+            return;
+    }
 }
 
 // --------------------------------------------------------------

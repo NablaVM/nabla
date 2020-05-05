@@ -209,7 +209,7 @@ then the new nettcpout object's ID will be in the following 2 bytes.
         0000 1011 | 0000 0000 | ‭0001 0100‬ | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
 Requests a connection to the remote as-per the information given to the object upon its creation.
-If the connection is a success, register 11 will be '1' if it fails, it will be '0'.
+If it is a success, r11 will contain a '0' if it fails, it will be '1'
 
 **send**
 
@@ -229,7 +229,7 @@ be contained by the start and end address given, the send will be cancelled and 
 in r11.
 
 The network object will attempt to send the information given the settings. If it is a success, r11 will
-contain a '1' if it fails, it will be '0'
+contain a '0' if it fails, it will be '1'
 
 **receive**
 
@@ -249,7 +249,7 @@ could be contained by the global stack given the addresses, the receive will be 
 will be reported in r11.
 
 The network object will attempt to receive information up-to the size given in NUM BYTES. If it is a success
-r11 will contain '1' otherwise it will be '0'
+r11 will contain the number of bytes received, otherwise it will be '0'
 
 ## **netinudp commands**
 
