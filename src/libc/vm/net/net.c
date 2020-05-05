@@ -173,7 +173,7 @@ char * process_encode_frame_data(struct VM * vm, uint16_t num_bytes, uint32_t gs
 
 int process_decode_frame_from_data(struct VM * vm, char * data, uint16_t num_bytes, uint32_t gs_start_addr, uint32_t gs_end_addr)
 {
-
+    printf("Decode : %s\n", data);
     return -1;
 }
 
@@ -236,7 +236,8 @@ uint8_t process_check_for_common_command(struct NETDevice * nd, struct VM * vm, 
             }
 
             // Place '1' in the result byte of r11 and place idx in the following 2 bytes
-            vm->registers[11] = ( (uint64_t)1 << 56 ) | (uint64_t)idx << 40 ;
+            vm->registers[11] = ( (uint64_t)1 << 56 ) | ((uint64_t)idx << 40) ;
+
             return 1;
         }
         case NABLA_NET_DEVICE_COMMAND_DELETE:
@@ -284,6 +285,9 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 
     uint8_t command = util_extract_byte(vm->registers[10], 5);
     uint16_t object_id = util_extract_two_bytes(vm->registers[10], 4);
+
+
+    printf(">>>>>>>>> r11 = %lu", vm->registers[11]);
 
     //  --------------------- Check 'specific' commands second ---------------------------
     //
@@ -369,6 +373,8 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
         }
         case NABLA_NET_DEVICE_COMMAND_TCP_OUT_RECEIVE :
         {
+            printf(">>> recv\n");
+
             // Extract information for recv
             uint16_t num_bytes = util_extract_two_bytes(vm->registers[10], 2);
 
@@ -376,6 +382,8 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
                                      (uint32_t)util_extract_two_bytes(vm->registers[11], 5);
             uint32_t gs_end_addr   = (uint32_t)util_extract_two_bytes(vm->registers[11], 3) << 16 |
                                      (uint32_t)util_extract_two_bytes(vm->registers[11], 1);
+
+            printf(">>> bytes: %u | gs start: %u | gs end: %u\n", num_bytes, gs_start_addr, gs_end_addr);
 
             // Error check
             /*
@@ -385,6 +393,7 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
             */
             if(num_bytes > abs(gs_start_addr - gs_end_addr)* 8)
             {
+                printf(">>> expecting too many bytes\n");
                 vm->registers[11] = 0;
                 return;
             }
@@ -394,14 +403,18 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 
             if(ns == NULL)
             {
+                printf(">>> ns idx %u was null\n", object_id);
                 vm->registers[11] = 0;
                 return;
             }
+
+            printf("Using nabla socket : %u for recv\n", object_id);
 
             // Build a buffer to receive data
             char * recvBuffer = (char*)malloc(sizeof(char) * num_bytes);
             if(recvBuffer == NULL)
             {
+                printf(">>> failed to build recv buffer\n");
                 vm->registers[11] = 0;
                 return;
             }
@@ -413,6 +426,8 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
             // If we didn't get anything indicate it and return
             if(bytes_received <= 0)
             {
+                printf(">>> Recvd <= 0 bytes\n");
+
                 free(recvBuffer);
                 vm->registers[11] = 0;
                 return;
@@ -420,6 +435,7 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 
             if( -1 == process_decode_frame_from_data(vm, recvBuffer, bytes_received, gs_start_addr, gs_end_addr) )
             {
+                printf(">>> Failed to decode data \n");
                 vm->registers[11] = 0;
             }
             else
@@ -549,7 +565,8 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
             }
 
             // Place '1' in the result byte of r11 and place new_connection_id in the following 2 bytes
-            vm->registers[11] = ( (uint64_t)1 << 56 ) | (uint64_t)new_connection_id << 40 ;
+            vm->registers[11] = ( (uint64_t)1 << 56 ) | ((uint64_t)new_connection_id << 40) ;
+            
             return;
         }
         default:

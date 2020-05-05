@@ -250,6 +250,9 @@ int vm_cycle(struct VM* vm, uint64_t n)
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = (lhs << rhs);
 
+                if(dest == 11)
+                    printf("LSH : result: %ld\n", vm->registers[dest]);
+
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("LSH : result: %ld\n", vm->registers[dest]);
 #endif
@@ -261,6 +264,12 @@ int vm_cycle(struct VM* vm, uint64_t n)
                 uint8_t dest =  util_extract_byte(ins, 6);
                 run_get_arith_lhs_rhs(vm, id, ins, &lhs, &rhs);
                 vm->registers[dest] = (lhs >> rhs);
+
+
+                if(dest == 11)
+                printf("RSH : result: %ld\n", vm->registers[dest]);
+
+
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                 printf("RSH : result: %ld\n", vm->registers[dest]);
 #endif

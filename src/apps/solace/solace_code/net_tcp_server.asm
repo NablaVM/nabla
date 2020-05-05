@@ -337,10 +337,12 @@ expand_stack:
     lsh r2 $0  $48  ; net out tcp
     lsh r3 $22 $40  ; recv 
     lsh r4 r11 $24  ; socket id
+    lsh r5 $2000 $8 ; bytes to recv
 
     or r1 r1 r2 
     or r1 r1 r3
     or r1 r1 r4
+    or r1 r1 r5
 
     ; r1 now contains the command to recv
 
