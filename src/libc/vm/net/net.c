@@ -12,8 +12,7 @@
 
 #define NABLA_NET_DEVICE_SUB_ID_TCP_OUT   0 
 #define NABLA_NET_DEVICE_SUB_ID_TCP_IN    1 
-#define NABLA_NET_DEVICE_SUB_ID_UDP_OUT  10 
-#define NABLA_NET_DEVICE_SUB_ID_UDP_IN   11 
+#define NABLA_NET_DEVICE_SUB_ID_UDP      10 
 #define NABLA_NET_DEVICE_SUB_ID_SHUTDOWN 50 
 #define NABLA_NET_DEVICE_SUB_ID_RESTART  55 
 
@@ -30,12 +29,9 @@
 #define NABLA_NET_DEVICE_COMMAND_TCP_OUT_SEND    21
 #define NABLA_NET_DEVICE_COMMAND_TCP_OUT_RECEIVE 22
 
-#define NABLA_NET_DEVICE_COMMAND_UDP_IN_BIND    70
-#define NABLA_NET_DEVICE_COMMAND_UDP_IN_SEND    71
-#define NABLA_NET_DEVICE_COMMAND_UDP_IN_RECEIVE 72
-
-#define NABLA_NET_DEVICE_COMMAND_UDP_OUT_SEND    80
-#define NABLA_NET_DEVICE_COMMAND_UDP_OUT_RECEIVE 81
+#define NABLA_NET_DEVICE_COMMAND_UDP_BIND    70
+#define NABLA_NET_DEVICE_COMMAND_UDP_SEND    71
+#define NABLA_NET_DEVICE_COMMAND_UDP_RECEIVE 72
 
 // The network device
 struct NETDevice
@@ -156,12 +152,17 @@ char * process_encode_frame_data(struct VM * vm, uint16_t num_bytes, uint32_t gs
 
         for(int i = 7; i >= 0; i--)
         {
+            if(encoded_idx > num_bytes)
+            {
+                goto retire_process_encode_loop;
+            }
             uint8_t c = frame >> i * 8;
 
             encoded[encoded_idx] = (char)c;
             encoded_idx++;
         }
     }
+retire_process_encode_loop:
 
     return encoded;
 }
@@ -173,8 +174,34 @@ char * process_encode_frame_data(struct VM * vm, uint16_t num_bytes, uint32_t gs
 
 int process_decode_frame_from_data(struct VM * vm, char * data, uint16_t num_bytes, uint32_t gs_start_addr, uint32_t gs_end_addr)
 {
-    printf("Decode : %s\n", data);
-    return -1;
+    uint64_t d_idx = 0;
+
+    for(uint32_t gs_idx = gs_start_addr; gs_idx < gs_end_addr; gs_idx++)
+    {
+        uint64_t frame = 0;
+
+        // Consume 8
+        for(int c_idx = 7; c_idx >= 0; c_idx--)
+        {
+            frame |= ((uint64_t)((uint8_t)data[d_idx]) << c_idx * 8);
+            d_idx++;
+
+            if(d_idx > num_bytes)
+            {
+                break;
+            }
+        }
+
+        int setResult = -255;
+        stack_set_value_at(gs_idx, frame, vm->globalStack, &setResult);
+
+        if(setResult != STACK_OKAY)
+        {
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
 // --------------------------------------------------------------
@@ -274,7 +301,9 @@ uint8_t process_check_for_common_command(struct NETDevice * nd, struct VM * vm, 
 
 void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("process_tcp_out\n");
+#endif
 
     //  --------------------- Check 'shared' commands first ---------------------------
     //
@@ -285,9 +314,6 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 
     uint8_t command = util_extract_byte(vm->registers[10], 5);
     uint16_t object_id = util_extract_two_bytes(vm->registers[10], 4);
-
-
-    printf(">>>>>>>>> r11 = %lu", vm->registers[11]);
 
     //  --------------------- Check 'specific' commands second ---------------------------
     //
@@ -373,8 +399,6 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
         }
         case NABLA_NET_DEVICE_COMMAND_TCP_OUT_RECEIVE :
         {
-            printf(">>> recv\n");
-
             // Extract information for recv
             uint16_t num_bytes = util_extract_two_bytes(vm->registers[10], 2);
 
@@ -382,8 +406,6 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
                                      (uint32_t)util_extract_two_bytes(vm->registers[11], 5);
             uint32_t gs_end_addr   = (uint32_t)util_extract_two_bytes(vm->registers[11], 3) << 16 |
                                      (uint32_t)util_extract_two_bytes(vm->registers[11], 1);
-
-            printf(">>> bytes: %u | gs start: %u | gs end: %u\n", num_bytes, gs_start_addr, gs_end_addr);
 
             // Error check
             /*
@@ -393,7 +415,6 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
             */
             if(num_bytes > abs(gs_start_addr - gs_end_addr)* 8)
             {
-                printf(">>> expecting too many bytes\n");
                 vm->registers[11] = 0;
                 return;
             }
@@ -403,18 +424,14 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 
             if(ns == NULL)
             {
-                printf(">>> ns idx %u was null\n", object_id);
                 vm->registers[11] = 0;
                 return;
             }
-
-            printf("Using nabla socket : %u for recv\n", object_id);
 
             // Build a buffer to receive data
             char * recvBuffer = (char*)malloc(sizeof(char) * num_bytes);
             if(recvBuffer == NULL)
             {
-                printf(">>> failed to build recv buffer\n");
                 vm->registers[11] = 0;
                 return;
             }
@@ -426,8 +443,6 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
             // If we didn't get anything indicate it and return
             if(bytes_received <= 0)
             {
-                printf(">>> Recvd <= 0 bytes\n");
-
                 free(recvBuffer);
                 vm->registers[11] = 0;
                 return;
@@ -435,19 +450,19 @@ void process_tcp_out(struct NETDevice * nd, struct VM * vm)
 
             if( -1 == process_decode_frame_from_data(vm, recvBuffer, bytes_received, gs_start_addr, gs_end_addr) )
             {
-                printf(">>> Failed to decode data \n");
                 vm->registers[11] = 0;
             }
             else
             {
                 // Bytes received guaranteed to be > 0 if this is reached
-                vm->registers[11] = (uint64_t)bytes_received;
+                vm->registers[11] = (uint64_t)(bytes_received / 8);
             }
 
             free(recvBuffer);
             return;
         }
         default:
+            vm->registers[11] = 0;
             return;
     }
 }
@@ -566,7 +581,6 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
 
             // Place '1' in the result byte of r11 and place new_connection_id in the following 2 bytes
             vm->registers[11] = ( (uint64_t)1 << 56 ) | ((uint64_t)new_connection_id << 40) ;
-            
             return;
         }
         default:
@@ -579,70 +593,213 @@ void process_tcp_in(struct NETDevice * nd, struct VM * vm)
 //
 // --------------------------------------------------------------
 
-void process_udp_out(struct NETDevice * nd, struct VM * vm)
+void process_udp(struct NETDevice * nd, struct VM * vm)
 {
-    printf("process_udp_out\n");
-    
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+    printf("process_udp\n");
+#endif 
+
     //  --------------------- Check 'shared' commands first ---------------------------
     //
-    if( 1 ==  process_check_for_common_command(nd, vm, NABLA_NET_DEVICE_SUB_ID_UDP_OUT) )
+    if( 1 ==  process_check_for_common_command(nd, vm, NABLA_NET_DEVICE_SUB_ID_UDP) )
     {
         return;
     }
 
     uint8_t command = util_extract_byte(vm->registers[10], 5);
 
-    //  --------------------- Check 'specific' commands second ---------------------------
-    //
-    switch(command)
-    {
-        case NABLA_NET_DEVICE_COMMAND_UDP_OUT_SEND   :
-        {
-            return;
-        }
-        case NABLA_NET_DEVICE_COMMAND_UDP_OUT_RECEIVE:
-        {
-            return;
-        }
-        default:
-            return;
-    }
-}
-
-// --------------------------------------------------------------
-//
-// --------------------------------------------------------------
-
-void process_udp_in(struct NETDevice * nd, struct VM * vm)
-{
-    printf("process_udp_in\n");
-    
-    //  --------------------- Check 'shared' commands first ---------------------------
-    //
-    if( 1 ==  process_check_for_common_command(nd, vm, NABLA_NET_DEVICE_SUB_ID_UDP_IN) )
-    {
-        return;
-    }
-
-    uint8_t command = util_extract_byte(vm->registers[10], 5);
+    uint16_t object_id = util_extract_two_bytes(vm->registers[10], 4);
 
     //  --------------------- Check 'specific' commands second ---------------------------
     //
     switch(command)
     {
-        case NABLA_NET_DEVICE_COMMAND_UDP_IN_BIND   :
+        case NABLA_NET_DEVICE_COMMAND_UDP_BIND   :
         {
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            int result = -255;
+            sockets_bind(ns, &result);
+
+            if(result < 0)
+            {
+                // Mark failure, return
+                vm->registers[11] = 0;
+                return;
+            }
+
+            // Success
+            vm->registers[11] = 1;
             return;
         }
-        case NABLA_NET_DEVICE_COMMAND_UDP_IN_SEND   :
+        case NABLA_NET_DEVICE_COMMAND_UDP_SEND   :
         {
+            uint16_t remote_object_id = util_extract_two_bytes(vm->registers[12], 1);
+
+            // Get socket object.
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            // Get remote socket object.
+            nabla_socket * remote_ns = sockpool_get_socket(nd->socket_pool, remote_object_id);
+
+            if(remote_ns == NULL)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            // Extract information for send
+            uint16_t num_bytes = util_extract_two_bytes(vm->registers[10], 2);
+
+            uint32_t gs_start_addr = (uint32_t)util_extract_two_bytes(vm->registers[11], 7) << 16 |
+                                     (uint32_t)util_extract_two_bytes(vm->registers[11], 5);
+            uint32_t gs_end_addr   = (uint32_t)util_extract_two_bytes(vm->registers[11], 3) << 16 |
+                                     (uint32_t)util_extract_two_bytes(vm->registers[11], 1);
+
+            // Error check
+            /*
+             If NUM BYTES is larger than what could be contained by the start and 
+             end address given, the send will be cancelled and an error will be 
+             reported in r11.
+            */
+            if(num_bytes > abs(gs_start_addr - gs_end_addr)* 8)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            char * encoded  = process_encode_frame_data(vm, num_bytes, gs_start_addr, gs_end_addr);
+
+            if(encoded == NULL)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            // Send the data
+            int result = -255;
+            sockets_connectionless_send(ns, remote_ns, encoded);
+
+            free(encoded);
+
+            if(result == -1)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            vm->registers[11] = 1;
+            vm->registers[12] = 0;
+
             return;
         }
-        case NABLA_NET_DEVICE_COMMAND_UDP_IN_RECEIVE:
+        case NABLA_NET_DEVICE_COMMAND_UDP_RECEIVE:
         {
+            uint16_t remote_object_id = util_extract_two_bytes(vm->registers[12], 1);
+
+            // Extract information for recv
+            uint16_t num_bytes = util_extract_two_bytes(vm->registers[10], 2);
+
+            uint32_t gs_start_addr = (uint32_t)util_extract_two_bytes(vm->registers[11], 7) << 16 |
+                                     (uint32_t)util_extract_two_bytes(vm->registers[11], 5);
+            uint32_t gs_end_addr   = (uint32_t)util_extract_two_bytes(vm->registers[11], 3) << 16 |
+                                     (uint32_t)util_extract_two_bytes(vm->registers[11], 1);
+
+
+
+            printf("obj_id %u | rem_obj_id %u | gs_start %u | gs_end %u\n",
+                   object_id, remote_object_id, gs_start_addr, gs_end_addr);
+
+            // Error check
+            /*
+             If NUM BYTES is larger than what could be contained by the start and 
+             end address given, the send will be cancelled and an error will be 
+             reported in r11.
+            */
+            if(num_bytes > abs(gs_start_addr - gs_end_addr)* 8)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            // Get socket object.
+            nabla_socket * ns = sockpool_get_socket(nd->socket_pool, object_id);
+
+            if(ns == NULL)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            // Get remote socket object.
+            nabla_socket * remote_ns = sockpool_get_socket(nd->socket_pool, remote_object_id);
+
+            if(remote_ns == NULL)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            // Build a buffer to receive data
+            char * recvBuffer = (char*)malloc(sizeof(char) * num_bytes);
+            if(recvBuffer == NULL)
+            {
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            // Attempt recv
+            int bytes_received = -255;
+            sockets_connectionless_recv(remote_ns, ns, recvBuffer, num_bytes, &bytes_received);
+
+            // If we didn't get anything indicate it and return
+            if(bytes_received <= 0)
+            {
+                free(recvBuffer);
+                vm->registers[11] = 0;
+                vm->registers[12] = 0;
+                return;
+            }
+
+            if( -1 == process_decode_frame_from_data(vm, recvBuffer, bytes_received, gs_start_addr, gs_end_addr) )
+            {
+                vm->registers[11] = 0;
+            }
+            else
+            {
+                // Bytes received guaranteed to be > 0 if this is reached
+                vm->registers[11] = (uint64_t)(bytes_received / 8);
+            }
+
+            vm->registers[12] = 0;
+            free(recvBuffer);
             return;
         }
         default:
+            vm->registers[11] = 0;
+            vm->registers[12] = 0;
             return;
     }
 }
@@ -748,20 +905,12 @@ void net_process(struct NETDevice * nd, struct VM * vm)
             process_tcp_in(nd, vm);
             break;
         }
-        case NABLA_NET_DEVICE_SUB_ID_UDP_OUT :
+        case NABLA_NET_DEVICE_SUB_ID_UDP :
         {
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-            printf("net_out_udp\n");
+            printf("net_udp\n");
 #endif
-            process_udp_out(nd, vm);
-            break;
-        }
-        case NABLA_NET_DEVICE_SUB_ID_UDP_IN :
-        {
-#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-            printf("net_in_udp\n");
-#endif
-            process_udp_in(nd, vm);
+            process_udp(nd, vm);
             break;
         }
         case NABLA_NET_DEVICE_SUB_ID_SHUTDOWN:

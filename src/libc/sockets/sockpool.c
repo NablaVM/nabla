@@ -152,11 +152,6 @@ void sockpool_delete_socket(sockpool * sp, uint16_t idx)
 {
     assert(sp);
 
-    if(sp->size == 0)
-    {
-        return;
-    }
-
     if(sp->pool[idx] == NULL)
     {
         return;
@@ -168,7 +163,8 @@ void sockpool_delete_socket(sockpool * sp, uint16_t idx)
 
     sp->pool[idx] = NULL;
 
-    sp->size--;
+    if(sp->size > 0)
+        sp->size--;
 }
 
 // ---------------------------------------------------------------

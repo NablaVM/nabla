@@ -1,3 +1,9 @@
+;
+;   This TCP server can receive a single connection. It receives upto 2000 bytes, 
+;   prints the data on the screen, and responds with "Hello client, I am server"
+;   This can be used with the libc/sockets/example/tcpclient.c
+;
+
 .file "net_tcp"
 
 .init main
@@ -293,8 +299,6 @@ new_connection:
     
     call handle_connection
 
-    ; jmp loop ; We could jump back into the loop and get more
-
     ret
 >
 
@@ -303,6 +307,9 @@ new_connection:
 ;     Connection info in r11
 ;
 <handle_connection:
+
+    ; Save connection id because println will wipe it out
+    mov r9 r11
 
     ; Print 'new connection'
     mov r5 $5
@@ -325,18 +332,18 @@ expand_stack:
 
     ; Get new size of gs
     size r1 gs 
-    push ls r1 
+    push ls r1  
 
     ; Get the socket id for new connection
-    lsh r11 r11  $8      ; Get rid of result byte
-    rsh r11 r11  $48      ; Move id to LSB
+    lsh r9 r9  $8      ; Get rid of result byte
+    rsh r9 r9  $48     ; Move id to LSB
 
     ; Socket id of new connection now in r11
 
     lsh r1 $11 $56  ; Network device
     lsh r2 $0  $48  ; net out tcp
     lsh r3 $22 $40  ; recv 
-    lsh r4 r11 $24  ; socket id         ; Directly adding '1' here makes things work  - There is some issue going on here
+    lsh r4 r9  $24  ; socket id    
     lsh r5 $2000 $8 ; bytes to recv
 
     or r1 r1 r2 
@@ -350,6 +357,7 @@ expand_stack:
 
     pop r3 ls  ; end 
     pop r4 ls  ; begin
+    push ls r4
 
     lsh r4 r4 $32
 
@@ -382,6 +390,38 @@ success:
 
     ; Bring print functions in from user io to dump the 
     ; data from the client to stdout
+
+    ; Start of the gs data-in
+    pop r5 ls
+
+    add r6 r5 r11 ; Add number of stack frames produced to the start index
+
+    ; Print the data received to screen 
+    call println
+
+    ; ----------------------------------------------------------
+    ;               Respond back to client
+    ; ----------------------------------------------------------
+    ; Client should be in r9 still
+
+    lsh r1 $11 $56  ; Network device
+    lsh r2 $0  $48  ; net out tcp
+    lsh r3 $21 $40  ; send 
+    lsh r4 r9  $24  ; socket id    
+    lsh r5 $32 $8 ; bytes to send - Must be < (gs end - gs start * 8)
+
+    or r1 r1 r2 
+    or r1 r1 r3
+    or r1 r1 r4
+    or r1 r1 r5
+
+    ; Build stack source info (constant str)
+    lsh r3 $17 $32
+    lsh r4 $21 $0
+    or r11 r3 r4
+
+    ; Call send
+    mov r10 r1
 
     ret
 >

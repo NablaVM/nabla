@@ -44,6 +44,8 @@ int main(void)
 
     printf("sockets_recv | result : %i\n", result);
 
+    replyBuff[result] = '\0';
+
     printf("\n DATA FROM SERVER >> %s \n", replyBuff);
 
     //

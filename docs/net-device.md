@@ -41,8 +41,7 @@ SUB-IDs:
 |---              |---    |---                                    |  
 |    netouttcp    |  0    | Network outbound using tcp            |
 |    netintcp     |  1    | Network inbound  using tcp            |
-|    netoutudp    |  10   | Network outbound using udp            |
-|    netinudp     |  11   | Network inbound  using udp            |
+|    netudp       |  10   | Network outbound using udp            |
 |    shutdown     |  50   | Close and release all network objects |
 |    restart      |  55   | Shutdown, and reset network device    |
 
@@ -249,13 +248,13 @@ could be contained by the global stack given the addresses, the receive will be 
 will be reported in r11.
 
 The network object will attempt to receive information up-to the size given in NUM BYTES. If it is a success
-r11 will contain the number of bytes received, otherwise it will be '0'
+r11 will contain the number of stack frames produced from recv, otherwise it will be '0'
 
-## **netinudp commands**
+## **netudp commands**
 
 | Command         | VALUE | Description             |  
 |---              |---    |---                      |  
-|    bind         |  70   | Connect to a remote     |
+|    bind         |  70   | Bind object to socket   |
 |    send         |  71   | Send data to a remote   |
 |    receive      |  72   | Receive from a remote   |
 
@@ -282,10 +281,17 @@ If the bind command was a success, register 11 will read '1', otherwise '0'.
         [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
         0000 1011 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
+* Register 12 
+
+        [ -------------------------------- UNUSED -------------------------- ] [  Remote Object ID  ]
+        0000 1011 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
+
 In register 10 NUM BYTES is the number of bytes that are to be sent out. Register 11 contains the start
 and end address of the global stack where the bytes are stored. If NUM BYTES is larger than what could
 be contained by the start and end address given, the send will be cancelled and an error will be reported
 in r11.
+
+r12 is the socket used to identify the remote object
 
 The network object will attempt to send the information given the settings. If it is a success, r11 will
 contain a '1' if it fails, it will be '0'
@@ -302,60 +308,21 @@ contain a '1' if it fails, it will be '0'
         [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
         0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
-In register 10 NUM BYTES is the number of bytes allocated to be received. Register 11 contains the start
-and end address of the global stack where the bytes will be stored. If NUM BYTES is larger than what 
-could be contained by the global stack given the addresses, the receive will be cancelled and an error
-will be reported in r11.
+* Register 12 
 
-The network object will attempt to receive information up-to the size given in NUM BYTES. If it is a success
-r11 will contain '1' otherwise it will be '0'
-
-## **netoutudp commands**
-
-| Command         | VALUE | Description             |  
-|---              |---    |---                      |  
-|    send         |  80   | Send data to a remote   |
-|    receive      |  81   | Receive from a remote   |
-
-**send**
-
-* Register 10
-
-           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ ---- NUM BYTES ---- ]   UNUSED
-        0000 1011 | 0000 1010 | 0101 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
-
-* Register 11
-
-        [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
+        [ -------------------------------- UNUSED -------------------------- ] [  Remote Object ID  ]
         0000 1011 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
 
-In register 10 NUM BYTES is the number of bytes that are to be sent out. Register 11 contains the start
-and end address of the global stack where the bytes are stored. If NUM BYTES is larger than what could
-be contained by the start and end address given, the send will be cancelled and an error will be reported
-in r11.
-
-The network object will attempt to send the information given the settings. If it is a success, r11 will
-contain a '1' if it fails, it will be '0'
-
-**receive**
-
-* Register 10
-
-           ID         SUB-ID     COMMAND    [ ---- Object ID ---- ] [ ---- NUM BYTES ---- ]   UNUSED
-        0000 1011 | 0000 1010 | 0101 0001 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
-
-* Register 11
-
-        [ --------- GLOBAL STACK START ADDRESS ----- ]  [ --------- GLOBAL STACK END ADDRESS ----- ]
-        0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
-
 In register 10 NUM BYTES is the number of bytes allocated to be received. Register 11 contains the start
 and end address of the global stack where the bytes will be stored. If NUM BYTES is larger than what 
 could be contained by the global stack given the addresses, the receive will be cancelled and an error
 will be reported in r11.
 
+r12 is the socket used to identify the remote object
+
 The network object will attempt to receive information up-to the size given in NUM BYTES. If it is a success
-r11 will contain '1' otherwise it will be '0'
+r11 will contain number of stack frames produced by recv, otherwise it will be '0'
+
 
 ## **shutdown**
 
