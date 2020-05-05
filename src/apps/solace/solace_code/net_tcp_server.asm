@@ -336,7 +336,7 @@ expand_stack:
     lsh r1 $11 $56  ; Network device
     lsh r2 $0  $48  ; net out tcp
     lsh r3 $22 $40  ; recv 
-    lsh r4 r11 $24  ; socket id
+    lsh r4 r11 $24  ; socket id         ; Directly adding '1' here makes things work  - There is some issue going on here
     lsh r5 $2000 $8 ; bytes to recv
 
     or r1 r1 r2 
