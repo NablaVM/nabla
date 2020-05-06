@@ -30,8 +30,9 @@
 #define VM_SETTINGS_CALL_STACK_SIZE         VM_SETTINGS_MAX_FUNCTIONS * 3  // Each call requires 3 instructions, so allow one call for each function max
 #define VM_SETTINGS_MAX_IN_PER_FUCNTION      100000 // Each instruction is 8 bytes, so this could be X *VM_SETTINGS_MAX_FUNCTIONS * 8 bytes (currently 400mb)
 
-#define VM_SETTINGS_DEVICE_ADDRESS_IO  0x0A
-#define VM_SETTINGS_DEVICE_ADDRESS_NET 0x0B
+#define VM_SETTINGS_DEVICE_ADDRESS_IO   0x0A
+#define VM_SETTINGS_DEVICE_ADDRESS_NET  0x0B
+#define VM_SETTINGS_DEVICE_ADDRESS_HOST 0x0C
 
 #define VM_SETTINGS_DEVICE_CONFIG_NET_MAX_CONNECTIONS 1000
 
@@ -39,6 +40,7 @@
 //
 struct IODevice;
 struct NETDevice;
+struct HOSTDevice;
 
 //  A function of instructions
 //
@@ -71,6 +73,7 @@ struct VM
     // Devices
     struct IODevice  * io_device;   // IO Device
     struct NETDevice * net_device;  // NET Device
+    struct HOSTDevice* host_device; // HOST Device
 };
 
 /*
