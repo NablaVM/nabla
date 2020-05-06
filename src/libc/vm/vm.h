@@ -35,9 +35,10 @@
 
 #define VM_SETTINGS_DEVICE_CONFIG_NET_MAX_CONNECTIONS 1000
 
-/*
-    VM Structure - We need this public so binloader and other things can manipulate the specifics of the vm
-*/
+//  VM "Devices"
+//
+struct IODevice;
+struct NETDevice;
 
 //  A function of instructions
 //
@@ -52,16 +53,20 @@ struct FUNC
 //
 struct VM
 {
-    uint8_t  id;             // Specific vm id
-    uint64_t fp;             // Function pointer
-    uint64_t entryAddress;   // Entry function address listed in binary
-    uint64_t numberOfFunctions;
-    int64_t  registers[16];  // VM Registers
-    NablaStack globalStack;  // Shared 'global' stack
-    NablaStack callStack;    // Call stack
-    struct FUNC * functions; 
+    uint64_t fp;                    // Function pointer
+    uint64_t entryAddress;          // Entry function address listed in binary
+    uint64_t numberOfFunctions;     // Number of functions in vm
+    int64_t  registers[16];         // VM Registers
+    NablaStack globalStack;         // Shared 'global' stack
+    NablaStack callStack;           // Call stack
+    struct FUNC * functions;        // All functions in VM
+    struct FUNC * currentFunction;  // Pointer to the current function being used
+    uint8_t switchingFunction;      // Indicate that the vm is currently switching functions 
+    uint8_t isVmRunning;            // Flag to indicate if vm is running
+    uint8_t isVmInitialized;        // Flag to indicate if vm has been initialized
 
-   // struct IODevice * io;
+    struct IODevice  * io_device;   // IO Device
+    struct NETDevice * net_device;  // NET Device
 };
 
 /*
