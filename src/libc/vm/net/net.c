@@ -790,7 +790,9 @@ void process_udp(struct NETDevice * nd, struct VM * vm)
 
 void process_shutdown(struct NETDevice * nd)
 {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("process_shutdown\n");
+#endif 
 
     // Process shutdown can only happen when the device is active, so the socket_pool
     // should still be good, and active set to 1. 
@@ -809,8 +811,10 @@ void process_shutdown(struct NETDevice * nd)
 
 void process_restart(struct NETDevice * nd)
 {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("process_restart\n");
-    
+#endif
+
     // If the socket pool hasn't been closed out yet (from a shutdown), close it out
     if(nd->socket_pool != NULL)
     {
