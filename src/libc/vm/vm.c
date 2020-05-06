@@ -17,28 +17,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 typedef struct FUNC NFUNC;
 typedef struct VM NVM;
-
-
-static uint8_t   FILE_GLOBAL_INVOKED_VM_COUNT  = 0;
-static uint8_t   FILE_GLOBAL_IS_VM_RUNNING     = 0;
-static uint8_t   FILE_GLOBAL_IS_VM_INITIALIZED = 0;
-
-// The current function to get instructions from
-static NFUNC * currentFunction;
-
-// The IO Device
-static struct IODevice * io_device;
-
-// The NET Device
-static struct NETDevice * net_device;
-
-// Indicate if we are switching functions. When this is set, we don't want to increase the instruction pointer
-// as we have modified it as-per the guidance of an instruction. Either a call, or a return. In any case we want
-// to ensure the bottom of the loop doesn't increase the ip
-static uint8_t switchingFunction;
 
 /*
     ---------------------------------------------------------------------------------
@@ -72,15 +52,11 @@ NVM * vm_new()
 
     assert(vm->functions);
 
-    io_device = io_new();
-    assert(io_device);
+    vm->io_device = io_new();
+    assert(vm->io_device);
 
-    net_device = net_new();
-    assert(net_device);
-
-    FILE_GLOBAL_INVOKED_VM_COUNT++;
-
-    vm->id = FILE_GLOBAL_INVOKED_VM_COUNT;
+    vm->net_device = net_new();
+    assert(vm->net_device);
 
     vm->fp = 0; // Function pointer= 0;
 
@@ -102,6 +78,8 @@ NVM * vm_new()
         vm->functions[i].ip = 0;
     }
 
+    vm->isVmRunning = 0;
+
     return vm;
 }
 
@@ -111,8 +89,8 @@ NVM * vm_new()
 
 void vm_delete(NVM * vm)
 {
-    FILE_GLOBAL_IS_VM_RUNNING     = 0;
-    FILE_GLOBAL_IS_VM_INITIALIZED = 0;
+    vm->isVmRunning     = 0;
+    vm->isVmInitialized = 0;
     for(int i = 0; i <VM_SETTINGS_MAX_FUNCTIONS; i++)
     {
         stack_delete(vm->functions[i].instructions);
@@ -121,15 +99,9 @@ void vm_delete(NVM * vm)
     free(vm->functions);
     stack_delete(vm->globalStack);
     stack_delete(vm->callStack);
-    io_delete(io_device);
-    net_delete(net_device);
+    io_delete(vm->io_device);
+    net_delete(vm->net_device);
     free(vm);
-
-    // Should be, but lets be careful
-    if(FILE_GLOBAL_INVOKED_VM_COUNT > 0)
-    {
-        FILE_GLOBAL_INVOKED_VM_COUNT--;
-    }
 }
 
 // -----------------------------------------------------
@@ -168,7 +140,7 @@ int vm_init(struct VM* vm)
 {
     assert(vm);
 
-    if(FILE_GLOBAL_IS_VM_INITIALIZED)
+    if(vm->isVmInitialized)
     {
         perror("VM is already initialized\n");
         return VM_INIT_ERROR_ALREADY_INITIALIZED;
@@ -178,17 +150,17 @@ int vm_init(struct VM* vm)
     vm->fp = vm->entryAddress;
 
     // The current function to get instructions from
-    currentFunction = &vm->functions[vm->fp];
+    vm->currentFunction = &vm->functions[vm->fp];
 
     // Indicate if we are switching functions. When this is set, we don't want to increase the instruction pointer
     // as we have modified it as-per the guidance of an instruction. Either a call, or a return. In any case we want
     // to ensure the bottom of the loop doesn't increase the ip
-    switchingFunction = 0;
+    vm->switchingFunction = 0;
 
     // The current function's instruction pointer ( the instruction we want to fetch, decode, and execute )
-    currentFunction->ip = 0;
+    vm->currentFunction->ip = 0;
 
-    FILE_GLOBAL_IS_VM_INITIALIZED = 1;
+    vm->isVmInitialized = 1;
 
     return 0;
 }
@@ -202,7 +174,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
     for(uint64_t cycle = 0; cycle < n; cycle++)
     {
         int res = 0;
-        uint64_t ins = stack_value_at(currentFunction->ip, currentFunction->instructions, &res);
+        uint64_t ins = stack_value_at(vm->currentFunction->ip, vm->currentFunction->instructions, &res);
 
         if(res != STACK_OKAY)
         {
@@ -756,7 +728,7 @@ int vm_cycle(struct VM* vm, uint64_t n)
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                     printf("Callstack empty on yield. Exiting\n");
 #endif
-                    FILE_GLOBAL_IS_VM_RUNNING = 0;
+                    vm->isVmRunning = 0;
                     return 0;
                 }
 
@@ -769,15 +741,15 @@ int vm_cycle(struct VM* vm, uint64_t n)
                 assert(getYieldRetData == STACK_OKAY);
 
                 // Increase the current instruction pointer so when we're called again we start off where we left
-                currentFunction->ip++;
+                vm->currentFunction->ip++;
 
                 vm->fp = func_to;
 
-                currentFunction = &vm->functions[vm->fp];
+                vm->currentFunction = &vm->functions[vm->fp];
 
-                currentFunction->ip = ret_roi;
+                vm->currentFunction->ip = ret_roi;
 
-                switchingFunction = 1;
+                vm->switchingFunction = 1;
 
                 break;
             }
@@ -816,9 +788,9 @@ int vm_cycle(struct VM* vm, uint64_t n)
 
                 vm->fp = destAddress;
 
-                currentFunction = &vm->functions[vm->fp];
+                vm->currentFunction = &vm->functions[vm->fp];
 
-                switchingFunction = 1;
+                vm->switchingFunction = 1;
 
                 break;
             }          
@@ -830,7 +802,7 @@ vm_attempt_force_return:
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
                     printf("Callstack empty. Exiting\n");
 #endif
-                    FILE_GLOBAL_IS_VM_RUNNING = 0;
+                    vm->isVmRunning = 0;
                     return 0;
                 }
 
@@ -843,35 +815,35 @@ vm_attempt_force_return:
                 assert(getRetData == STACK_OKAY);
 
                 // Clear out the function's local call stack
-                while(0 == stack_is_empty(currentFunction->localStack))
+                while(0 == stack_is_empty(vm->currentFunction->localStack))
                 {
-                    int k; stack_pop(currentFunction->localStack, &k); assert(k == STACK_OKAY);
+                    int k; stack_pop(vm->currentFunction->localStack, &k); assert(k == STACK_OKAY);
                 }
 
                 // Set the current function's return instruction back to 0
-                currentFunction->ip = 0;
+                vm->currentFunction->ip = 0;
 
                 vm->fp = func_to;
 
-                currentFunction = &vm->functions[vm->fp];
+                vm->currentFunction = &vm->functions[vm->fp];
 
-                currentFunction->ip = ret_roi;
+                vm->currentFunction->ip = ret_roi;
 
-                switchingFunction = 1;
+                vm->switchingFunction = 1;
 
                 break; // Yes
             }          
             case INS_EXIT :
             {
-                FILE_GLOBAL_IS_VM_RUNNING = 0;
+                vm->isVmRunning = 0;
                 return 0;
             }    
             default:
             {
-                uint64_t stackEnd = stack_get_size(currentFunction->instructions);
-                if(currentFunction->ip == stackEnd)
+                uint64_t stackEnd = stack_get_size(vm->currentFunction->instructions);
+                if(vm->currentFunction->ip == stackEnd)
                 {
-                    FILE_GLOBAL_IS_VM_RUNNING = 0;
+                    vm->isVmRunning = 0;
                     return 0;
                 }
                 return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
@@ -884,16 +856,21 @@ vm_attempt_force_return:
 
         if(vm->registers[10] != 0)
         {
+            /*
+                Devices take in both device pointer, AND VM, as the interface for the devices 
+                has been set as-such to ensure that the device is logically seperated from the 
+                machine. This gives us some flex for future work
+            */
             uint8_t device_id = util_extract_byte(vm->registers[10], 7);
 
             switch(device_id)
             {
             case VM_SETTINGS_DEVICE_ADDRESS_IO:
-                io_process(io_device, vm);
+                io_process(vm->io_device, vm);
                 break;
 
             case VM_SETTINGS_DEVICE_ADDRESS_NET:
-                net_process(net_device, vm);
+                net_process(vm->net_device, vm);
                 break;
 
             default:
@@ -908,15 +885,15 @@ vm_attempt_force_return:
 
         //  Increase the instruction pointer if we aren't explicitly told not to
         //
-        if(0 == switchingFunction)
+        if(0 == vm->switchingFunction)
         {
-            currentFunction->ip++;
+            vm->currentFunction->ip++;
         }
         else
         {
         // This was only to ensure we didn't inc the ip, and since we didn't we will un-flag this
         // so we can step through the next (funky fresh) function
-            switchingFunction = 0;
+            vm->switchingFunction = 0;
         }
     }
 
@@ -930,7 +907,9 @@ vm_attempt_force_return:
 
 int vm_step(struct VM* vm, uint64_t n)
 {
-    if(!FILE_GLOBAL_IS_VM_INITIALIZED)
+    assert(vm);
+    
+    if(!vm->isVmInitialized)
     {
         return VM_RUN_ERROR_VM_NOT_INITIALIZED;
     }
@@ -944,9 +923,11 @@ int vm_step(struct VM* vm, uint64_t n)
 
 int vm_run(NVM* vm)
 {
-    if(1 == FILE_GLOBAL_IS_VM_RUNNING)        {  return VM_RUN_ERROR_VM_ALREADY_RUNNING; }
+    assert(vm);
 
-    if(0 == FILE_GLOBAL_IS_VM_INITIALIZED)
+    if(1 == vm->isVmRunning)        {  return VM_RUN_ERROR_VM_ALREADY_RUNNING; }
+
+    if(0 == vm->isVmInitialized)
     {
         int init_res = vm_init(vm);
 
@@ -957,14 +938,14 @@ int vm_run(NVM* vm)
     }
 
     // Indicate that it is now running
-    FILE_GLOBAL_IS_VM_RUNNING = 1;
+    vm->isVmRunning = 1;
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
     printf("Running VM\n");
 #endif
 
     int result;
-    while(FILE_GLOBAL_IS_VM_RUNNING)
+    while(vm->isVmRunning)
     {
         result = vm_cycle(vm, 1);
 
