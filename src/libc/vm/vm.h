@@ -53,6 +53,7 @@ struct FUNC
 //
 struct VM
 {
+    // Structure
     uint64_t fp;                    // Function pointer
     uint64_t entryAddress;          // Entry function address listed in binary
     uint64_t numberOfFunctions;     // Number of functions in vm
@@ -61,10 +62,13 @@ struct VM
     NablaStack callStack;           // Call stack
     struct FUNC * functions;        // All functions in VM
     struct FUNC * currentFunction;  // Pointer to the current function being used
+
+    // Status 
     uint8_t switchingFunction;      // Indicate that the vm is currently switching functions 
     uint8_t isVmRunning;            // Flag to indicate if vm is running
     uint8_t isVmInitialized;        // Flag to indicate if vm has been initialized
 
+    // Devices
     struct IODevice  * io_device;   // IO Device
     struct NETDevice * net_device;  // NET Device
 };

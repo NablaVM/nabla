@@ -907,6 +907,8 @@ vm_attempt_force_return:
 
 int vm_step(struct VM* vm, uint64_t n)
 {
+    assert(vm);
+    
     if(!vm->isVmInitialized)
     {
         return VM_RUN_ERROR_VM_NOT_INITIALIZED;
@@ -921,6 +923,8 @@ int vm_step(struct VM* vm, uint64_t n)
 
 int vm_run(NVM* vm)
 {
+    assert(vm);
+
     if(1 == vm->isVmRunning)        {  return VM_RUN_ERROR_VM_ALREADY_RUNNING; }
 
     if(0 == vm->isVmInitialized)
