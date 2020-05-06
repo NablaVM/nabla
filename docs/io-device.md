@@ -15,6 +15,7 @@ Don't use registers 10 - 15 without a clear goal. They are reserved for device o
 |---         |---      |---                          |  
 |    IO      | 0x0A    | User and disk io operations |
 | Network    | 0x0B    | TCP/UDP Network operations  |
+| Host       | 0x0C    | Host operations             |
 
 
 # Register 10 Decodes

@@ -6,6 +6,7 @@ set(NABLA_LIBC_INCLUDES
     ${CMAKE_SOURCE_DIR}/libc/util
     ${CMAKE_SOURCE_DIR}/libc/vm/io
     ${CMAKE_SOURCE_DIR}/libc/vm/net
+    ${CMAKE_SOURCE_DIR}/libc/vm/host
     ${CMAKE_SOURCE_DIR}/libc/vm
 )
 
@@ -17,6 +18,7 @@ set(NABLA_LIBC_HEADERS
     ${CMAKE_SOURCE_DIR}/libc/util/util.h
     ${CMAKE_SOURCE_DIR}/libc/vm/io/io.h
     ${CMAKE_SOURCE_DIR}/libc/vm/net/net.h
+    ${CMAKE_SOURCE_DIR}/libc/vm/host/host.h
     ${CMAKE_SOURCE_DIR}/libc/vm/vm.h
 )
 
@@ -28,5 +30,6 @@ set(NABLA_LIBC_SOURCES
     ${CMAKE_SOURCE_DIR}/libc/util/util.c
     ${CMAKE_SOURCE_DIR}/libc/vm/io/io.c
     ${CMAKE_SOURCE_DIR}/libc/vm/net/net.c
+    ${CMAKE_SOURCE_DIR}/libc/vm/host/host.c
     ${CMAKE_SOURCE_DIR}/libc/vm/vm.c
 )

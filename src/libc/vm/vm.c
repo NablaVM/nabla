@@ -11,6 +11,7 @@
 
 #include "io.h"     // IO Device
 #include "net.h"    // Network Device
+#include "host.h"   // Host Device
 #include "util.h"
 
 #include <assert.h>
@@ -58,6 +59,9 @@ NVM * vm_new()
     vm->net_device = net_new();
     assert(vm->net_device);
 
+    vm->host_device = host_new();
+    assert(vm->host_device);
+
     vm->fp = 0; // Function pointer= 0;
 
     //  Setup function structures
@@ -101,6 +105,7 @@ void vm_delete(NVM * vm)
     stack_delete(vm->callStack);
     io_delete(vm->io_device);
     net_delete(vm->net_device);
+    host_delete(vm->host_device);
     free(vm);
 }
 
@@ -162,6 +167,8 @@ int vm_init(struct VM* vm)
 
     vm->isVmInitialized = 1;
 
+    // Indicate to host device that processing is about to begin
+    host_mark(vm->host_device);
     return 0;
 }
 
@@ -871,6 +878,10 @@ vm_attempt_force_return:
 
             case VM_SETTINGS_DEVICE_ADDRESS_NET:
                 net_process(vm->net_device, vm);
+                break;
+
+            case VM_SETTINGS_DEVICE_ADDRESS_HOST:
+                host_process(vm->host_device, vm);
                 break;
 
             default:
