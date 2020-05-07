@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "BinExec.hpp"
+#include "CliInterpreter.hpp"
 
 /*
     LLL - Low level language    (LLL Binary is a binary generated from raw LLL through solace)
@@ -70,8 +71,12 @@ int handle_compilation(std::string file)
 
 int handle_interpretation_cli()
 {
-    std::cout << "Interpreter has not yet been developed" << std::endl;
-    return 1;
+    std::cout << " ∇ Nabla ∇ " << NABLA_VERSION_INFO     << std::endl 
+              << "Platform: "  << TARGET_PLATFORM_STRING << std::endl
+              << "------------------------------------" << std::endl; 
+
+    NABLA::CliInterpreter cliInterpreter;
+    return cliInterpreter.begin();
 }
 
 // --------------------------------------------
