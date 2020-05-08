@@ -1,9 +1,11 @@
 #include "stack.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
 /*
     [ ------------------ elements ------------------]
@@ -203,4 +205,72 @@ int64_t stack_pop(NStack * stack, int* result)
     *result = STACK_OKAY;
 
     return val;
+}
+
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
+uint8_t stack_get_byte(NStack * stack, uint64_t pos, int* result)
+{
+    assert(stack);
+    assert(result);
+
+    uint64_t frame = floor(pos/8); // 0-indexed
+
+    if(stack->top < frame)
+    {
+        *result = STACK_ERROR_IDX_OUT_OF_RANGE;
+        return 0;
+    }
+
+    uint8_t  byteIndex = 7 - (pos % 8);
+
+    *result = STACK_OKAY;
+
+    return util_extract_byte(stack->elements[frame], byteIndex);
+}
+
+// -----------------------------------------------------
+//
+// -----------------------------------------------------
+
+void stack_put_byte(NStack * stack, uint64_t pos, uint8_t data, int* result)
+{
+    assert(stack);
+    assert(result);
+
+    uint64_t frame = floor(pos/8); // 0-indexed
+
+    if(stack->capacity < frame)
+    {
+        *result = STACK_ERROR_IDX_OUT_OF_RANGE;
+        return;
+    }
+
+    // Expand the stack to ensure we can place the byte there
+    if(stack->top < frame)
+    {
+        while(stack->top < frame)
+        {
+            int push_result = -255;
+            stack_push(0, stack, &push_result);
+
+            if(push_result != STACK_OKAY)
+            {
+                *result = push_result;
+                return;
+            }
+        }
+    }
+
+    uint8_t  byteIndex = 7 - (pos % 8);
+
+    // Clear the byte out 
+    stack->elements[frame] |= ((uint64_t)(0xFF) << byteIndex * 8);
+
+    // Add the new value in
+    stack->elements[frame] &= ((uint64_t)data << byteIndex * 8);
+
+    *result = STACK_OKAY;
 }

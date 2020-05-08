@@ -61,5 +61,21 @@ void stack_push(int64_t val, NablaStack stack, int* result);
 //! \retval Value at stack top
 int64_t stack_pop(NablaStack stack, int* result);
 
+//! \brief Get a single byte out of the stack by index
+//! \param[in] stack The stack to get byte from
+//! \param[in] pos The position to get byte from
+//! \param[out] result The result code of the operation
+//! \returns Byte if index is valid
+uint8_t stack_get_byte(NablaStack stack, uint64_t pos, int* result);
+
+//! \brief Put a byte in the stack by index
+//! \param[in] stack The stack to put byte into
+//! \param[in] pos The position to put the byte
+//! \param[in] daata The byte to place in the stack
+//! \param[out] result The result code of the operation
+//! \post If index is within range of stack size, the byte is placed in. If it exceeds
+//!       current stack size, then the stack is expanded.
+//!       If the index is greater than the capacity of the stack, result will indicate error.
+void stack_put_byte(NablaStack stack, uint64_t pos, uint8_t data, int* result);
 
 #endif
