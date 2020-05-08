@@ -321,6 +321,7 @@ def flow() -> nil{
 # Keywords
 
 ```
+global
 let
 int
 str
