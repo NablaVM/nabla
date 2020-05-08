@@ -24,10 +24,10 @@ namespace
 }
 
 // --------------------------------------------
-//  Execute a raw LLL binary
+//  Execute a binary 
 // --------------------------------------------
     
-int  handle_raw_binary_execution(std::string file)
+int  handle_bin_exec(std::string file)
 {
     NABLA::BinExec exec;
     if(!exec.loadBinaryFromFile(file))
@@ -43,16 +43,6 @@ int  handle_raw_binary_execution(std::string file)
     }
 
     return 0;
-}
-
-// --------------------------------------------
-//  Execute a binary HLL binary
-// --------------------------------------------
-    
-int handle_binary_project_execution(std::string file)
-{
-    std::cout << "Nabla HLL binary execution not yet been developed" << std::endl;
-    return 1;
 }
 
 // --------------------------------------------
@@ -145,7 +135,6 @@ int main(int argc, char ** argv)
 
         { "-h", "--nabla-help", "Display help message."},
         { "-v", "--version",    "Display the version of Nabla." },
-        { "-r", "--raw-binary", "Read in a raw binary assembled by solace (NLLL)." },
         { "-i", "--interpret",  "Interpret a Nabla HLL project."},
         { "-c", "--compile",    "Compile a nabla HLL project."}
     };
@@ -170,20 +159,7 @@ int main(int argc, char ** argv)
             return 0;
         }
 
-        // Solace generated raw binary
-        //
-        if(args[i] == "-r" || args[i] == "--raw-binary")
-        {
-            if(i == argc - 1)
-            {
-                std::cout << "Error: File name for raw binary expected but not found" << std::endl;
-                return 1;
-            }
-
-            return handle_raw_binary_execution(args[i+1]);
-        }
-
-        // Interpret a nabla HLL project
+        // Interpret a nabla HLL project (run without compile)
         //
         if(args[i] == "-i" || args[i] == "--interpret")
         {
@@ -212,5 +188,5 @@ int main(int argc, char ** argv)
 
     // No arguments handled, but there is at least one argument so try to execute it as a HLL project
 
-    return handle_binary_project_execution(args[1]);
+    return handle_bin_exec(args[1]);
 }

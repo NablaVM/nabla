@@ -1,8 +1,5 @@
 #include "CliInterpreter.hpp"
 
-// The libcpp interpreter
-#include "interpreter.hpp"
-
 #include <iostream>
 
 namespace NABLA
@@ -21,9 +18,15 @@ namespace NABLA
 
     int CliInterpreter::begin()
     {
+        std::cout << "The CLI has not yet been implemented. This is a place holder." << std::endl;
+
         /*
         
             Need to handle ctrl^c 
+
+            - The interpreter here will act as a manager for a 'virtual' project. Statements written will be dropped into
+              the 'main' or 'entry' method. When we detect a function decl or something that needs to be exported from entry method, 
+              once the user fully defines said method, it is manually placed external to entry method.
         
         */
         while(doInterpretation)
