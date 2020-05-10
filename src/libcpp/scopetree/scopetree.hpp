@@ -56,6 +56,13 @@ namespace NABLA
         //! \returns AddResult enum for result of operation
         AddResult addChild(std::string parentPath, Scope * child);
 
+        //! \brief Check if item is in a scope
+        //! \param scopePath The path of the scope
+        //! \param item The item to check is in scope
+        //! \returns true if in scope, false if scope path is invalid, or 
+        //!          item not in scope
+        bool isItemInScope(std::string scopePath, std::string item);
+
     private:
 
         // The scope objects that are being used in the tree structure

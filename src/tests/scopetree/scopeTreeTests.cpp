@@ -133,10 +133,15 @@ TEST(ScopeTreeTests, actualTree)
     CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b.file_1.func_a", stree.createScope("m")));
     CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b.file_1.func_a", stree.createScope("n")));
 
-    //
-    //      Check if things are 'in scope'
-    //
+    
+    CHECK_TRUE(stree.isItemInScope("root",  "mod_a"));
+    CHECK_TRUE(stree.isItemInScope("root",  "mod_b"));
 
-    // Continue here
+    CHECK_FALSE(stree.isItemInScope("root", "mod_c"));
+    CHECK_FALSE(stree.isItemInScope("root.mod_c.file_1", "func_b"));
 
+    CHECK_TRUE(stree.isItemInScope("root.mod_b.file_1.func_a", "k"));
+    CHECK_TRUE(stree.isItemInScope("root.mod_b.file_1.func_a", "l"));
+    CHECK_TRUE(stree.isItemInScope("root.mod_b.file_1.func_a", "m"));
+    CHECK_TRUE(stree.isItemInScope("root.mod_b.file_1.func_a", "n"));
 }

@@ -130,39 +130,61 @@ namespace NABLA
     //
     // ------------------------------------------------------
 
-}
+    bool ScopeTree::isItemInScope(std::string path, std::string item)
+    {
+         // We need to split the path that should be of the form  : "root.path.name.every.spot.is.a.child"
+        std::string token;
+        std::istringstream ss(path);
 
-/*
+        // Get the root
+        Scope * scope = scopeObjectsInUse[0];
 
+        bool rootFlag = true;
 
-        if(child == nullptr){ return AddResult::INVALID_DATA; }
-
-        // Add to scope tree
-        for(auto & i : scopeObjectsInUse)
+        // Locate the parent
+        while(std::getline(ss, token, '.')) 
         {
-            // If someone deleted what i points to externally they did a bad 
-            if(i == nullptr) { return AddResult::INVALID_DATA; }
-
-            // If the parent is found
-            if(i->name == parent)
+            // Edge case right out the gate - Skip the first node, 
+            // but ensure if something else has the name 'root' we don't ignore it
+            if(rootFlag && token == "root")
             {
-                for(auto & c : i->children)
-                {
-                    // Children must be unique
-                    if(c->name == child->name)
-                    {
-                        return AddResult::DUPLICATE_CHILD_NAME;
-                    }
-                }
+                rootFlag = false;
+                continue;
+            }
 
-                // Set the child's parent
-                child->parent = i;
-                i->children.push_back(child);
-                
-                // Add child to known scope objects
-                scopeObjectsInUse.push_back( child );
-                return AddResult::OKAY;
+            bool tokenMatched = false;
+
+            // Check if current token is in the scope children
+            for(auto & c : scope->children)
+            {
+                // Ensure they didn't try to delete the thing externally
+                if(c == nullptr){ return false; }
+
+                // If the child has the name specified, we need to drill further in
+                if(c->name == token)
+                {
+                    tokenMatched = true;
+                    scope = c;
+                }
+            }
+
+            // If the token wasn't matched in the child list then we cant find the parent
+            // so we need to error out
+            if(!tokenMatched)
+            {
+                return false;
             }
         }
-        return AddResult::PARENT_NOT_FOUND;
-*/
+
+        // Check if the item is a child of the scope
+        for(auto & i : scope->children)
+        {
+            if(i->name == item)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
