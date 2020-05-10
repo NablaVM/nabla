@@ -28,3 +28,9 @@ add_subdirectory(binloader)
 #   VM Tests
 #
 add_subdirectory(vm)
+
+
+#
+#   Scope Tree Tests
+#
+add_subdirectory(scopetree)
