@@ -90,16 +90,53 @@ TEST(ScopeTreeTests, createFailures)
 
 TEST(ScopeTreeTests, actualTree)
 {
+    /*            
+
+                           /------- file_1 --- func a - vars x,y,z
+                   /--- mod_a ----- file_2 --- func a
+                  /                         \- func b                       
+                 / 
+        root ---------- mod_b ----- file_1 --- func a  - vars k,l,m,n
+                            \ ----- file_2 --- func a
+
+    */
+
     NABLA::ScopeTree stree;
 
+    //
+    //      Build module-file-function tree
+    //
     CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root", stree.createScope("mod_a")));
     CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root", stree.createScope("mod_b")));
 
-    
     CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_a", stree.createScope("file_1")));
     CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_a", stree.createScope("file_2")));
 
-    
     CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b", stree.createScope("file_1")));
     CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b", stree.createScope("file_2")));
+    
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_a.file_1", stree.createScope("func_a")));
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_a.file_2", stree.createScope("func_a")));
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_a.file_2", stree.createScope("func_b")));
+
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b.file_1", stree.createScope("func_a")));
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b.file_2", stree.createScope("func_a")));
+
+    // Add 'variables' to a few functions
+
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_a.file_1.func_a", stree.createScope("x")));
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_a.file_1.func_a", stree.createScope("y")));
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_a.file_1.func_a", stree.createScope("z")));
+
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b.file_1.func_a", stree.createScope("k")));
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b.file_1.func_a", stree.createScope("l")));
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b.file_1.func_a", stree.createScope("m")));
+    CHECK_TRUE(NABLA::ScopeTree::AddResult::OKAY == stree.addChild("root.mod_b.file_1.func_a", stree.createScope("n")));
+
+    //
+    //      Check if things are 'in scope'
+    //
+
+    // Continue here
+
 }
