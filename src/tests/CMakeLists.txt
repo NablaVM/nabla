@@ -29,6 +29,11 @@ add_subdirectory(binloader)
 #
 add_subdirectory(vm)
 
+#
+#   VSYS Tests
+#
+add_subdirectory(vsys)
+
 
 #
 #   Scope Tree Tests
