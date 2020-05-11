@@ -1,7 +1,7 @@
 /*
     VSYS Memory
 
-    The memory object is a wrapped std array that has some functions that allow us to 'push, pop, get, and set' 
+    Memory has some functions that allow us to 'push, pop, get, and set' 
     uint '8, 16, 32, and 64' values into a uint_8 array. This allows us to work with single bytes and multiple bytes
     in a single list with stack-like calls to support global / local stack operations while making it easy
     for externals to add single bytes wherever they want (instead of pulling a uint64_t and masking the value in)
@@ -13,7 +13,7 @@
 #include "VSysSettings.hpp"
 
 #include <stdint.h>
-#include <array>
+#include <iterator>
 
 namespace NABLA
 {
@@ -21,15 +21,21 @@ namespace VSYS
 {
     //! \brief A memory structure for the nabla vsys
     template<std::size_t T>
-    class Memory : public std::array<uint8_t, T>
+    class Memory
     {
     public:
 
         //! \brief Construct a memory object
-        Memory() : data_back(0) {}
+        Memory() : data_back(0) 
+        {
+            memory = new uint8_t [T];
+        }
 
         //! \brief Destruct a memory object
-        ~Memory(){}
+        ~Memory()
+        {
+            delete [] memory;
+        }
 
         //! \brief Check if memory contains data placed by system
         //! \returns True if data has been placed, False otherwise
@@ -43,7 +49,7 @@ namespace VSYS
         //! \returns True if data could be pushed, False otherwise
         bool push_8(uint8_t data)
         {
-            if(data_back >= this->size())  {  return false;   }
+            if(data_back >= T)  {  return false;   }
 
             put_n(data_back, data, 8);
 
@@ -71,7 +77,7 @@ namespace VSYS
         //! \returns True if data could be gotten, False otherwise
         bool get_8(uint64_t idx, uint8_t &data)
         {
-            if(idx > this->size() || idx > data_back) { return false; }
+            if(idx > T || idx > data_back) { return false; }
 
             data = get_n(idx, 8);
 
@@ -84,7 +90,7 @@ namespace VSYS
         //! \returns True if data could be set, False otherwise
         bool set_8(uint64_t idx, uint8_t data)
         {
-            if(idx >= this->size()) { return false; }
+            if(idx >= T) { return false; }
 
             put_n(idx, data, 8);
 
@@ -96,7 +102,7 @@ namespace VSYS
         //! \returns True if data could be pushed, False otherwise
         bool push_16(uint16_t data)
         {
-            if(data_back+1 >= this->size()) {  return false; }
+            if(data_back+1 >= T) {  return false; }
 
             put_n(data_back, data, 16);
 
@@ -124,7 +130,7 @@ namespace VSYS
         //! \returns True if data could be gotten, False otherwise
         bool get_16(uint64_t idx, uint16_t &data)
         {
-            if(idx > this->size() || idx > data_back) { return false; }
+            if(idx > T || idx > data_back) { return false; }
 
             data = get_n(idx, 16);
 
@@ -137,7 +143,7 @@ namespace VSYS
         //! \returns True if data could be set, False otherwise
         bool set_16(uint64_t idx, uint8_t data)
         {
-            if(idx+1 >= this->size()) { return false; }
+            if(idx+1 >= T) { return false; }
 
             put_n(idx, data, 16);
 
@@ -149,7 +155,7 @@ namespace VSYS
         //! \returns True if data could be pushed, False otherwise
         bool push_32(uint32_t data)
         {
-            if(data_back+3 >= this->size()) {  return false; }
+            if(data_back+3 >= T) {  return false; }
 
             put_n(data_back, data, 32);
 
@@ -177,7 +183,7 @@ namespace VSYS
         //! \returns True if data could be gotten, False otherwise
         bool get_32(uint64_t idx, uint32_t &data)
         {
-            if(idx > this->size() || idx > data_back) { return false; }
+            if(idx > T || idx > data_back) { return false; }
 
             data = get_n(idx, 32);
 
@@ -190,7 +196,7 @@ namespace VSYS
         //! \returns True if data could be set, False otherwise
         bool set_32(uint64_t idx, uint8_t data)
         {
-            if(idx+3 >= this->size()) { return false; }
+            if(idx+3 >= T) { return false; }
 
             put_n(idx, data, 32);
 
@@ -202,7 +208,7 @@ namespace VSYS
         //! \returns True if data could be pushed, False otherwise
         bool push_64(uint64_t data)
         {
-            if(data_back+7 >= this->size()) {  return false; }
+            if(data_back+7 >= T) {  return false; }
 
             put_n(data_back, data, 64);
 
@@ -230,7 +236,7 @@ namespace VSYS
         //! \returns True if data could be gotten, False otherwise
         bool get_64(uint64_t idx, uint64_t &data)
         {
-            if(idx > this->size() || idx > data_back) { return false; }
+            if(idx > T || idx > data_back) { return false; }
 
             data = get_n(idx, 64);
 
@@ -243,7 +249,7 @@ namespace VSYS
         //! \returns True if data could be set, False otherwise
         bool set_64(uint64_t idx, uint8_t data)
         {
-            if(idx+7 >= this->size()) { return false; }
+            if(idx+7 >= T) { return false; }
 
             put_n(idx, data, 64);
 
@@ -258,7 +264,7 @@ namespace VSYS
         {
             for(int i = (n / 8); i > 0; i-- )
             {
-                this->at(idx++) = (uint8_t)(data >> (8 * (i-1)));
+                memory[idx++] = (uint8_t)(data >> (8 * (i-1)));
             }
         }
 
@@ -269,13 +275,15 @@ namespace VSYS
             uint64_t result = 0;
             for(int i = (n / 8); i > 0; i-- )
             {
-                result |= ( (uint64_t)this->at(idx++) << (8 * (i-1)));
+                result |= ( (uint64_t)memory[idx++] << (8 * (i-1)));
             }
             return result;
         }
 
         // The 'back' of stored data, to support push-pop operations
         int64_t data_back;
+
+        uint8_t * memory;
     };
 } 
 }

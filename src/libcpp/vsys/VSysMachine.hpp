@@ -34,6 +34,8 @@ namespace VSYS
         // Address of first function to execute
         uint64_t entryAddress;
 
+        uint64_t numberOfFunctions;
+
         // Global memory
         Memory<NABLA_VSYS_SETTINGS_GLOBAL_MEMORY_BYTES> global_memory;
 
