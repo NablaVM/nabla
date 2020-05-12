@@ -32,7 +32,6 @@ namespace VSYS
     {
         for(uint64_t i = 0; i < functions.size(); i++)
         {
-            std::cout << "Loading function : " << i << " with " << functions[i].size() << " instructions" << std::endl;
             InstructionBlock ib;
             ib.instruction_pointer = 0;
             ib.instructions = &functions[i];
@@ -68,7 +67,6 @@ namespace VSYS
     {
         for(uint64_t cycle = 0; cycle < steps; cycle++)
         {
-            std::cout << "Grabbing pointer " << std::endl;
 
             uint64_t poi = this->contextFunctions[this->currentInstructionBlock].instruction_pointer;
 
@@ -79,12 +77,14 @@ namespace VSYS
     #endif
                 if(!attempt_return())
                 {
+                    this->contextCompleted = true;
                     return ExecutionReturns::ALL_EXECUTION_COMPLETE;
                 }
+                continue;
             }
 
             uint64_t ins = this->contextFunctions[this->currentInstructionBlock].instructions->at(poi);
-
+            
             // The full first byte of the instruction
             uint8_t operation =  util_extract_byte(ins, 7);
 
@@ -727,7 +727,7 @@ namespace VSYS
                 case INS_EXIT :
                 {
                     this->contextCompleted = true;
-                    return ExecutionReturns::OKAY;
+                    return ExecutionReturns::ALL_EXECUTION_COMPLETE;
                 }    
                 default:
                 {
@@ -834,7 +834,6 @@ namespace VSYS
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
             printf("Callstack empty. Exiting\n");
 #endif
-            this->contextCompleted = true;
             return false;
         }
 
@@ -854,10 +853,9 @@ namespace VSYS
         this->contextFunctions[currentInstructionBlock].instruction_pointer = 0;
 
         this->currentInstructionBlock = func_to;
-
         this->contextFunctions[currentInstructionBlock].instruction_pointer = ret_roi;
-
         this->switchingFunction = true;
+
         return true;
     }
 }

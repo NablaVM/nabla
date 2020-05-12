@@ -18,10 +18,18 @@ namespace VSYS
     //
     // ----------------------------------------------------------------
     
-
     Machine::~Machine()
     {
 
+    }
+
+    // ----------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------
+    
+    bool Machine::isRunning() const
+    {
+        return running;
     }
 
     // ----------------------------------------------------------------
@@ -47,14 +55,16 @@ namespace VSYS
             }
         }
 
+        uint64_t completedContexts = 0;
         for(uint64_t idx = 0; idx < executionContexts.size(); idx++)
         {
-            /*
-                    This needs to be updated to allow detailed error reporting. 
+            // Its possible that GC hasn't run yet, so we count dead contexts
+            if(executionContexts[idx].isContextComplete())
+            {
+                completedContexts++;
+                continue;
+            }
 
-                    - Execution context ID, the error etc
-            */
-            
             switch(executionContexts[idx].stepExecution(steps))
             {
                 case ExecutionReturns::OKAY:                              break;
@@ -64,6 +74,13 @@ namespace VSYS
                 case ExecutionReturns::FAILED_TO_SPAWN_EXECUTION_CONTEXT: return ExecutionReturns::FAILED_TO_SPAWN_EXECUTION_CONTEXT;
                 case ExecutionReturns::EXECUTION_ERROR:                   return ExecutionReturns::EXECUTION_ERROR;
             }
+        }
+
+        // If everything has completed, we die
+        if(completedContexts == executionContexts.size())
+        {
+            running = false;
+            return ExecutionReturns::ALL_EXECUTION_COMPLETE;
         }
 
         return ExecutionReturns::OKAY;
@@ -104,6 +121,11 @@ namespace VSYS
         executionContexts.clear();
 
         executionContexts.swap(tmp);
+
+        if(executionContexts.size() == 0)
+        {
+            running = false;
+        }
     }
 
 }

@@ -10,7 +10,6 @@ extern "C"
 
 int main(int argc, char **argv)
 {
-
     std::cout << "Nabla with new vsys architecture" << std::endl;
 
     NABLA::VSYS::LoadableMachine virtualMachine;
@@ -52,8 +51,6 @@ int main(int argc, char **argv)
             break;
     }
 
-    std::cout << "About to run " << std::endl;
-
     bool continueRunning = true;
 
     while(continueRunning)
@@ -89,6 +86,12 @@ int main(int argc, char **argv)
                 std::cerr << "Exectuion error" << std::endl;
                 break;
             }
+        }
+
+        // If VM has stopped. We should stop
+        if(!virtualMachine.isRunning())
+        {
+            continueRunning = false;
         }
 
         // Add a timer and run garbage collection

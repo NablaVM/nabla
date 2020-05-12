@@ -26,6 +26,8 @@ namespace VSYS
 
         // Remove completed execution contexts
         void executionContextGarbageCollection();
+
+        bool isRunning() const;
     
     protected:
 
