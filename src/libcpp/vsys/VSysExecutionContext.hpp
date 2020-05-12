@@ -26,6 +26,9 @@ namespace VSYS
 
         bool isContextComplete() const;
 
+        // Registers that can be used specific to this context
+        int64_t registers[16];
+        
     private:
 
         Machine &owner;
@@ -56,9 +59,6 @@ namespace VSYS
 
         // Call stack for the current execution context
         std::stack<uint64_t> callStack;
-
-        // Registers that can be used specific to this context
-        int64_t registers[16];
 
         bool switchingFunction;
 

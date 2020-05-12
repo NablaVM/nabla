@@ -27,7 +27,7 @@ add_subdirectory(binloader)
 #
 #   VM Tests
 #
-add_subdirectory(vm)
+# add_subdirectory(vm)
 
 #
 #   VSYS Tests

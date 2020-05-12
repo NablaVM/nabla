@@ -720,6 +720,7 @@ namespace VSYS
                     // Attempt a return. If it returns, true will be signaled
                     if(!attempt_return())
                     {
+                        this->contextCompleted = true;
                         return ExecutionReturns::ALL_EXECUTION_COMPLETE;
                     }
                     break; // Yes
