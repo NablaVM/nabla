@@ -1,6 +1,7 @@
 #ifndef NABLA_VM_EXEC_TESTS_HPP
 #define NABLA_VM_EXEC_TESTS_HPP
 
+#include <assert.h>
 #include <iostream>
 #include "bytegen.hpp"
 #include <random>
@@ -59,6 +60,7 @@ namespace TEST
                 std::cout << "REG: " << i << " " << registers[i] << std::endl;
             }
         }
+
     };
 
     /*
@@ -124,6 +126,20 @@ namespace TEST
         uint64_t getActiveReg(uint8_t regNum)
         {
             return this->executionContexts[0].registers[regNum];
+        }
+
+        uint64_t getGlobalWord(uint64_t addr)
+        {
+            uint64_t v = 0;
+            this->global_memory.get_64(addr, v);
+            return v;
+        }
+
+        uint8_t getGlobalByte(uint64_t addr)
+        {
+            uint8_t v = 0;
+            assert(this->global_memory.get_8(addr, v));
+            return v;
         }
 
     private:

@@ -1,10 +1,5 @@
 #include "testSetup.hpp"
 
-namespace
-{
-    typedef struct VM * NablaVirtualMachine;
-}
-
 // ---------------------------------------------------------------
 // 
 // ---------------------------------------------------------------
@@ -31,9 +26,9 @@ TEST(NablaNopTests, nopIns)
     for(int t = 0; t < 100; t++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
-        vm->registers[0]    = 0;
+        vm.setReg(0, 0);
 
         uint16_t randomNumAdds = TEST::getRandomU16(1, 500);
 
@@ -45,10 +40,14 @@ TEST(NablaNopTests, nopIns)
             1   // Inc reg1 by 1 every time this instruction is called
         );
 
+        std::vector<uint8_t> vins;
+
         // Add a random number of additions
         for(int i = 0; i < randomNumAdds; i++)
         {
-            TEST::build_test_vm(vm, TEST::ins_to_vec(baseIns));
+            std::vector<uint8_t> v = TEST::ins_to_vec(baseIns);
+
+            vins.insert(std::end(vins), std::begin(v), std::end(v));
         }
 
         NABLA::Bytegen::Instruction nopIns = bytegen.createNopInstruction();
@@ -58,26 +57,23 @@ TEST(NablaNopTests, nopIns)
         // Add a random number of additions
         for(int i = 0; i < randomNumNops; i++)
         {
-            TEST::build_test_vm(vm, TEST::ins_to_vec(nopIns));
+            std::vector<uint8_t> v = TEST::ins_to_vec(nopIns);
+
+            vins.insert(std::end(vins), std::begin(v), std::end(v));
         }
 
-        vm_init(vm);
+        vm.build(vins);
 
         // Step over the adds
-        vm_step(vm, randomNumAdds);
+        vm.step(randomNumAdds);
 
         // Ensure that all of the adds have occured
-        CHECK_EQUAL(randomNumAdds, vm->registers[0]);
+        CHECK_EQUAL(randomNumAdds, vm.getActiveReg(0));
 
         // Step the noops
-        vm_step(vm, randomNumNops);
+        vm.step(randomNumNops);
 
         // Ensure the addition sum is the same as before noops
-        CHECK_EQUAL(randomNumAdds, vm->registers[0]);
-
-        // Ensure that the instruction pointer is equal to all of the instructions executed
-        CHECK_EQUAL(randomNumAdds + randomNumNops, vm->functions[vm->fp].ip);
-
-        vm_delete(vm);
+        CHECK_EQUAL(randomNumAdds, vm.getActiveReg(0));
     }
 }

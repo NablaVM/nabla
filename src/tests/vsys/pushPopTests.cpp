@@ -26,14 +26,14 @@ TEST_GROUP(NablaPushPopTests)
 // 
 // ---------------------------------------------------------------
 
-TEST(NablaPushPopTests, pushPopIns)
+TEST(NablaPushPopTests, pushwPopwIns)
 {
     for(int i = 0; i < 10; i++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
-        NABLA::Bytegen::Stacks stackLoc = static_cast<NABLA::Bytegen::Stacks>(TEST::getRandomU16(0,1));
+        NABLA::Bytegen::Stacks stackLoc = NABLA::Bytegen::Stacks::GLOBAL;
 
         uint16_t pushReg = TEST::getRandomU16(0, 9);
         uint16_t popReg  = TEST::getRandomU16(0, 9);
@@ -44,7 +44,74 @@ TEST(NablaPushPopTests, pushPopIns)
             popReg = TEST::getRandomU16(0, 9);
         }
 
-        vm->registers[pushReg] = TEST::getRandomU16(0, 65530);
+        vm.setReg(pushReg, TEST::getRandomU16(0, 65530));
+
+        NABLA::Bytegen::Instruction pushIns = bytegen.createPushwInstruction(
+            stackLoc, pushReg
+        );
+
+        NABLA::Bytegen::Instruction popIns = bytegen.createPopwInstruction(
+            stackLoc, popReg
+        );
+
+        std::vector<uint8_t> pushBytes = TEST::ins_to_vec(pushIns);
+        std::vector<uint8_t> popBytes  = TEST::ins_to_vec(popIns);
+
+        pushBytes.insert(std::end(pushBytes), std::begin(popBytes), std::end(popBytes));
+
+        // Init
+        vm.build(pushBytes);
+
+        // Step 1 instruction (should be push)
+        vm.step(1);
+
+        // Depending on the stack, get the value that should have been pushed
+        int64_t val;
+        int result = 0;
+        if(stackLoc == NABLA::Bytegen::Stacks::GLOBAL)
+        {
+            val = vm.getGlobalWord(0);
+        }
+        else
+        {
+            // Local memory no longer reachable from execution context.
+            assert(false);
+        }
+
+        CHECK_EQUAL((int64_t)vm.getActiveReg(pushReg), val);
+
+        // Step again to execute pop
+        vm.step(1);
+
+        // See if correct val is stored
+        CHECK_EQUAL(val, vm.getActiveReg(popReg));
+    }
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(NablaPushPopTests, pushPopIns)
+{
+    for(int i = 0; i < 10; i++)
+    {
+        NABLA::Bytegen bytegen;
+        TEST::TestMachine vm;
+
+        NABLA::Bytegen::Stacks stackLoc = NABLA::Bytegen::Stacks::GLOBAL;
+
+        uint16_t pushReg = TEST::getRandomU16(0, 9);
+        uint16_t popReg  = TEST::getRandomU16(0, 9);
+
+        // Ensure push and pop reg differ
+        while(pushReg == popReg)
+        {
+            popReg = TEST::getRandomU16(0, 9);
+        }
+
+        uint8_t expectVal =TEST::getRandomU16(0, 250) & 0xFF;
+        vm.setReg(pushReg, expectVal);
 
         NABLA::Bytegen::Instruction pushIns = bytegen.createPushInstruction(
             stackLoc, pushReg
@@ -57,38 +124,33 @@ TEST(NablaPushPopTests, pushPopIns)
         std::vector<uint8_t> pushBytes = TEST::ins_to_vec(pushIns);
         std::vector<uint8_t> popBytes  = TEST::ins_to_vec(popIns);
 
-        // Populate vm
-        TEST::build_test_vm(vm, pushBytes);
-        TEST::build_test_vm(vm, popBytes);
+        pushBytes.insert(std::end(pushBytes), std::begin(popBytes), std::end(popBytes));
 
         // Init
-        vm_init(vm);
+        vm.build(pushBytes);
 
         // Step 1 instruction (should be push)
-        vm_step(vm, 1);
+        vm.step(1);
 
         // Depending on the stack, get the value that should have been pushed
-        int64_t val;
+        uint8_t val;
         int result = 0;
         if(stackLoc == NABLA::Bytegen::Stacks::GLOBAL)
         {
-            val = stack_value_at(0, vm->globalStack, &result);
+            val = vm.getGlobalByte(0);
         }
         else
         {
-            val = stack_value_at(0, vm->functions[0].localStack, &result);
+            assert(false);
+            // Local memory no longer reachable from execution context.
         }
 
-        // Ensure stack grab was okay. and ensure the value retrieved was the value we put in
-        CHECK_EQUAL(result, STACK_OKAY);
-        CHECK_EQUAL(vm->registers[pushReg], val);
+        CHECK_EQUAL((int64_t)(vm.getActiveReg(pushReg) ), (int64_t)val);
 
         // Step again to execute pop
-        vm_step(vm, 1);
+        vm.step(1);
 
         // See if correct val is stored
-        CHECK_EQUAL(val, vm->registers[popReg]);
-
-        vm_delete(vm);
+        CHECK_EQUAL(val, vm.getActiveReg(popReg));
     }
 }

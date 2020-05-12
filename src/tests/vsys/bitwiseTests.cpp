@@ -1,10 +1,5 @@
 #include "testSetup.hpp"
 
-namespace
-{
-    typedef struct VM * NablaVirtualMachine;
-}
-
 // ---------------------------------------------------------------
 // 
 // ---------------------------------------------------------------
@@ -48,7 +43,7 @@ TEST(NablaBitwiseTests, bitwiseIns)
             }
 
             NABLA::Bytegen bytegen;
-            NablaVirtualMachine vm = vm_new();
+            TEST::TestMachine vm;
 
 
             int16_t dest_reg    = TEST::getRandomU16(0, 9);
@@ -60,24 +55,24 @@ TEST(NablaBitwiseTests, bitwiseIns)
             switch(arithSetup)
             {
                 case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
-                    arg1 = TEST::getRandomU16(0, 9); vm->registers[arg1] = TEST::getRandomU16(0, 65000); // random reg with random val
-                    arg2 = TEST::getRandomU16(0, 9); vm->registers[arg2] = TEST::getRandomU16(0, 65000); // random reg with random val
+                    arg1 = TEST::getRandomU16(0, 9); vm.setReg(arg1, TEST::getRandomU16(0, 65000)); // random reg with random val
+                    arg2 = TEST::getRandomU16(0, 9); vm.setReg(arg2, TEST::getRandomU16(0, 65000)); // random reg with random val
 
-                    expectedResult = TEST::calculateBitwise(arithType, vm->registers[arg1], vm->registers[arg2]);
+                    expectedResult = TEST::calculateBitwise(arithType, vm.getReg(arg1), vm.getReg(arg2));
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::REG_NUM: 
-                    arg1 = TEST::getRandomU16(0, 9); vm->registers[arg1] = TEST::getRandomU16(0, 65000); // Random reg with random val
+                    arg1 = TEST::getRandomU16(0, 9); vm.setReg(arg1,  TEST::getRandomU16(0, 65000)); // Random reg with random val
                     arg2 = TEST::getRandomS16(-30000, 30000);                                            // Random val
 
-                    expectedResult = TEST::calculateBitwise(arithType, vm->registers[arg1], arg2);
+                    expectedResult = TEST::calculateBitwise(arithType, vm.getReg(arg1), arg2);
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_REG: 
-                    arg2 = TEST::getRandomU16(0, 9); vm->registers[arg2] = TEST::getRandomU16(0, 65000); // Random reg with random val
+                    arg2 = TEST::getRandomU16(0, 9); vm.setReg(arg2, TEST::getRandomU16(0, 65000)); // Random reg with random val
                     arg1 = TEST::getRandomS16(-30000, 30000);                                            // Random val
 
-                    expectedResult = TEST::calculateBitwise(arithType, arg1, vm->registers[arg2]);
+                    expectedResult = TEST::calculateBitwise(arithType, arg1,vm.getReg(arg2));
                     break;
 
                 case NABLA::Bytegen::ArithmaticSetup::NUM_NUM: 
@@ -99,13 +94,11 @@ TEST(NablaBitwiseTests, bitwiseIns)
                 arg2
             );
 
-            TEST::build_test_vm(vm, TEST::ins_to_vec(ins));
+            vm.build( TEST::ins_to_vec(ins));
 
-            vm_run(vm);
-
+            NABLA::VSYS::ExecutionReturns result = vm.step(4);
+            CHECK_TRUE(NABLA::VSYS::ExecutionReturns::OKAY == result);
             CHECK_TRUE(TEST::check_result(vm, dest_reg, expectedResult));
-
-            vm_delete(vm);
         }
     }
 }

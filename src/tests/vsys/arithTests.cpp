@@ -46,7 +46,7 @@ TEST(NablaArithTests, standardArith)
             {
                 case NABLA::Bytegen::ArithmaticSetup::REG_REG: 
                     arg1 = TEST::getRandomU16(0, 9); vm.setReg(arg1, TEST::getRandomU16(0, 65000)); // random reg with random val
-                    arg2 = TEST::getRandomU16(0, 9);vm.setReg(arg2, TEST::getRandomU16(0, 65000)); // random reg with random val
+                    arg2 = TEST::getRandomU16(0, 9); vm.setReg(arg2, TEST::getRandomU16(0, 65000)); // random reg with random val
 
                     expectedResult = TEST::calculateArith(arithType, vm.getReg(arg1), vm.getReg(arg2));
                     break;

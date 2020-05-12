@@ -31,7 +31,7 @@ TEST(NablaMovTests, movIns)
     for(int i = 0; i < 10; i++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
         NABLA::Bytegen::MovSetup setup = static_cast<NABLA::Bytegen::MovSetup>(TEST::getRandomU16(0,1));
 
@@ -44,7 +44,8 @@ TEST(NablaMovTests, movIns)
         {
             arg1 = TEST::getRandomU16(0, 9); 
             expectedResult = (int8_t)TEST::getRandomS16(-120, 120);
-            vm->registers[arg1] = expectedResult;
+
+            vm.setReg(arg1, expectedResult);
         }
         else
         {
@@ -59,12 +60,12 @@ TEST(NablaMovTests, movIns)
             arg1
         );
 
-        TEST::build_test_vm(vm, TEST::ins_to_vec(ins));
+        std::vector<uint8_t> vins = TEST::ins_to_vec(ins);
+        
+        vm.build(vins);
 
-        vm_run(vm);
+        vm.step(1);
 
         CHECK_TRUE(TEST::check_result(vm, dest_reg, expectedResult));
-
-        vm_delete(vm);
     }
 }

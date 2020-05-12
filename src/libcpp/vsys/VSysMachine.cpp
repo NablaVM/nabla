@@ -45,7 +45,6 @@ namespace VSYS
 
         if(!running)
         {
-            std::cout << "ARE YOU SEREAL ? " << std::endl;
             executionContexts.clear();
             running = true;
 
@@ -55,8 +54,6 @@ namespace VSYS
                 return ExecutionReturns::FAILED_TO_SPAWN_EXECUTION_CONTEXT;
             }
         }
-
-        std::cout << "Executing contexts ... \n";
 
         uint64_t completedContexts = 0;
         for(uint64_t idx = 0; idx < executionContexts.size(); idx++)
@@ -69,8 +66,6 @@ namespace VSYS
                 continue;
             }
 
-            std::cout << "Execute context : " << idx << std::endl;
-
             switch(executionContexts[idx].stepExecution(steps))
             {
                 case ExecutionReturns::OKAY:                              break;
@@ -80,8 +75,6 @@ namespace VSYS
                 case ExecutionReturns::FAILED_TO_SPAWN_EXECUTION_CONTEXT: return ExecutionReturns::FAILED_TO_SPAWN_EXECUTION_CONTEXT;
                 case ExecutionReturns::EXECUTION_ERROR:                   return ExecutionReturns::EXECUTION_ERROR;
             }
-
-            std::cout << "Context returned" << std::endl;
         }
 
         // If everything has completed, we die

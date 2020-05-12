@@ -1,10 +1,5 @@
 #include "testSetup.hpp"
 
-namespace
-{
-    typedef struct VM * NablaVirtualMachine;
-}
-
 // ---------------------------------------------------------------
 // 
 // ---------------------------------------------------------------
@@ -32,9 +27,9 @@ TEST(NablaJumpTests, jumpInsLow)
     for(int i = 0; i < 5; i++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
-        vm->registers[0]    = 0;
+        vm.setReg(0, 0);
 
         NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
@@ -48,25 +43,24 @@ TEST(NablaJumpTests, jumpInsLow)
             0
         );
 
-        TEST::build_test_vm(vm, TEST::ins_to_vec(baseIns));
-        TEST::build_test_vm(vm, TEST::ins_to_vec(jmpIns));
+        std::vector<uint8_t> vins = TEST::ins_to_vec(baseIns);
+        
+        std::vector<uint8_t> vins1 = TEST::ins_to_vec(jmpIns);
 
-        // Init
-        vm_init(vm);
+        vins.insert(std::end(vins), std::begin(vins1), std::end(vins1));
+
+        vm.build(vins);
 
         // Step 1 instruction (should be add)
-        vm_step(vm, 1);
+        vm.step(1);
 
         // Sanity
-        CHECK_EQUAL(1, vm->registers[0]);
+        CHECK_EQUAL(1, vm.getActiveReg(0));
 
         // Step 2 instruction (should be jump, followed by add)
-        vm_step(vm, 2);
+        vm.step(2);
 
-        CHECK_EQUAL(2, vm->registers[0]);
-
-        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
-        vm_delete(vm);
+        CHECK_EQUAL(2, vm.getActiveReg(0));
     }
 }
 
@@ -80,9 +74,9 @@ TEST(NablaJumpTests, jumpInsHigh)
     for(int i = 0; i < 5; i++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
-        vm->registers[0]    = 0;
+        vm.setReg(0, 0);
 
         NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
@@ -92,7 +86,7 @@ TEST(NablaJumpTests, jumpInsHigh)
             1   // Inc reg1 by 1 every time this instruction is called
         );
         
-        vm->registers[9]    = 0;
+        vm.setReg(9, 0);
 
         NABLA::Bytegen::Instruction baseIns1 = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
@@ -106,28 +100,27 @@ TEST(NablaJumpTests, jumpInsHigh)
             2 // Jump over baseIns to baseIns2
         );
 
-        TEST::build_test_vm(vm, TEST::ins_to_vec(jmpIns));
-        TEST::build_test_vm(vm, TEST::ins_to_vec(baseIns)); // This one is jumped over
-        TEST::build_test_vm(vm, TEST::ins_to_vec(baseIns1));
+        std::vector<uint8_t> vins  = TEST::ins_to_vec(jmpIns);
+        std::vector<uint8_t> vins1 = TEST::ins_to_vec(baseIns);
+        std::vector<uint8_t> vins2 = TEST::ins_to_vec(baseIns1);
 
-        // Init
-        vm_init(vm);
+        vins.insert(std::end(vins), std::begin(vins1), std::end(vins1));
+        vins.insert(std::end(vins), std::begin(vins2), std::end(vins2));
+
+        vm.build(vins);
 
         // Step 1 instruction (should be jump)
-        vm_step(vm, 1);
+        vm.step(1);
 
         // Sanity
-        CHECK_EQUAL(0, vm->registers[0]);
+        CHECK_EQUAL(0, vm.getActiveReg(0));
 
         // Step 2 instruction (should be jump, followed by add to register 2)
-        vm_step(vm, 2);
+        vm.step(2);
 
         // Sanity
-        CHECK_EQUAL(0, vm->registers[0]);   // Hopefully skipped
+        CHECK_EQUAL(0, vm.getActiveReg(0));  // Hopefully skipped
 
-        CHECK_EQUAL(1, vm->registers[9]);  // Hopefully added 2
-
-        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
-        vm_delete(vm);
+        CHECK_EQUAL(1, vm.getActiveReg(9));  // Hopefully added 2
     }
 }

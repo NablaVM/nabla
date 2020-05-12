@@ -77,7 +77,7 @@ TEST(NablaBranchTests, standardBranchIns)
         }
 
         // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
-            vm.setReg(0, 0);
+        vm.setReg(0, 0);
 
         NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
