@@ -44,7 +44,7 @@ namespace VSYS
         {
             uint64_t instruction_pointer;
             std::vector<uint64_t> * instructions;
-            Memory<NABLA_VSYS_SETTINGS_LOCAL_MEMORY_BYTES> functionMemory;
+            Memory<NABLA_VSYS_SETTINGS_LOCAL_MEMORY_BYTES> function_memory;
         };
 
         // Functions wrapped with context info for execution within the current
@@ -59,6 +59,12 @@ namespace VSYS
 
         // Registers that can be used specific to this context
         int64_t registers[16];
+
+        bool switchingFunction;
+
+        void get_arith_lhs_rhs(uint8_t id, uint64_t ins, int64_t * lhs, int64_t * rhs);
+
+        bool attempt_return();
     };
 } 
 }

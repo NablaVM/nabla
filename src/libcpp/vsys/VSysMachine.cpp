@@ -1,4 +1,5 @@
 #include "VSysMachine.hpp"
+#include <iostream>
 
 namespace NABLA
 {

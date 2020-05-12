@@ -13,7 +13,7 @@
 #include "VSysSettings.hpp"
 
 #include <stdint.h>
-#include <iterator>
+#include <vector>
 
 namespace NABLA
 {
@@ -28,13 +28,13 @@ namespace VSYS
         //! \brief Construct a memory object
         Memory() : data_back(0) 
         {
-            memory = new uint8_t [T];
+            memory.reserve(T);
         }
 
         //! \brief Destruct a memory object
         ~Memory()
         {
-            delete [] memory;
+            memory.clear();
         }
 
         //! \brief Check if memory contains data placed by system
@@ -42,6 +42,11 @@ namespace VSYS
         bool hasData() const
         {
             return (data_back > 0);
+        }
+
+        uint64_t getSize() const
+        {
+            return data_back;
         }
 
         //! \brief Bush data into back of allocated memory
@@ -283,7 +288,7 @@ namespace VSYS
         // The 'back' of stored data, to support push-pop operations
         int64_t data_back;
 
-        uint8_t * memory;
+        std::vector<uint8_t> memory;
     };
 } 
 }

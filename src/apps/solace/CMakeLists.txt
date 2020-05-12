@@ -7,6 +7,7 @@ include_directories(${NABLA_LIBC_INCLUDES})
 include_directories(${NABLA_LIBCPP_INCLUDES})
 
 set(SOLACE_COMPILER_SOURCES
+    ${NABLA_LIBC_SOURCES}
     ${NABLA_LIBCPP_SOURCES}
 )
 

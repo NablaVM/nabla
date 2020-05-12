@@ -5,6 +5,7 @@
 #include "VSysExecutionContext.hpp"
 #include "VSysExecutionReturns.hpp"
 #include "VSysMemory.hpp"
+#include "VSysInstructions.hpp"
 
 #include <stdint.h>
 #include <vector>
