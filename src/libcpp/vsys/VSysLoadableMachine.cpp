@@ -51,10 +51,45 @@ namespace VSYS
             }
         }
 
-        if(!this->global_memory.push_64(stackValue))
+        if(nBytes == 1 )
         {
-            *result = -1;
-            return;
+            if(!this->global_memory.push_8(stackValue))
+            {
+                *result = -1;
+                return;
+            }
+        }
+        else if (nBytes == 2)
+        {
+            if(!this->global_memory.push_16(stackValue))
+            {
+                *result = -1;
+                return;
+            }
+        }
+        else if (nBytes == 4)
+        {
+            if(!this->global_memory.push_32(stackValue))
+            {
+                *result = -1;
+                return;
+            }
+        }
+        else if (nBytes == 8 )
+        {
+            if(!this->global_memory.push_64(stackValue))
+            {
+                *result = -1;
+                return;
+            }
+        }
+        else 
+        {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+        std::cout << "unhandled size of numerical constant : " << nBytes << std::endl;
+#endif
+                *result = -1;
+                return;
         }
 
         *result = 0;

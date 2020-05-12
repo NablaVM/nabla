@@ -45,6 +45,7 @@ namespace VSYS
 
         if(!running)
         {
+            std::cout << "ARE YOU SEREAL ? " << std::endl;
             executionContexts.clear();
             running = true;
 
@@ -55,15 +56,20 @@ namespace VSYS
             }
         }
 
+        std::cout << "Executing contexts ... \n";
+
         uint64_t completedContexts = 0;
         for(uint64_t idx = 0; idx < executionContexts.size(); idx++)
         {
+
             // Its possible that GC hasn't run yet, so we count dead contexts
             if(executionContexts[idx].isContextComplete())
             {
                 completedContexts++;
                 continue;
             }
+
+            std::cout << "Execute context : " << idx << std::endl;
 
             switch(executionContexts[idx].stepExecution(steps))
             {
@@ -74,6 +80,8 @@ namespace VSYS
                 case ExecutionReturns::FAILED_TO_SPAWN_EXECUTION_CONTEXT: return ExecutionReturns::FAILED_TO_SPAWN_EXECUTION_CONTEXT;
                 case ExecutionReturns::EXECUTION_ERROR:                   return ExecutionReturns::EXECUTION_ERROR;
             }
+
+            std::cout << "Context returned" << std::endl;
         }
 
         // If everything has completed, we die

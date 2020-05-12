@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include "CppUTest/TestHarness.h"
 
@@ -29,22 +29,22 @@ namespace
     {
         switch(reg)
         {
-            case 0 : return REGISTER_0 ;
-            case 1 : return REGISTER_1 ;
-            case 2 : return REGISTER_2 ;
-            case 3 : return REGISTER_3 ;
-            case 4 : return REGISTER_4 ;
-            case 5 : return REGISTER_5 ;
-            case 6 : return REGISTER_6 ;
-            case 7 : return REGISTER_7 ;
-            case 8 : return REGISTER_8 ;
-            case 9 : return REGISTER_9 ;
-            case 10: return REGISTER_10;
-            case 11: return REGISTER_11;
-            case 12: return REGISTER_12;
-            case 13: return REGISTER_13;
-            case 14: return REGISTER_14;
-            case 15: return REGISTER_15;
+            case 0 : return NABLA::VSYS::REGISTER_0 ;
+            case 1 : return NABLA::VSYS::REGISTER_1 ;
+            case 2 : return NABLA::VSYS::REGISTER_2 ;
+            case 3 : return NABLA::VSYS::REGISTER_3 ;
+            case 4 : return NABLA::VSYS::REGISTER_4 ;
+            case 5 : return NABLA::VSYS::REGISTER_5 ;
+            case 6 : return NABLA::VSYS::REGISTER_6 ;
+            case 7 : return NABLA::VSYS::REGISTER_7 ;
+            case 8 : return NABLA::VSYS::REGISTER_8 ;
+            case 9 : return NABLA::VSYS::REGISTER_9 ;
+            case 10: return NABLA::VSYS::REGISTER_10;
+            case 11: return NABLA::VSYS::REGISTER_11;
+            case 12: return NABLA::VSYS::REGISTER_12;
+            case 13: return NABLA::VSYS::REGISTER_13;
+            case 14: return NABLA::VSYS::REGISTER_14;
+            case 15: return NABLA::VSYS::REGISTER_15;
             default: 
                 std::cerr << "Someone tried something silly with : " << reg  << ". IN THE ARITH TEST!" << std::endl;
                 exit(EXIT_FAILURE); 
@@ -173,12 +173,12 @@ TEST(BitwiseTests, AllBitwiseTests)
         // Set the expected op + ins
         switch(type)
         {
-            case NABLA::Bytegen::BitwiseTypes::LSH: expectedIns.bytes[0] = addOppCode(INS_LSH, setup); break;
-            case NABLA::Bytegen::BitwiseTypes::RSH: expectedIns.bytes[0] = addOppCode(INS_RSH, setup); break; 
-            case NABLA::Bytegen::BitwiseTypes::AND: expectedIns.bytes[0] = addOppCode(INS_AND, setup); break;
-            case NABLA::Bytegen::BitwiseTypes::OR : expectedIns.bytes[0] = addOppCode(INS_OR , setup); break; 
-            case NABLA::Bytegen::BitwiseTypes::XOR: expectedIns.bytes[0] = addOppCode(INS_XOR, setup); break;
-            case NABLA::Bytegen::BitwiseTypes::NOT: expectedIns.bytes[0] = addOppCode(INS_NOT, setup); break;
+            case NABLA::Bytegen::BitwiseTypes::LSH: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_LSH, setup); break;
+            case NABLA::Bytegen::BitwiseTypes::RSH: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_RSH, setup); break; 
+            case NABLA::Bytegen::BitwiseTypes::AND: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_AND, setup); break;
+            case NABLA::Bytegen::BitwiseTypes::OR : expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_OR , setup); break; 
+            case NABLA::Bytegen::BitwiseTypes::XOR: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_XOR, setup); break;
+            case NABLA::Bytegen::BitwiseTypes::NOT: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_NOT, setup); break;
             default:     FAIL("Something bad happened");  break; // Keep that compiler happy.
         }
 

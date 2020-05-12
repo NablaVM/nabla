@@ -12,6 +12,8 @@
 
 #include "VSysSettings.hpp"
 
+#include <iostream>
+
 #include <stdint.h>
 #include <vector>
 
@@ -267,6 +269,8 @@ namespace VSYS
         //
         void put_n(uint64_t idx, uint64_t data, uint8_t n)
         {
+            memcheck(n);
+
             for(int i = (n / 8); i > 0; i-- )
             {
                 memory[idx++] = (uint8_t)(data >> (8 * (i-1)));
@@ -283,6 +287,16 @@ namespace VSYS
                 result |= ( (uint64_t)memory[idx++] << (8 * (i-1)));
             }
             return result;
+        }
+
+        //  Ensure that a memory slot exists prior to access on put / push
+        //
+        void memcheck(uint8_t size)
+        {
+            while(memory.size() < (data_back + size /8) )
+            {
+                memory.push_back(0);
+            }
         }
 
         // The 'back' of stored data, to support push-pop operations

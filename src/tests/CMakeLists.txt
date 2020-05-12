@@ -1,15 +1,4 @@
 
-#
-#   Stack tests
-#
-add_subdirectory(stack)
-
-#
-#   Socket tests
-#
-add_subdirectory(sockets)
-
-#
 #   Util tests
 #
 add_subdirectory(util)
@@ -20,20 +9,9 @@ add_subdirectory(util)
 add_subdirectory(bytegen)
 
 #
-#   Binloader Tests
-#
-add_subdirectory(binloader)
-
-#
-#   VM Tests
-#
-# add_subdirectory(vm)
-
-#
 #   VSYS Tests
 #
 add_subdirectory(vsys)
-
 
 #
 #   Scope Tree Tests

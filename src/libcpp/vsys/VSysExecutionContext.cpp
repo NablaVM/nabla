@@ -30,6 +30,9 @@ namespace VSYS
                                                                                          switchingFunction(false)
 
     {
+        //  For HUGE projects that run on VSYS this will be a lot of overhead. It will have to iterate over all functions. If 
+        //  theres a small number thats fine, but if its 10000+ it will be a headache. A 'loader' could be made that populates 
+        //  the entry function, and populates 'on the fly' as things get called (if they get called)
         for(uint64_t i = 0; i < functions.size(); i++)
         {
             InstructionBlock ib;
@@ -67,7 +70,6 @@ namespace VSYS
     {
         for(uint64_t cycle = 0; cycle < steps; cycle++)
         {
-
             uint64_t poi = this->contextFunctions[this->currentInstructionBlock].instruction_pointer;
 
             if(poi >=  this->contextFunctions[this->currentInstructionBlock].instructions->size())
@@ -80,6 +82,13 @@ namespace VSYS
                     this->contextCompleted = true;
                     return ExecutionReturns::ALL_EXECUTION_COMPLETE;
                 }
+
+                /*
+                    If no more intructions, and we were able to return we will find ourselves here.
+                    We treat this are like the bottom of the loop, but we don't check for hardware
+                    execution because we are out of instructions.. so clearly nothing is going on 
+                */
+                finalize_cycle();
                 continue;
             }
 
@@ -187,7 +196,7 @@ namespace VSYS
                     this->registers[dest] = lhs+rhs;
 
     #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                    printf("result: %ld\n", this->registers[dest]);
+                    printf("INS_ADD: result: %ld , DEST : %u\n", this->registers[dest], dest);
     #endif
                     break;
                 }          
@@ -199,7 +208,7 @@ namespace VSYS
                     this->registers[dest] = lhs-rhs;
 
     #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                    printf("result: %ld\n", this->registers[dest]);
+                    printf("INS_SUB: result: %ld , DEST : %u\n", this->registers[dest], dest);
     #endif
                     break;
                 }          
@@ -211,7 +220,7 @@ namespace VSYS
                     this->registers[dest] = lhs*rhs;
 
     #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                    printf("result: %ld\n", this->registers[dest]);
+                    printf("INS_MUL: result: %ld , DEST : %u\n", this->registers[dest], dest);
     #endif
                     break;
                 }          
@@ -225,7 +234,7 @@ namespace VSYS
                     else { this->registers[dest] = lhs/rhs; }
                     
     #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                    printf("result: %ld\n", this->registers[dest]);
+                    printf("INS_DIV result: %ld , DEST : %u\n", this->registers[dest], dest);
     #endif
                     break;
                 }          
@@ -293,6 +302,11 @@ namespace VSYS
                     uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
                                           (uint64_t)util_extract_two_bytes(ins, 2);
                     
+
+    #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("BGT : %i\n", lhs > rhs);
+    #endif
+
                     if(lhs > rhs){ this->contextFunctions[
                         this->currentInstructionBlock
                         ].instruction_pointer = branchAddr; continue; }
@@ -305,6 +319,12 @@ namespace VSYS
 
                     uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
                                           (uint64_t)util_extract_two_bytes(ins, 2);
+                    
+
+    #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("BGTE : %i\n", lhs >= rhs);
+    #endif
+
                     
                     if(lhs >= rhs){ this->contextFunctions[
                         this->currentInstructionBlock
@@ -319,6 +339,13 @@ namespace VSYS
                     uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
                                           (uint64_t)util_extract_two_bytes(ins, 2);
                     
+
+    #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("BLT : %i\n", lhs < rhs);
+    #endif
+
+                    
+                    
                     if(lhs < rhs){ this->contextFunctions[
                         this->currentInstructionBlock
                         ].instruction_pointer = branchAddr; continue; }
@@ -331,6 +358,13 @@ namespace VSYS
 
                     uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
                                           (uint64_t)util_extract_two_bytes(ins, 2);
+                    
+
+    #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("BLTE : %i\n", lhs <= rhs);
+    #endif
+
+                    
                     
                     if(lhs <= rhs){ this->contextFunctions[
                         this->currentInstructionBlock
@@ -345,6 +379,13 @@ namespace VSYS
                     uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
                                           (uint64_t)util_extract_two_bytes(ins, 2);
 
+                    
+
+    #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("BEQ : %i\n", lhs == rhs);
+    #endif
+
+                    
                     if(lhs == rhs){ this->contextFunctions[
                         this->currentInstructionBlock
                         ].instruction_pointer = branchAddr; continue; }
@@ -357,6 +398,13 @@ namespace VSYS
 
                     uint64_t branchAddr = (uint64_t)util_extract_two_bytes(ins, 4) << 16 | 
                                           (uint64_t)util_extract_two_bytes(ins, 2);
+                    
+
+    #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("BNE : %i\n", lhs != rhs);
+    #endif
+
+                    
 
                     if(lhs != rhs){ this->contextFunctions[
                         this->currentInstructionBlock
@@ -516,6 +564,52 @@ namespace VSYS
                     
                     // Now that we have the source address and other required information, we can move on and actually do the load
                     bool okay = false;
+                    uint8_t val;
+                    if(stackSouce == GLOBAL_STACK)
+                    {
+                        okay = this->global_memory.get_8(sourceAddress, val);
+                    }
+                    else if ( stackSouce == LOCAL_STACK )
+                    {
+                        okay = this->contextFunctions[currentInstructionBlock].function_memory.get_8(
+                            sourceAddress, val
+                        );
+                    }
+                    assert(okay);
+                    registers[dest] = val;
+
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                    printf("Ldb Result: %lu\n", this->registers[dest]);
+#endif
+                    break;
+                }
+                case INS_LDW  :
+                {
+                    uint8_t dest =  util_extract_byte(ins, 6);
+                    uint8_t stackSouce = util_extract_byte(ins, 5);
+                    uint64_t sourceAddress;
+
+                    // Depending on the 'id' of the instruction we need to change where we are getting the value
+                    // for the stack offset.
+                    if(id == 0)
+                    {
+                        sourceAddress = (uint64_t)util_extract_two_bytes(ins, 4) << 16| 
+                                        (uint64_t)util_extract_two_bytes(ins, 2);
+
+                    }
+                    else if (id == 1)
+                    {
+                        uint8_t sourceReg  = util_extract_byte(ins, 4);
+                        sourceAddress = this->registers[sourceReg];
+                    }
+                    else
+                    {
+                        printf("Invalid 'ldw' instruction id : ID= %u\n", id);
+                        return ExecutionReturns::UNKNOWN_INSTRUCTION;
+                    }
+                    
+                    // Now that we have the source address and other required information, we can move on and actually do the load
+                    bool okay = false;
                     uint64_t val;
                     if(stackSouce == GLOBAL_STACK)
                     {
@@ -531,10 +625,10 @@ namespace VSYS
                     registers[dest] = val;
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                    printf("Ldb Result: %lu\n", this->registers[dest]);
+                    printf("Ldw Result: %lu\n", this->registers[dest]);
 #endif
                     break;
-                }          
+                }         
                 case INS_STB  :
                 {
                     uint8_t  stackDest = util_extract_byte(ins, 6);
@@ -563,22 +657,86 @@ namespace VSYS
 
                     // Now that we have the destination information, perform the store
                     bool okay = false;
-                    uint64_t val;
+                    uint8_t val =  registers[sourceReg] & 0x00000000000000FF;
+                    if(stackDest == GLOBAL_STACK)
+                    {
+                        okay = this->global_memory.set_8(destAddress, val);
+                    }
+                    else if ( stackDest == LOCAL_STACK )
+                    {
+                        okay = this->contextFunctions[currentInstructionBlock].function_memory.set_8(
+                            destAddress, val
+                        );
+                    }
+                    assert(okay);
+                    break;
+                } 
+                case INS_STW  :
+                {
+                    uint8_t  stackDest = util_extract_byte(ins, 6);
+                    uint64_t destAddress;
+                    uint8_t  sourceReg;
+
+                    // Depending on the 'id' of the instruction we need to change where we are getting the value
+                    // for the stack offset.
+                    if(id == 0)
+                    {
+                        sourceReg =  util_extract_byte(ins, 1);
+                        destAddress = (uint64_t)util_extract_two_bytes(ins, 5) << 16| 
+                                      (uint64_t)util_extract_two_bytes(ins, 3);
+                    }
+                    else if (id == 1)
+                    {
+                        sourceReg = util_extract_byte(ins, 4);
+                        uint8_t destReg   = util_extract_byte(ins, 5);
+                        destAddress = this->registers[destReg];
+                    }
+                    else
+                    {
+                        printf("Invalid 'stw' instruction id : ID= %u\n", id);
+                        return ExecutionReturns::UNKNOWN_INSTRUCTION;
+                    }
+
+                    // Now that we have the destination information, perform the store
+                    bool okay = false;
+                    uint64_t val =  registers[sourceReg];
+
+
                     if(stackDest == GLOBAL_STACK)
                     {
                         okay = this->global_memory.set_64(destAddress, val);
+                    std::cout << "STW STORE : " << val << " @ GM " << destAddress << std::endl;
                     }
                     else if ( stackDest == LOCAL_STACK )
                     {
                         okay = this->contextFunctions[currentInstructionBlock].function_memory.set_64(
                             destAddress, val
                         );
+                    std::cout << "STW STORE : " << val << " @ FM " << destAddress << std::endl;
                     }
                     assert(okay);
-                    registers[sourceReg] = val;
                     break;
-                }          
-                case INS_PUSH :
+                }        
+                case INS_PUSH  :
+                {
+                    uint8_t destStack = util_extract_byte(ins, 6);
+                    uint8_t sourceReg = util_extract_byte(ins, 5);
+
+                    bool okay = false;
+                    if(destStack == GLOBAL_STACK)
+                    {
+                        okay = this->global_memory.push_8((this->registers[sourceReg] & 0x00000000000000FF));
+                    }
+                    else if (destStack == LOCAL_STACK )
+                    {
+                        okay = this->contextFunctions[currentInstructionBlock].function_memory.push_8(
+                            (this->registers[sourceReg] & 0x00000000000000FF)
+                        );
+                    }
+                    assert(okay);
+                    break;
+                }  
+                case INS_PUSHW :
                 {
                     uint8_t destStack = util_extract_byte(ins, 6);
                     uint8_t sourceReg = util_extract_byte(ins, 5);
@@ -596,8 +754,30 @@ namespace VSYS
                     }
                     assert(okay);
                     break;
-                }          
+                }      
                 case INS_POP  :
+                {
+                    uint8_t destReg     = util_extract_byte(ins, 6);
+                    uint8_t sourceStack = util_extract_byte(ins, 5);
+
+                    bool okay = false;
+                    uint8_t val;
+                    if(sourceStack == GLOBAL_STACK)
+                    {
+                        okay = this->global_memory.pop_8(val);
+                    }
+                    else if (sourceStack == LOCAL_STACK )
+                    {
+                        okay = this->contextFunctions[currentInstructionBlock].function_memory.pop_8(
+                            val
+                        );
+                    }
+                    
+                    assert(okay);
+                    this->registers[destReg] = val;
+                    break;
+                }    
+                case INS_POPW  :
                 {
                     uint8_t destReg     = util_extract_byte(ins, 6);
                     uint8_t sourceStack = util_extract_byte(ins, 5);
@@ -743,57 +923,75 @@ namespace VSYS
                 }
             }
 
-            // Check action registers to see if a device needs to be called
-            // ----------------------------------------------------------------------------
+            hardware_execution_check();
 
-            if(this->registers[10] != 0)
-            {
-                /*
-                    Devices take in both device pointer, AND VM, as the interface for the devices 
-                    has been set as-such to ensure that the device is logically seperated from the 
-                    machine. This gives us some flex for future work
-                */
-   //             uint8_t device_id = util_extract_byte(this->registers[10], 7);
-//
-   //             switch(device_id)
-   //             {
-   //             case VM_SETTINGS_DEVICE_ADDRESS_IO:
-   //                 io_process(this->io_device, vm);
-   //                 break;
-//
-   //             case VM_SETTINGS_DEVICE_ADDRESS_NET:
-   //                 net_process(this->net_device, vm);
-   //                 break;
-//
-   //             case VM_SETTINGS_DEVICE_ADDRESS_HOST:
-   //                 host_process(this->host_device, vm);
-   //                 break;
-//
-   //             default:
-   // #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-   //                     printf("Invalid device id found in register 10.\n");
-   // #endif
-   //                 return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
-   //             };
-            }
-
-            // ----------------------------------------------------------------------------
-
-            //  Increase the instruction pointer if we aren't explicitly told not to
-            //
-            if(!this->switchingFunction)
-            {
-               this->contextFunctions[currentInstructionBlock].instruction_pointer++;
-            }
-            else
-            {
-            // This was only to ensure we didn't inc the ip, and since we didn't we will un-flag this
-            // so we can step through the next (funky fresh) function
-                this->switchingFunction = false;
-            }
+            finalize_cycle();
         }
 
         return ExecutionReturns::OKAY;
+    }
+
+    // ----------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------
+
+    void ExecutionContext::finalize_cycle()
+    {
+        // ----------------------------------------------------------------------------
+
+        //  Increase the instruction pointer if we aren't explicitly told not to
+        //
+        if(!this->switchingFunction)
+        {
+            this->contextFunctions[currentInstructionBlock].instruction_pointer++;
+        }
+        else
+        {
+        // This was only to ensure we didn't inc the ip, and since we didn't we will un-flag this
+        // so we can step through the next (funky fresh) function
+            this->switchingFunction = false;
+        }
+    }
+
+    // ----------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------
+
+    void ExecutionContext::hardware_execution_check()
+    {
+                // Check action registers to see if a device needs to be called
+        // ----------------------------------------------------------------------------
+
+        if(this->registers[10] != 0)
+        {
+            /*
+                Devices take in both device pointer, AND VM, as the interface for the devices 
+                has been set as-such to ensure that the device is logically seperated from the 
+                machine. This gives us some flex for future work
+            */
+//             uint8_t device_id = util_extract_byte(this->registers[10], 7);
+//
+//             switch(device_id)
+//             {
+//             case VM_SETTINGS_DEVICE_ADDRESS_IO:
+//                 io_process(this->io_device, vm);
+//                 break;
+//
+//             case VM_SETTINGS_DEVICE_ADDRESS_NET:
+//                 net_process(this->net_device, vm);
+//                 break;
+//
+//             case VM_SETTINGS_DEVICE_ADDRESS_HOST:
+//                 host_process(this->host_device, vm);
+//                 break;
+//
+//             default:
+// #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+//                     printf("Invalid device id found in register 10.\n");
+// #endif
+//                 return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
+//             };
+        }
     }
 
     // ----------------------------------------------------------------

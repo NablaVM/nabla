@@ -202,19 +202,43 @@ namespace NABLA
         //! \param reg   The register to put the data
         Instruction createPopInstruction(Stacks stack, uint8_t reg);
 
-        //! \brief Create a pop instruction
+        //! \brief Create a stb instruction
         //! \param stack The stack to put data in
         //! \param setup Indicate what location is to be encoded as (number or register)
         //! \param location The location in the stack to put the data
         //! \param reg   The register to get the data
         Instruction createStbInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg);
 
-        //! \brief Create a pop instruction
+        //! \brief Create a ldb instruction
         //! \param stack The stack to get data from
         //! \param setup Indicate what location is to be encoded as (number or register)
         //! \param location The location in the stack to get the data
         //! \param reg   The register to put the data
         Instruction createLdbInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg);
+
+        //! \brief Create a pushw instruction
+        //! \param stack The stack to push to
+        //! \param reg   The register that contains data to get
+        Instruction createPushwInstruction(Stacks stack, uint8_t reg);
+
+        //! \brief Create a popw instruction
+        //! \param stack The stack to pop from
+        //! \param reg   The register to put the data
+        Instruction createPopwInstruction(Stacks stack, uint8_t reg);
+
+        //! \brief Create a stw instruction
+        //! \param stack The stack to put data in
+        //! \param setup Indicate what location is to be encoded as (number or register)
+        //! \param location The location in the stack to put the data
+        //! \param reg   The register to get the data
+        Instruction createStwInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg);
+
+        //! \brief Create a ldw instruction
+        //! \param stack The stack to get data from
+        //! \param setup Indicate what location is to be encoded as (number or register)
+        //! \param location The location in the stack to get the data
+        //! \param reg   The register to put the data
+        Instruction createLdwInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg);
 
         //! \brief Create return instruction
         Instruction createReturnInstruction();

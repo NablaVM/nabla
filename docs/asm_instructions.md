@@ -41,8 +41,9 @@ is the maximum number able to be stored by 2 bytes (2^16)
 Upon startup all constants listed will be loaded directly into the global stack. These constants will be loaded in the order by which they 
 are defined in the file. Ints and doubles that are loaded by const are checked to ensure that they are valid range. 
 Strings are not limited in size. Ints and doubles will need to be manually checked for sign, as once they're in the VM memory, they are just 
-bits and bytes. Strings are encoded into chunks of 8 bytes for storage in the stack frames with the left-most characters being encoded
-into the MSB. 
+bits and bytes. 
+
+**Note**: The size of the global stack is dependant on the constants. It is up to the user to know how to index into the constants. 
 
 ## Instructions
 Abbreviations : 
@@ -52,6 +53,8 @@ Abbreviations :
 |     *n       | in-place numerical value               |
 |     sp       | stack pointer   (ls, gs)               |
 |     *sp      | stack pointer offset  ($N(ls), $N(gs)) or rN(ls), rN(gs) for register-based offset |
+
+**Note**: Stack offsets refer to 'byte' offsets. so $7(gs) is to refer to the 7th byte stored within the global stack
 
 ## Misc Instructions
 | Instruction     | Arg1      | Arg2          | Arg3         | Description                                  |
@@ -109,10 +112,14 @@ If 'd' is specified and the value in a given register is not a floating point, t
 |  Instruction     |  Arg1     |  Arg2    |  Description                                 |
 |---               |---        |---       |---                                           |
 |      mov         |    r      |   r, *n  |  Move data from Arg2 into Arg1 (8-bit max *n)|
+|      ldw         |    r      |   *sp    |  Load word from Arg2 (address) into Arg1     |
+|      stw         |   *sp     |   r      |  Store Arg2 word at Arg1 (arg1=addr)         |
 |      ldb         |    r      |   *sp    |  Load data from Arg2 (address) into Arg1     |
 |      stb         |   *sp     |   r      |  Store Arg2 data at Arg1 (arg1=addr)         |
 |      push        |    sp     |   r      |  Data from Arg2 into Arg1                    |
-|      pop         |    sp     |   r      |  Data from Arg2 into Arg1                    |
+|      pop         |    r      |   sp     |  Data from Arg2 into Arg1                    |
+|      pushw       |    sp     |   r      |  Word from Arg2 into Arg1                    |
+|      popw        |    r      |   sp     |  Word from Arg2 into Arg1                    |
 
 ## Jump / Call
 
@@ -279,12 +286,46 @@ Indication Bits:
     INS    ID    REGISTER      STACK     REGISTER   [ ------------------ UNUSED ----------------]
     111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
+**stw** - Store bytes
+
+Indication Bits:
+00 - Stack with numerical offset, Source Register
+01 - Stack with register-base offset, Source Register
+
+    INS    ID    STACK       [ ---------------   ADDRESS  ---------------]   REGISTER    UNUSED
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+    INS    ID    STACK      REGISTER     REGISTER   [ ------------------ UNUSED ----------------]
+    111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**ldw** - Load bytes
+
+Indication Bits:
+00 - Destination Register, Stack with numerical offset
+01 - Destination Register, Stack with register-base offset
+
+    INS    ID   REGISTER      STACK     [ ---------------   ADDRESS  ---------------]    UNUSED
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+    INS    ID    REGISTER      STACK     REGISTER   [ ------------------ UNUSED ----------------]
+    111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
 **push** - Push
 
     INS    ID      STACK     REGISTER   [ ------------------- UNUSED -------------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
 **pop** - Pop
+
+    INS    ID   REGISTER      STACK     [ --------------------   UNUSED  ---------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**pushw** - Push
+
+    INS    ID      STACK     REGISTER   [ ------------------- UNUSED -------------------------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+
+**popw** - Pop
 
     INS    ID   REGISTER      STACK     [ --------------------   UNUSED  ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111

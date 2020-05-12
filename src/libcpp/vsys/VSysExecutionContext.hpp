@@ -29,7 +29,7 @@ namespace VSYS
         // Registers that can be used specific to this context
         int64_t registers[16];
         
-    private:
+    protected:
 
         Machine &owner;
 
@@ -65,6 +65,10 @@ namespace VSYS
         void get_arith_lhs_rhs(uint8_t id, uint64_t ins, int64_t * lhs, int64_t * rhs);
 
         bool attempt_return();
+
+        void hardware_execution_check();
+
+        void finalize_cycle();
     };
 } 
 }

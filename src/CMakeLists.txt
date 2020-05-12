@@ -6,9 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 
 # Build options
 option(BUILD_SOLACE         "Build solace parser"            ON)
-option(BUILD_HARP           "Build harp application"         ON)
+#option(BUILD_HARP           "Build harp application"         ON)
 option(BUILD_NABLA          "Build nabla application"        ON)
-option(BUILD_NABLA_VSYS     "Build nabla vsys application"   ON)
 option(COMPILE_TESTS        "Execute compile-time tests"     ON)
 option(SOLACE_DEBUG_OUTPUT  "Enable solace debug output"     OFF)
 option(VM_DEBUG_OUTPUT      "Enable VM debug output"         OFF)
@@ -55,20 +54,13 @@ endif()
 # -------------------------------------------------
 #   Harp Analyzer
 # -------------------------------------------------
-if(BUILD_HARP)
-    add_subdirectory(apps/harp)
-endif()
+#if(BUILD_HARP)
+#    add_subdirectory(apps/harp)
+#endif()
 
 # -------------------------------------------------
 #   Nabla Application
 # -------------------------------------------------
 if(BUILD_NABLA)
     add_subdirectory(apps/nabla)
-endif()
-
-# -------------------------------------------------
-#   Nabla with VSYS Application
-# -------------------------------------------------
-if(BUILD_NABLA)
-    add_subdirectory(apps/nablavsys)
 endif()

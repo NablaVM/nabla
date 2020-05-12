@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include "CppUTest/TestHarness.h"
 
@@ -33,7 +33,7 @@ TEST(JumpTests, AllJumpTests)
 
         uint32_t location = getRandomLabelNumber();
 
-        expectedIns.bytes[0] = INS_JUMP;
+        expectedIns.bytes[0] = NABLA::VSYS::INS_JUMP;
         expectedIns.bytes[1] = (location & 0xFF000000) >> 24 ;
         expectedIns.bytes[2] = (location & 0x00FF0000) >> 16 ;
         expectedIns.bytes[3] = (location & 0x0000FF00) >> 8  ;

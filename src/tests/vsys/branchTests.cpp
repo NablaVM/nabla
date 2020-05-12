@@ -31,7 +31,7 @@ TEST(NablaBranchTests, standardBranchIns)
     for(int i = 0x01; i <= 0x06; i++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
 
@@ -46,37 +46,38 @@ TEST(NablaBranchTests, standardBranchIns)
 
         if(type == NABLA::Bytegen::BranchTypes::BGT)
         {
-            vm->registers[reg1] = TEST::getRandomU16(500, 600);
-            vm->registers[reg2] = TEST::getRandomU16(0, 200);
+            vm.setReg(reg1, TEST::getRandomU16(500, 600));
+            vm.setReg(reg2, TEST::getRandomU16(0  , 200));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BGTE)
         {
-            vm->registers[reg1] = 10;
-            vm->registers[reg2] = 10;
+            vm.setReg(reg1, 10);
+            vm.setReg(reg2, 10);
         }
         else if (type == NABLA::Bytegen::BranchTypes::BLT)
         {
-            vm->registers[reg1] = TEST::getRandomU16(0, 200);
-            vm->registers[reg2] = TEST::getRandomU16(500, 600);
+            vm.setReg(reg1, TEST::getRandomU16(0  , 200));
+            vm.setReg(reg2, TEST::getRandomU16(500, 600));
+
         }
         else if (type == NABLA::Bytegen::BranchTypes::BLTE)
         {
-            vm->registers[reg1] = 10;
-            vm->registers[reg2] = 10;
+            vm.setReg(reg1, 10);
+            vm.setReg(reg2, 10);
         }
         else if (type == NABLA::Bytegen::BranchTypes::BEQ)
         {
-            vm->registers[reg1] = 10;
-            vm->registers[reg2] = 10;
+            vm.setReg(reg1, 10);
+            vm.setReg(reg2, 10);
         }
         else if (type == NABLA::Bytegen::BranchTypes::BNE)
         {
-            vm->registers[reg1] = 10;
-            vm->registers[reg2] = 25;
+            vm.setReg(reg1, 10);
+            vm.setReg(reg2, 25);
         }
 
         // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
-        vm->registers[0]    = 0;
+            vm.setReg(0, 0);
 
         NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
@@ -93,28 +94,27 @@ TEST(NablaBranchTests, standardBranchIns)
             0       // Location to branch to
         );
 
-        // Populate vm
-        TEST::build_test_vm(vm, TEST::ins_to_vec(baseIns));
-        TEST::build_test_vm(vm, TEST::ins_to_vec(branchIns));
+        std::vector<uint8_t> vins = TEST::ins_to_vec(baseIns);
+        
+        std::vector<uint8_t> vins1 = TEST::ins_to_vec(branchIns);
 
-        // Init
-        vm_init(vm);
+        vins.insert(std::end(vins), std::begin(vins1), std::end(vins1));
+
+        vm.build(vins);
 
         // Step 1 instruction (should be add)
-        vm_step(vm, 1);
+        vm.step(1);
 
         // Sanity
-        CHECK_EQUAL(1, vm->registers[0]);
+        CHECK_EQUAL(1, vm.getActiveReg(0));
 
         // Step 2 instruction (should be branch check, followed by add)
-        vm_step(vm, 2);
+        vm.step(2);
 
-        CHECK_EQUAL(2, vm->registers[0]);
-
-        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
-        vm_delete(vm);
+        CHECK_EQUAL(2, vm.getActiveReg(0));
     }
 }
+
 
 // ---------------------------------------------------------------
 // 
@@ -125,7 +125,7 @@ TEST(NablaBranchTests, standardBranchInsExpectedFails)
     for(int i = 0x01; i <= 0x06; i++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
 
@@ -140,37 +140,38 @@ TEST(NablaBranchTests, standardBranchInsExpectedFails)
 
         if(type == NABLA::Bytegen::BranchTypes::BGT)
         {
-            vm->registers[reg1] = TEST::getRandomU16(0, 200);
-            vm->registers[reg2] = TEST::getRandomU16(500, 600);
+            vm.setReg(reg1, TEST::getRandomU16(0  , 200));
+            vm.setReg(reg2, TEST::getRandomU16(500, 600));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BGTE)
         {
-            vm->registers[reg1] = 1;
-            vm->registers[reg2] = 10;
+            vm.setReg(reg1, 1);
+            vm.setReg(reg2, 10);
         }
         else if (type == NABLA::Bytegen::BranchTypes::BLT)
         {
-            vm->registers[reg1] = TEST::getRandomU16(500, 600); 
-            vm->registers[reg2] = TEST::getRandomU16(0, 200);
+            vm.setReg(reg1, TEST::getRandomU16(500, 600));
+            vm.setReg(reg2, TEST::getRandomU16(0  , 200));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BLTE)
         {
-            vm->registers[reg1] = 55;
-            vm->registers[reg2] = 10;
+            vm.setReg(reg1, 55);
+            vm.setReg(reg2, 10);
         }
         else if (type == NABLA::Bytegen::BranchTypes::BEQ)
         {
-            vm->registers[reg1] = 500;
-            vm->registers[reg2] = 10;
+            vm.setReg(reg1, 500);
+            vm.setReg(reg2, 10);
         }
         else if (type == NABLA::Bytegen::BranchTypes::BNE)
         {
-            vm->registers[reg1] = 25;
-            vm->registers[reg2] = 25;
+            vm.setReg(reg1, 25);
+            vm.setReg(reg2, 25);
         }
 
+
         // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
-        vm->registers[0]    = 0;
+            vm.setReg(0, 0);
 
         NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
@@ -187,29 +188,26 @@ TEST(NablaBranchTests, standardBranchInsExpectedFails)
             0       // Location to branch to
         );
 
-        // Populate vm
-        TEST::build_test_vm(vm, TEST::ins_to_vec(baseIns));
-        TEST::build_test_vm(vm, TEST::ins_to_vec(branchIns));
+        std::vector<uint8_t> vins = TEST::ins_to_vec(baseIns);
+        
+        std::vector<uint8_t> vins1 = TEST::ins_to_vec(branchIns);
 
-        // Init
-        vm_init(vm);
+        vins.insert(std::end(vins), std::begin(vins1), std::end(vins1));
+
+        vm.build(vins);
 
         // Step 1 instruction (should be add)
-        vm_step(vm, 1);
+        vm.step(1);
 
         // Sanity
-        CHECK_EQUAL(1, vm->registers[0]);
+        CHECK_EQUAL(1, vm.getActiveReg(0));
 
-        // Step 2 instruction (should be branch check, but no add)
-        vm_step(vm, 2);
+        // Step 2 instruction (should be branch check, followed by add)
+        vm.step(2);
 
-        CHECK_EQUAL(1, vm->registers[0]);
-
-        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
-        vm_delete(vm);
+        CHECK_EQUAL(1, vm.getActiveReg(0));
     }
 }
-
 
 // ---------------------------------------------------------------
 // 
@@ -220,7 +218,7 @@ TEST(NablaBranchTests, doubleBranchIns)
     for(int i = 0x07; i <= 0x0C; i++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
 
@@ -235,37 +233,37 @@ TEST(NablaBranchTests, doubleBranchIns)
 
         if(type == NABLA::Bytegen::BranchTypes::BGTD)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(TEST::getRandomDouble(500, 600));
-            vm->registers[reg2] = TEST::doubleToUint64(TEST::getRandomDouble(0, 200));
+            vm.setReg(reg1, TEST::doubleToUint64(TEST::getRandomDouble(500, 600)));
+            vm.setReg(reg2, TEST::doubleToUint64(TEST::getRandomDouble(0, 200)));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BGTED)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(10.0);
-            vm->registers[reg2] = TEST::doubleToUint64(10.0);
+            vm.setReg(reg1, TEST::doubleToUint64(10.0));
+            vm.setReg(reg2, TEST::doubleToUint64(10.0));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BLTD)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(TEST::getRandomDouble(0, 200));
-            vm->registers[reg2] = TEST::doubleToUint64(TEST::getRandomDouble(500, 600));
+            vm.setReg(reg1, TEST::doubleToUint64(TEST::getRandomDouble(0, 200)));
+            vm.setReg(reg2, TEST::doubleToUint64(TEST::getRandomDouble(500, 600)));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BLTED)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(10.0);
-            vm->registers[reg2] = TEST::doubleToUint64(10.0);
+            vm.setReg(reg1, TEST::doubleToUint64(10.0));
+            vm.setReg(reg2, TEST::doubleToUint64(10.0));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BEQD)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(10.0);
-            vm->registers[reg2] = TEST::doubleToUint64(10.0);
+            vm.setReg(reg1, TEST::doubleToUint64(10.0));
+            vm.setReg(reg2, TEST::doubleToUint64(10.0));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BNED)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(10.0);
-            vm->registers[reg2] = TEST::doubleToUint64(25.0);
+            vm.setReg(reg1, TEST::doubleToUint64(10.0));
+            vm.setReg(reg2, TEST::doubleToUint64(25.0));
         }
 
         // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
-        vm->registers[0]    = 0;
+            vm.setReg(0, 0);
 
         NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
@@ -282,26 +280,24 @@ TEST(NablaBranchTests, doubleBranchIns)
             0       // Location to branch to
         );
 
-        // Populate vm
-        TEST::build_test_vm(vm, TEST::ins_to_vec(baseIns));
-        TEST::build_test_vm(vm, TEST::ins_to_vec(branchIns));
+        std::vector<uint8_t> vins = TEST::ins_to_vec(baseIns);
+        
+        std::vector<uint8_t> vins1 = TEST::ins_to_vec(branchIns);
 
-        // Init
-        vm_init(vm);
+        vins.insert(std::end(vins), std::begin(vins1), std::end(vins1));
+
+        vm.build(vins);
 
         // Step 1 instruction (should be add)
-        vm_step(vm, 1);
+        vm.step(1);
 
         // Sanity
-        CHECK_EQUAL(1, vm->registers[0]);
+        CHECK_EQUAL(1, vm.getActiveReg(0));
 
         // Step 2 instruction (should be branch check, followed by add)
-        vm_step(vm, 2);
+        vm.step(2);
 
-        CHECK_EQUAL(2, vm->registers[0]);
-
-        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
-        vm_delete(vm);
+        CHECK_EQUAL(2, vm.getActiveReg(0));
     }
 }
 
@@ -314,7 +310,7 @@ TEST(NablaBranchTests, doubleBranchInsFails)
     for(int i = 0x07; i <= 0x0C; i++)
     {
         NABLA::Bytegen bytegen;
-        NablaVirtualMachine vm = vm_new();
+        TEST::TestMachine vm;
 
         NABLA::Bytegen::BranchTypes type = static_cast<NABLA::Bytegen::BranchTypes>(i);
 
@@ -329,37 +325,38 @@ TEST(NablaBranchTests, doubleBranchInsFails)
 
         if(type == NABLA::Bytegen::BranchTypes::BGTD)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(TEST::getRandomDouble(0, 200));
-            vm->registers[reg2] = TEST::doubleToUint64(TEST::getRandomDouble(500, 600));
+            vm.setReg(reg1, TEST::doubleToUint64(TEST::getRandomDouble(0, 200)));
+            vm.setReg(reg2, TEST::doubleToUint64(TEST::getRandomDouble(500, 600)));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BGTED)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(9.0);
-            vm->registers[reg2] = TEST::doubleToUint64(10.0);
+            vm.setReg(reg1, TEST::doubleToUint64(9.0));
+            vm.setReg(reg2, TEST::doubleToUint64(10.0));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BLTD)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(TEST::getRandomDouble(500, 700));
-            vm->registers[reg2] = TEST::doubleToUint64(TEST::getRandomDouble(100, 200));
+            vm.setReg(reg1, TEST::doubleToUint64(TEST::getRandomDouble(500, 700)));
+            vm.setReg(reg2, TEST::doubleToUint64(TEST::getRandomDouble(100, 200)));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BLTED)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(15.0);
-            vm->registers[reg2] = TEST::doubleToUint64(10.0);
+            vm.setReg(reg1, TEST::doubleToUint64(15.0));
+            vm.setReg(reg2, TEST::doubleToUint64(10.0));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BEQD)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(55.0);
-            vm->registers[reg2] = TEST::doubleToUint64(10.0);
+            vm.setReg(reg1, TEST::doubleToUint64(55.0));
+            vm.setReg(reg2, TEST::doubleToUint64(10.0));
         }
         else if (type == NABLA::Bytegen::BranchTypes::BNED)
         {
-            vm->registers[reg1] = TEST::doubleToUint64(25.0);
-            vm->registers[reg2] = TEST::doubleToUint64(25.0);
+            vm.setReg(reg1, TEST::doubleToUint64(25.0));
+            vm.setReg(reg2, TEST::doubleToUint64(25.0));
         }
 
+
         // Instruction to branch to is at location 0, so ensure 0 is there to start. Should be 1 on first cycle
-        vm->registers[0]    = 0;
+            vm.setReg(0, 0);
 
         NABLA::Bytegen::Instruction baseIns = bytegen.createArithmaticInstruction(
             NABLA::Bytegen::ArithmaticTypes::ADD,
@@ -376,25 +373,23 @@ TEST(NablaBranchTests, doubleBranchInsFails)
             0       // Location to branch to
         );
 
-        // Populate vm
-        TEST::build_test_vm(vm, TEST::ins_to_vec(baseIns));
-        TEST::build_test_vm(vm, TEST::ins_to_vec(branchIns));
+        std::vector<uint8_t> vins = TEST::ins_to_vec(baseIns);
+        
+        std::vector<uint8_t> vins1 = TEST::ins_to_vec(branchIns);
 
-        // Init
-        vm_init(vm);
+        vins.insert(std::end(vins), std::begin(vins1), std::end(vins1));
+
+        vm.build(vins);
 
         // Step 1 instruction (should be add)
-        vm_step(vm, 1);
+        vm.step(1);
 
         // Sanity
-        CHECK_EQUAL(1, vm->registers[0]);
+        CHECK_EQUAL(1, vm.getActiveReg(0));
 
-        // Step 2 instruction (should be branch check that fails)
-        vm_step(vm, 2);
+        // Step 2 instruction (should be branch check, followed by add)
+        vm.step(2);
 
-        CHECK_EQUAL(1, vm->registers[0]);
-
-        // If the previous test passes. Then we are complete. To avoid anything crazy, we kill the vm
-        vm_delete(vm);
+        CHECK_EQUAL(1, vm.getActiveReg(0));
     }
 }

@@ -13,6 +13,7 @@ add_executable(nablaVsysTests
         ${NABLA_LIBCPP_SOURCES}
         ${NABLA_LIBC_SOURCES}
         arithTests.cpp
+        branchTests.cpp
         memory.cpp
         main.cpp
 )

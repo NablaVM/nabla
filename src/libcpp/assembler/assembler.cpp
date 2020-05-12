@@ -66,6 +66,10 @@
         nop             X                   X                  X
         size            X                   X                  X
         yield           X                   X                  X
+        pushw           X                   X                  X
+        popw            X                   X                  X
+        ldw             X                   X                  X
+        stw             X                   X                  X
         label           X                   NA                 NA
 
 */
@@ -136,6 +140,11 @@ bool instruction_create_function();
 bool instruction_end_function();
 
 bool instruction_yield();
+
+bool instruction_pushw();
+bool instruction_popw();
+bool instruction_stw();
+bool instruction_ldw();
 
 namespace 
 {
@@ -253,7 +262,12 @@ void populate_parser_map()
         MatchCall{ std::regex("^ldb$")       , instruction_ldb       },
         MatchCall{ std::regex("^stb$")       , instruction_stb       },
         MatchCall{ std::regex("^push$")      , instruction_push      },
-        MatchCall{ std::regex("^pop$")       , instruction_pop      },
+        MatchCall{ std::regex("^pop$")       , instruction_pop       },
+
+        MatchCall{ std::regex("^ldw$")       , instruction_ldw       },
+        MatchCall{ std::regex("^stw$")       , instruction_stw       },
+        MatchCall{ std::regex("^pushw$")     , instruction_pushw     },
+        MatchCall{ std::regex("^popw$")      , instruction_popw      },
 
         // Function movement
         MatchCall{ std::regex("^jmp$")       , instruction_jmp       },
@@ -2680,5 +2694,296 @@ bool instruction_size()
 
     return true;
 }
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_pushw()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
+    if(!currentPieces.size() == 3)
+    {
+        std::cerr << "Invalid 'pushw' instruction : " << currentLine << std::endl;
+        return false; 
+    }
+
+    if(isParserVerbose){ std::cout << "pushw : " << currentLine << std::endl; }
+
+    NABLA::Bytegen::Stacks stackType;
+
+    // Argument 1
+    if(isDirectLocalStackPointer(currentPieces[1]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 1 is a local stack pointer " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+    }
+    else if (isDirectGlobalStackPointer(currentPieces[1]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 1 is a global stack pointer " << std::endl; }
+        
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+    }
+    else
+    {
+        std::cerr << "'pushw' instruction argument 1 must be a global or local stack pointer" << std::endl;
+        return false;
+    }
+    
+    // Argument 2
+    if(!isRegister(currentPieces[2]))
+    {
+        std::cout << "'pushw' instruction argument 2 must be a register" << std::endl;
+        return false;
+    }
+
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[2]);
+    
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createPushwInstruction(stackType, reg)
+        );
+
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_popw()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
+    if(!currentPieces.size() == 3)
+    {
+        std::cerr << "Invalid 'popw' instruction : " << currentLine << std::endl;
+        return false; 
+    }
+
+    if(isParserVerbose){ std::cout << "popw : " << currentLine << std::endl; }
+
+    // Argument 1
+    if(!isRegister(currentPieces[1]))
+    {
+        std::cerr << "'popw' instruction argument 1 must be a register" << std::endl;
+        return false;
+    }
+
+    NABLA::Bytegen::Stacks stackType;
+
+    // Argument 2
+    if(isDirectLocalStackPointer(currentPieces[2]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 2 is a local stack pointer " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+    }
+    else if (isDirectGlobalStackPointer(currentPieces[2]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 2 is a global stack pointer " << std::endl; }
+        
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+    }
+    else
+    {
+        std::cerr << "'popw' instruction argument 2 must be a global or local stack pointer (not an offset)" << std::endl;
+        return false;
+    }
+    
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[1]);
+    
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createPopwInstruction(stackType, reg)
+        );
+
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_stw()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
+    if(isParserVerbose){ std::cout << "stw : " << currentLine << std::endl; }
+
+    if(currentPieces.size() != 3)
+    {
+        std::cerr << "Invalid 'stw' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    NABLA::Bytegen::Stacks stackType;
+    NABLA::Bytegen::LoadStoreSetup lsSetup;
+
+    // Check argument 1 
+    if(isOffsetGlobalStackpointer(currentPieces[1]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 1 is global spo : " << currentPieces[1] << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED;
+
+        if(!isStackOffsetInRange(currentPieces[1]))
+        {
+            std::cerr << "Stack offset [" << currentPieces[1] << "] is out of the acceptable range of offsets" << std::endl;
+            return false;
+        }
+    }
+    else if (isOffsetLocalStackpointer(currentPieces[1]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 1 is local spo : " << currentPieces[1] << std::endl; }
+        
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED;
+        
+        if(!isStackOffsetInRange(currentPieces[1]))
+        {
+            std::cerr << "Stack offset [" << currentPieces[1] << "] is out of the acceptable range of offsets" << std::endl;
+            return false;
+        }
+    }
+    else if (isRegisterBasedGlobalStackpointer(currentPieces[1]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 1 -> register-based global_stack_pointer_offset " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED;
+    }
+    else if (isRegisterBasedLocalStackpointer(currentPieces[1]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 1 -> register-based local_stack_pointer_offset " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED;
+    }
+    else
+    {
+        std::cerr << "'stw' argument 1 must be a stack pointer offset, got : " << currentPieces[1] << " instread" << std::endl;
+        return false;
+    }
+
+    if(!isRegister(currentPieces[2]))
+    {
+        std::cerr << "'stw' argument 2 must be a register, got : " << currentPieces[2] << " instead" << std::endl;
+        return false;
+    }
+
+    uint32_t location = getOffsetFromStackOffset(currentPieces[1]);
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[2]);
+
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createStwInstruction(stackType, lsSetup, location, reg)
+        );
+
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_ldw()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
+    if(isParserVerbose){  std::cout << "ldw : " << currentLine << std::endl; }
+
+    if(currentPieces.size() != 3)
+    {
+        std::cerr << "Invalid 'ldw' instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    if(!isRegister(currentPieces[1]))
+    {
+        std::cerr << "Error: First argument of 'ldw' must be a register, got :" << currentPieces[1] << std::endl;
+        return false;
+    }
+
+    NABLA::Bytegen::Stacks stackType;
+    NABLA::Bytegen::LoadStoreSetup lsSetup;
+
+    // Check if its a global stack pointer
+    if (isOffsetGlobalStackpointer(currentPieces[2]))
+    {
+        if(isParserVerbose){ std::cout << "Argument 2 -> global_stack_pointer_offset " << std::endl; }
+    
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED;
+        
+        if(!isStackOffsetInRange(currentPieces[2]))
+        {
+            std::cerr << "Stack offset [" << currentPieces[2] << "] is out of the acceptable range of offsets" << std::endl;
+            return false;
+        }
+    }
+
+    // Check if its a local stack pointer
+    else if (isOffsetLocalStackpointer(currentPieces[2]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 2 -> local_stack_pointer_offset " << std::endl; }
+        
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED;
+        
+        if(!isStackOffsetInRange(currentPieces[2]))
+        {
+            std::cerr << "Stack offset [" << currentPieces[2] << "] is out of the acceptable range of offsets" << std::endl;
+            return false;
+        }
+    }
+    else if (isRegisterBasedGlobalStackpointer(currentPieces[2]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 2 -> register-based global_stack_pointer_offset " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::GLOBAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED;
+    }
+    else if (isRegisterBasedLocalStackpointer(currentPieces[2]))
+    {
+        if(isParserVerbose){  std::cout << "Argument 2 -> register-based local_stack_pointer_offset " << std::endl; }
+
+        stackType = NABLA::Bytegen::Stacks::LOCAL;
+        lsSetup = NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED;
+    }
+    else
+    {
+        std::cerr << "'ldw' argument 2 must be stack offset, got : " << currentPieces[2] << std::endl;
+        return false;
+    }
+
+    uint32_t location = getOffsetFromStackOffset(currentPieces[2]);
+    uint8_t reg = getNumberFromNumericalOrRegister(currentPieces[1]);
+
+     addBytegenInstructionToCurrentFunction(
+         nablaByteGen.createLdwInstruction(stackType, lsSetup, location, reg)
+         );
+
+    return true;
+}
+
+
+
 
 } // End namespace ASSEMBLER

@@ -1,9 +1,9 @@
 .file "constants"
 .init main
 
-.int8  integer     96
-.int16 integer1    42
-.int32 integer2    55
+.int64 integer     96
+.int64 integer1    42
+.int64 integer2    55
 .int64 integer3    568888
 
 .double someDouble 45.435
@@ -16,78 +16,141 @@
 .string ayyy "Hey this is a really cool string. The string limit might seem lame, but hey, maybe its okay!"
 
 
-<dummy:
-    exit
+;
+;      POWER
+;      Performs power operation on r1, and r2
+;      Results in r0
+;      Ex:  r0 = r1 ^ r2
+;      Uses : r0, r1, r2, r3
+<power:
+        mov r0 r1
+        mov r3 $1                   ; Start a counter 
+        bgte r3 r2 powerbottom      ; Pre-Test
+powertop:
+        mul r0 r0 r1			    ; Multiply the and sum
+        add r3 r3 $1
+        blt r3 r2 powertop
+powerbottom:
 >
 
-<another:
-    exit
+;
+;	MODULUS
+;	Performs modulus operation on r1, and r2
+;	Results in r0
+;	Ex:  r0 = r1 % r2
+;	Uses : r0, r1, r2, r3, r4
+<modulus:
+
+    blt r1 r2 modspecial
+
+	mov r3 $0   		; Init temp, and result
+	div r3 r1 r2		; Divide Num/Denom
+    mov r4 $0
+	beq r3 r4 moduiz	; Check if mod is 0
+	jmp moduinz	    	; If not, go to moduinz
+moduiz:
+		add r0 $0 $0	; Indicate is 0
+		jmp moddone
+moduinz:
+		mul r3 r2 r3 	; Mult denom by result
+		sub r0 r1 r3	; Sub result from num
+		jmp moddone
+moddone:
+    ret 
+modspecial:
+    mov r0 r1
+>
+
+<arith:
+    add r0 $2 $10    ; 12 
+    add r0 r0  r0    ; 24
+    add r1 r0  $6    ; 30
+    add r0 r1  $10   ; 40
+    sub r0 $10 $2    ; 8
+    sub r0 r0  r0    ; 0
+    sub r1 r0  $6    ; -6
+    sub r0 $10 r1    ; 16
+    mul r0 $2 $2     ; 4
+    mul r0 r0 r0     ; 16
+    mul r1 r0 $2     ; 32
+    mul r1 $4 r1     ; 128
+    div r0 $100 $5   ; 20
+    div r0 r0 r0     ; 1
+    add r0 r0 $49    ; 50
+    div r1 r0 $2     ; 25
+    div r1 $100 r1   ; 4
+>
+
+<modtest:
+    mov r1 $10
+    mov r2 $7
+    call modulus     ; 3
+    mov r1 $10
+    mov r2 $9
+    call modulus     ; 1
+    mov r1 $10
+    mov r2 $10
+    call modulus     ; 0
+    mov r1 $8
+    mov r2 $10
+    call modulus     ; 8
+>
+
+<powertest:
+    mov r1 $2
+    mov r2 $8
+    call power       ; 256
+>
+
+<load_and_dbl_arith:
+    ldw r1 $0(gs)   ; Should be 96
+    ldw r2 $8(gs)   ; Should be 42
+    ldw r3 $16(gs)  ; Should be 55
+    ldw r4 $24(gs)  ; Should be 568888
+    ldw r9 $0(gs)   ; load integer into 49
+    add r9 r9 $1    ; add 1 to 96
+    ldw r9  $40(gs)       
+    ldw r10 $48(gs)      
+    add.d r0 r9 r10  ; 11.5
+    sub.d r0 r9 r10  ; 8.5
+    mul.d r0 r10 r9  ; 15.0
+    div.d r0 r9 r10  ; 6.66
+
+>
+
+<load_store_push_pop:
+    ldw r1 $0(gs)
+    stw $8(gs) r1
+
+    ldw r1 $0(gs)
+
+    pushw gs r1
+    pushw ls r1
+    popw r0 gs
+    popw r0 ls
+>
+
+<jmp_test:
+
+    mov r0 $1
+
+    jmp gohere
+
+    mov r0 $10 ; Should be skipped
+
+gohere:
+   
+
 >
 
 <main:
 
-; ----------------------- Working -----------------------
-
-     ldb r1 $0(gs) ; Should be 96
-     ldb r2 $8(gs) ; Should be 42
-     ldb r3 $16(gs) ; Should be 55
-     ldb r4 $32(gs) ; Should be 568888
-
-    ; ldb r9 $0(gs)       ; load integer into 49
-    ; add r9 r9 $1        ; add 1 to 96
-
-    ; add r0 $2 $10    ; 12 
-    ; add r0 r0  r0    ; 24
-    ; add r1 r0  $6    ; 30
-    ; add r0 r1  $10   ; 40
-
-    ; sub r0 $10 $2    ; 8
-    ; sub r0 r0  r0    ; 0
-    ; sub r1 r0  $6    ; -6
-    ; sub r0 $10 r1    ; 16
-
-    ; mul r0 $2 $2       ; 4
-    ; mul r0 r0 r0       ; 16
-    ; mul r1 r0 $2       ; 32
-    ; mul r1 $4 r1       ; 128
-
-    ; div r0 $100 $5     ; 20
-    ; div r0 r0 r0       ; 1
-    ; add r0 r0 $49      ; 50
-    ; div r1 r0 $2       ; 25
-    ; div r1 $100 r1     ; 4
-
-    ldb r9  $40(gs)       
-    ldb r10 $48(gs)      
-    add.d r0 r9 r10      ; 11.5
-    sub.d r0 r9 r10      ; 8.5
-    mul.d r0 r10 r9      ; 15.0
-    div.d r0 r9 r10      ; 6.66
-
-    ; ldb r1 $0(gs)
-    ; stb $10(gs) r1
-
-    ; ldb r1 $0(gs)
-    ; push gs r1
-    ; push ls r1
-    ; pop r0 gs
-    ; pop r0 ls
-
-;    ldb r15 $0(gs)
-;jumpLabel:
-;
-;    add r15 r15 $1
-;
-;    jmp jumpLabel
-;    
-;    ldb r15 $0(gs)
-;
-;    mov r0 r15
-;
-;    mov r1 $55
-
-    ; Branch tests 
-
+    ;call arith
+    ;call modtest
+    ;call powertest
+    ;call load_and_dbl_arith
+    ;call load_store_push_pop
+    ;call jmp_test
 
 ; -------------------- BGT -----------------------------
 ;     add r0 $2 $10        ; Put 12 into reg 0
@@ -157,8 +220,8 @@
 
 
 ; -------------------- BGTD ----------------------------
-;    ldb r0  $7(gs)  ; small  (1.0) 
-;    ldb r1  $8(gs)  ; large  (5.0)
+;    ldw r0  $56(gs)  ; small  (1.0) 
+;    ldw r1  $64(gs)  ; large  (5.0)
 ;
 ;testLabel:
 ;    add.d r0 r0 r0  ; add 1.0 r0 
@@ -168,8 +231,8 @@
 
 
 ; -------------------- BGTED ----------------------------
-;    ldb r0  $7(gs)  ; small  (1.0) 
-;    ldb r1  $8(gs)  ; large  (5.0)
+;    ldw r0  $56(gs)  ; small  (1.0) 
+;    ldw r1  $64(gs)  ; large  (5.0)
 ;
 ;testLabel:
 ;    add.d r0 r0 r0  ; add 1.0 r0 
@@ -179,8 +242,8 @@
 
 
 ; -------------------- BLTD ----------------------------
-;    ldb r0  $7(gs)  ; small  (1.0) 
-;    ldb r1  $8(gs)  ; large  (5.0)
+;    ldw r0  $56(gs)  ; small  (1.0) 
+;    ldw r1  $64(gs)  ; large  (5.0)
 ;
 ;testLabel:
 ;    add.d r0 r0 r0  ; add 1.0 r0 
@@ -190,8 +253,8 @@
 
 
 ; -------------------- BLTED ----------------------------
-;    ldb r0  $7(gs)  ; small  (1.0) 
-;    ldb r1  $8(gs)  ; large  (5.0)
+;    ldw r0  $56(gs)  ; small  (1.0) 
+;    ldw r1  $64(gs)  ; large  (5.0)
 ;
 ;testLabel:
 ;    add.d r0 r0 r0  ; add 1.0 r0 
@@ -201,8 +264,8 @@
 
 
 ; -------------------- BEQD ----------------------------
-;    ldb r0  $7(gs)  ; small  (1.0) 
-;    ldb r1  $8(gs)  ; large  (5.0)
+;    ldw r0  $56(gs)  ; small  (1.0) 
+;    ldw r1  $64(gs)  ; large  (5.0)
 ;
 ;    add.d r0 r0 r0  ; add 1.0 r0 
 ;    add.d r0 r0 r0  ; add 1.0 r0 
@@ -215,16 +278,15 @@
 
 
 ; -------------------- BNEQ ----------------------------
-;    ldb r0  $7(gs)  ; small  (1.0) 
-;    ldb r1  $7(gs)  ; small  (1.0) 
-;    ldb r2  $8(gs)  ; large  (5.0)
+;    ldw r0  $56(gs)  ; small  (1.0) 
+;    ldw r1  $56(gs)  ; small  (1.0) 
+;    ldw r2  $64(gs)  ; large  (5.0)
 ;
 ;testLabel:
 ;    add.d r0 r0 r1  ; add 1.0 r0 
 ;
 ;    bne.d r0 r2 testLabel
 ; -------------------------------------------------------
-
 
     exit
 >

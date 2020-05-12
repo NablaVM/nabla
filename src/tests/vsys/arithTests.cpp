@@ -85,9 +85,9 @@ TEST(NablaArithTests, standardArith)
             );
             vm.build( TEST::ins_to_vec(ins));
 
-           // NABLA::VSYS::ExecutionReturns result = vm.step(1);
-          //  CHECK_TRUE(NABLA::VSYS::ExecutionReturns::OKAY == result);
-          //  CHECK_TRUE(TEST::check_result(vm, dest_reg, expectedResult));
+            NABLA::VSYS::ExecutionReturns result = vm.step(50);
+            CHECK_TRUE(NABLA::VSYS::ExecutionReturns::OKAY == result);
+            CHECK_TRUE(TEST::check_result(vm, dest_reg, expectedResult));
 
         }
     }
@@ -157,14 +157,14 @@ TEST(NablaArithTests, doubleArith)
             arg1,
             arg2
         );
-/*
+
         vm.build(TEST::ins_to_vec(ins));
 
         NABLA::VSYS::ExecutionReturns result = vm.step(2);
 
         CHECK_TRUE(NABLA::VSYS::ExecutionReturns::OKAY == result);
 
-        CHECK_TRUE(TEST::check_double_equal(TEST::uint64ToDouble(vm.getReg(dest_reg)), TEST::uint64ToDouble(expectedResult)));
-*/
+        CHECK_TRUE(TEST::check_double_equal(TEST::uint64ToDouble(vm.getActiveReg(dest_reg)), TEST::uint64ToDouble(expectedResult)));
+
     }
 }

@@ -10,23 +10,69 @@
 #include "CppUTest/TestHarness.h"
 
 #include "VSysMachine.hpp"
+#include "VSysMemory.hpp"
 #include "VSysExecutionContext.hpp"
 #include "VSysExecutionReturns.hpp"
+#include <vector>
 
 namespace TEST
 {
+    /*
+    
+            An execution context with some extra functions for setting up tests
+    
+    */
+    class TestContext : public NABLA::VSYS::ExecutionContext
+    {
+    public:
+        TestContext(NABLA::VSYS::Machine &owner, 
+                    uint64_t startAddress, 
+                    NABLA::VSYS::Memory<NABLA::VSYS::NABLA_VSYS_SETTINGS_GLOBAL_MEMORY_BYTES> &global_memory, 
+                    std::vector< std::vector<uint64_t> > &functions) : 
+                    ExecutionContext(owner, startAddress, global_memory, functions)
+        {
+            for(int i = 0; i < 16; i++)
+            {
+                registers[i] = i;
+            }
+        }
+
+        void resetFunctions(std::vector< std::vector<uint64_t> > &functions)
+        {
+            this->contextFunctions.clear();
+
+            for(uint64_t i = 0; i < functions.size(); i++)
+            {
+                InstructionBlock ib;
+                ib.instruction_pointer = 0;
+                ib.instructions = &functions[i];
+                contextFunctions.push_back(
+                    ib
+                );
+            }
+        }
+
+        void dumpReg()
+        {
+            for(int i = 0; i < 16; i++)
+            {
+                std::cout << "REG: " << i << " " << registers[i] << std::endl;
+            }
+        }
+    };
+
+    /*
+    
+            A virtual machine with methods for building tests and accessing execution contexts
+    
+    */
     class TestMachine : public NABLA::VSYS::Machine
     {
     public:
-        TestMachine()
+        TestMachine() : test_context(*this, 0, this->global_memory, this->functions)
         {    
             // Ensure execution contexts arent wiped
             this->running = true;
-            
-            // Manually set a context
-            this->executionContexts.push_back(
-                NABLA::VSYS::ExecutionContext(*this, 0, this->global_memory, this->functions)
-            );
         }
 
         ~TestMachine(){}
@@ -38,13 +84,14 @@ namespace TEST
 
             std::vector<uint64_t> func;
 
-            // Read all of the instructions from the file
+            // Read all of the instructions 
+            uint64_t s = 0;
             for(uint64_t ins = 0; ins < instructions.size()/8; ins++)
             {
                 uint64_t currentIns = 0;
                 for(int n = 7; n >= 0; n--)   
                 {
-                    currentIns |= (uint64_t)instructions[ins++] << (n * 8);
+                    currentIns |= (uint64_t)instructions[s++] << (n * 8);
                 }
 
                 func.push_back(currentIns);
@@ -52,17 +99,35 @@ namespace TEST
 
             this->functions.push_back(func);
 
+            this->executionContexts.clear();
+            
+            test_context.resetFunctions(this->functions);
+
+            // Manually set a context
+            this->executionContexts.push_back(
+                test_context
+            );
         }
 
         void setReg(uint8_t regNum, uint64_t val)
         {
-            this->executionContexts[0].registers[regNum] = val;
+            this->test_context.registers[regNum] = val;
         }
 
         uint64_t getReg(uint8_t regNum)
         {
+            return this->test_context.registers[regNum];
+        }
+
+        //  - Should only be called post-build and post-execution
+        //
+        uint64_t getActiveReg(uint8_t regNum)
+        {
             return this->executionContexts[0].registers[regNum];
         }
+
+    private:
+        TestContext test_context;
     };
 
     // ---------------------------------------------------------------
@@ -131,7 +196,7 @@ namespace TEST
     
     static bool check_result(TestMachine vm, int16_t dest_reg, uint64_t expected)
     {
-        return ((int64_t)vm.getReg(dest_reg) == (int64_t)expected);
+        return ((int64_t)vm.getActiveReg(dest_reg) == (int64_t)expected);
     }
 
     // ---------------------------------------------------------------
