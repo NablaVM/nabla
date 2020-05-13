@@ -6,6 +6,8 @@
 
     This test ensures that the loadable machine can be loaded, stepped, etc. It also
     functions as a test of yield, call, store, and loads.
+
+    In the future I'd like to add more tests here just to increase coverage
 */
 
 #include "VSysLoadableMachine.hpp"
@@ -18,6 +20,8 @@
 #include <string>
 #include <vector>
 #include <fstream>
+
+#include "testSetup.hpp"    // For conversion methods
 
 #include "CppUTest/TestHarness.h"
 
@@ -43,7 +47,7 @@ namespace
     {
         TestInstructs instruct;
         int data;
-        int expected;
+        int64_t expected;
     };
 
     const std::string ASM_YIELD =
@@ -99,9 +103,30 @@ namespace
             "    div r1 $100 r1   ; 4\n"
             ">\n";
 
-
-
-    
+    const std::string ASM_DBL_ARITH =
+            ".file  \"dbl\"\n"
+            ".init  main\n"
+            ".int64 integer     96\n"
+            ".int64 integer1    42\n"
+            ".int64 integer2    55\n"
+            ".int64 integer3    568888\n"
+            ".double someDouble 45.435\n"
+            ".double lhsd       10.0\n"
+            ".double rhsd       1.5\n"
+            "<main:\n"
+            "    ldw r1 $0(gs)   ; Should be 96\n"
+            "    ldw r2 $8(gs)   ; Should be 42\n"
+            "    ldw r3 $16(gs)  ; Should be 55\n"
+            "    ldw r4 $24(gs)  ; Should be 568888\n"
+            "    ldw r9 $0(gs)   ; load integer into 49\n"
+            "    add r9 r9 $1    ; add 1 to 96\n"
+            "    ldw r9  $40(gs)       \n"
+            "    ldw r10 $48(gs)      \n"
+            "    add.d r0 r9 r10  ; 11.5\n"
+            "    sub.d r0 r9 r10  ; 8.5\n"
+            "    mul.d r0 r10 r9  ; 15.0\n"
+            "    div.d r0 r9 r10  ; 6.66\n"
+            ">\n";
 
     struct TestCase
     {
@@ -144,7 +169,7 @@ namespace
             }
         },
 
-        // STD Arithmatic TESTS
+        // STD Arithmetic TESTS
         TestCase
         {
             ASM_STD_ARITH, "Standard Arithmetic",
@@ -183,6 +208,25 @@ namespace
                 {TestInstructs::CHECK_REG, 1,   25},
                 {TestInstructs::STEP,      1,    0},
                 {TestInstructs::CHECK_REG, 1,    4},
+            }
+        },
+
+        // DBL Arithmetic TESTS
+        TestCase
+        {
+            ASM_DBL_ARITH, "Double-based Arithmetic",
+            {
+                // Step all of the loads - we aren't testing those here
+                {TestInstructs::STEP,      9,  0},
+                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(11.5))},
+                {TestInstructs::STEP,      1,  0},
+                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(8.5))},
+                {TestInstructs::STEP,      1,  0},
+                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(15.0))},
+                {TestInstructs::STEP,      1,  0},
+
+                // To ensure full precision and not rely on double casting for checks we use the raw value here. (~6.666667)
+                {TestInstructs::CHECK_REG, 0,  4619192017806338731},
             }
         },
     };

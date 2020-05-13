@@ -115,7 +115,6 @@ modspecial:
     sub.d r0 r9 r10  ; 8.5
     mul.d r0 r10 r9  ; 15.0
     div.d r0 r9 r10  ; 6.66
-
 >
 
 <load_store_push_pop:
