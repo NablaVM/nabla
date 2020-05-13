@@ -1,24 +1,202 @@
 #include <iostream>
+#include <string>
+#include <vector>
 
-extern "C" 
+#include "VSysLoadableMachine.hpp"
+
+/*
+    LLL - Low level language    (LLL Binary is a binary generated from raw LLL through solace)
+    HLL - High level language   (HLL Binary is a binary generated from nabla HLL compiler)
+*/
+
+namespace
 {
-    #include "util.h"
+    struct Args
+    {
+        std::string short_arg;
+        std::string long_arg;
+        std::string description;
+    };
+
+    std::vector<Args> NablaArguments;
 }
-#include "VSysMachine.hpp"          // raw virtual machine
-#include "VSysLoadableMachine.hpp"  // Binary-loadable machine
 
+int handle_bin_exec(std::string file);
 
-int main(int argc, char **argv)
+int handle_compilation(std::string file);
+
+int handle_interpretation_cli();
+
+int handle_interpretation_project(std::string project_dir);
+
+void show_help();
+
+void show_version();
+
+// --------------------------------------------
+// Entry
+// --------------------------------------------
+    
+int main(int argc, char ** argv)
 {
-    std::cout << "Nabla with new vsys architecture" << std::endl;
+    if(argc == 1)
+    {
+        return handle_interpretation_cli();
+    }
 
+    NablaArguments = {
+
+        { "-h", "--nabla-help", "Display help message."},
+        { "-v", "--version",    "Display the version of Nabla." },
+        { "-i", "--interpret",  "Interpret a Nabla HLL project."},
+        { "-c", "--compile",    "Compile a nabla HLL project."}
+    };
+    
+    std::vector<std::string> args(argv, argv + argc);
+
+    for(int i = 0; i < argc; i++)
+    {
+        //  Help
+        //
+        if(args[i] == "-h" || args[i] == "--nabla-help")
+        {
+            show_help();
+            return 0;
+        }
+
+        // Version info
+        //
+        if(args[i] == "-v" || args[i] == "--version")
+        {
+            show_version();
+            return 0;
+        }
+
+        // Interpret a nabla HLL project (run without compile)
+        //
+        if(args[i] == "-i" || args[i] == "--interpret")
+        {
+            if(i == argc - 1)
+            {
+                std::cout << "Error: Project directory not given" << std::endl;
+                return 1;
+            }
+
+            return handle_interpretation_project(args[i+1]);
+        }
+        
+        // Compile a nabla HLL project
+        //
+        if(args[i] == "-c" || args[i] == "--compile")
+        {
+            if(i == argc - 1)
+            {
+                std::cout << "Error: Project directory not given" << std::endl;
+                return 1;
+            }
+
+            return handle_compilation(args[i+1]);
+        }
+    }
+
+    // No arguments handled, but there is at least one argument so try to execute it as a HLL project
+
+    return handle_bin_exec(args[1]);
+}
+
+// --------------------------------------------
+// Compile Nabla HLL
+// --------------------------------------------
+    
+int handle_compilation(std::string file)
+{
+    std::cout << "Nabla compiler has not yet been developed" << std::endl;
+    return 1;
+}
+
+// --------------------------------------------
+// Interpret Nabla HLL cli
+// --------------------------------------------
+
+int handle_interpretation_cli()
+{
+    std::cout << " ∇ Nabla ∇ " << NABLA_VERSION_INFO     << std::endl 
+              << "Platform: "  << TARGET_PLATFORM_STRING << std::endl
+              << "------------------------------------"  << std::endl; 
+
+    std::cerr << "CLI Interpreter has not yet been completed" << std::endl;
+
+    return 1;
+}
+
+// --------------------------------------------
+// Interpret Nabla HLL Project
+// --------------------------------------------
+
+int handle_interpretation_project(std::string project_dir)
+{
+    std::cout << " ∇ Nabla ∇ " << NABLA_VERSION_INFO     << std::endl 
+              << "Platform: "  << TARGET_PLATFORM_STRING << std::endl
+              << "------------------------------------"  << std::endl; 
+
+    std::cerr << "Project Interpreter has not yet been completed" << std::endl;
+
+    return 1;
+}
+
+// --------------------------------------------
+// Show help
+// --------------------------------------------
+    
+void show_help()
+{
+    std::cout << " ∇ Nabla ∇ | Help" << std::endl 
+              << "----------------------------------------------" 
+              << std::endl
+              << "Short\tLong\t\tDescription" << std::endl
+              << "----------------------------------------------"
+              << std::endl;
+
+    for(auto & na : NablaArguments)
+    {
+        std::cout << na.short_arg << "\t" << na.long_arg << "\t" << na.description << std::endl;
+    }
+
+    std::cout << "----------------------------------------------"
+              << std::endl 
+              << "Given no commands, Nabla will enter into interpreter."
+              << std::endl 
+              << "Given a single file, Nabla will assume that it is a compiled HLL project and attempt to execute it."
+              << std::endl;
+}
+
+// --------------------------------------------
+// Show version
+// --------------------------------------------
+    
+void show_version()
+{
+    std::cout << " ∇ Nabla ∇ | Version and build information"       << std::endl
+              << "-------------------------------------------"      << std::endl 
+              << "Nabla Version  : " << NABLA_VERSION_INFO          << std::endl
+              << "Short Build ID : " << NABLA_BUILD_ID_SHORT        << std::endl
+              << "Compiled       : " << NABLA_COMPILATION_TIMESTAMP << std::endl
+              << "-------------------------------------------"      << std::endl;
+    return;
+}
+
+// --------------------------------------------
+//  Execute a binary 
+// --------------------------------------------
+
+int  handle_bin_exec(std::string file)
+{
     NABLA::VSYS::LoadableMachine virtualMachine;
 
-    switch(virtualMachine.loadFile("solace.out"))
+    switch(virtualMachine.loadFile(file))
     {
         case NABLA::VSYS::LoadableMachine::LoadResultCodes::OKAY :
         {
-            std::cout << "VSYS loaded" << std::endl;
             break;
         }
         case NABLA::VSYS::LoadableMachine::LoadResultCodes::UNABLE_TO_OPEN_FILE :

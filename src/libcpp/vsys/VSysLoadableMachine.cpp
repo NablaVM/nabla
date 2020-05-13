@@ -288,10 +288,6 @@ namespace VSYS
 
     LoadableMachine::LoadResultCodes LoadableMachine::loadFile(std::string path)
     {
-
-        std::cout << "-----------" << std::endl;
-
-        
         FILE * file = fopen(path.c_str(), "rb");
 
         if(file == NULL)
