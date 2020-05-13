@@ -76,6 +76,33 @@ namespace
             "  ldw r1 $2(gs)\n"
             ">\n";
 
+    const std::string ASM_STD_ARITH = 
+            ".file \"arith\"\n"
+            ".init main\n"
+            "<main:\n"
+            "    add r0 $2 $10    ; 12 \n"
+            "    add r0 r0  r0    ; 24\n"
+            "    add r1 r0  $6    ; 30\n"
+            "    add r0 r1  $10   ; 40\n"
+            "    sub r0 $10 $2    ; 8\n"
+            "    sub r0 r0  r0    ; 0\n"
+            "    sub r1 r0  $6    ; -6\n"
+            "    sub r0 $10 r1    ; 16\n"
+            "    mul r0 $2 $2     ; 4\n"
+            "    mul r0 r0 r0     ; 16\n"
+            "    mul r1 r0 $2     ; 32\n"
+            "    mul r1 $4 r1     ; 128\n"
+            "    div r0 $100 $5   ; 20\n"
+            "    div r0 r0 r0     ; 1\n"
+            "    add r0 r0 $49    ; 50\n"
+            "    div r1 r0 $2     ; 25\n"
+            "    div r1 $100 r1   ; 4\n"
+            ">\n";
+
+
+
+    
+
     struct TestCase
     {
         std::string data;
@@ -114,6 +141,48 @@ namespace
                 {TestInstructs::CHECK_REG, 0,  42},
                 {TestInstructs::STEP,      1,   0},
                 {TestInstructs::CHECK_REG, 1,  69}
+            }
+        },
+
+        // STD Arithmatic TESTS
+        TestCase
+        {
+            ASM_STD_ARITH, "Standard Arithmetic",
+            {
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,   12},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,   24},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 1,   30},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,   40},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,    8},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,    0},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 1,   -6},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,   16},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,    4},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,   16},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 1,   32},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 1,  128},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,   20},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,    1},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 0,   50},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 1,   25},
+                {TestInstructs::STEP,      1,    0},
+                {TestInstructs::CHECK_REG, 1,    4},
             }
         },
     };
@@ -163,7 +232,7 @@ namespace
 // 
 // ---------------------------------------------------------------
 
-TEST_GROUP(NablaLoadableTests)
+TEST_GROUP(NablaAutomatedExecutionTests)
 {
     void setup()
     {
@@ -180,7 +249,7 @@ TEST_GROUP(NablaLoadableTests)
 // 
 // ---------------------------------------------------------------
 
-TEST(NablaLoadableTests, asms)
+TEST(NablaAutomatedExecutionTests, asms)
 {
     for(auto & tc : TEST_CASES)
     {
@@ -199,8 +268,10 @@ TEST(NablaLoadableTests, asms)
         // Execute the checks specific to the test case
         for(auto & inspair : tc.instructs)
         {
+            // Depending on the given instruction, take a different action
             switch(inspair.instruct)
             {
+                // Step the machine a given amount
                 case TestInstructs::STEP:
                 {
                     NABLA::VSYS::ExecutionReturns step_result = vm.step(inspair.data);
@@ -208,6 +279,7 @@ TEST(NablaLoadableTests, asms)
                     break;
                 }
 
+                // Check the contents of a register
                 case TestInstructs::CHECK_REG:
                 {
                     // There is only one context for tests
@@ -219,6 +291,7 @@ TEST(NablaLoadableTests, asms)
                     break;
                 }
 
+                // Fail
                 default:
                 {
                     FAIL("Somehow hit an unknown test instruction????");
