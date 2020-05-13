@@ -23,9 +23,8 @@ namespace EXTERNAL
 
     private:
     
-        int    state;
+        int     state;
         FILE *  filePointer;
-        int byteIndex;
     };
 }
 }
