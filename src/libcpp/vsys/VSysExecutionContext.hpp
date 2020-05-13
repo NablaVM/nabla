@@ -91,7 +91,7 @@ namespace VSYS
         bool attempt_return();
 
         // Check if hardware needs to be triggered
-        void hardware_execution_check();
+        bool hardware_execution_check();
 
         // Complete a step cycle
         void finalize_cycle();

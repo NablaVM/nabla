@@ -121,11 +121,11 @@ namespace
             "    ldw r9 $0(gs)   ; load integer into 49\n"
             "    add r9 r9 $1    ; add 1 to 96\n"
             "    ldw r9  $40(gs)       \n"
-            "    ldw r10 $48(gs)      \n"
-            "    add.d r0 r9 r10  ; 11.5\n"
-            "    sub.d r0 r9 r10  ; 8.5\n"
-            "    mul.d r0 r10 r9  ; 15.0\n"
-            "    div.d r0 r9 r10  ; 6.66\n"
+            "    ldw r8  $48(gs)      \n"
+            "    add.d r0 r9 r8  ; 11.5\n"
+            "    sub.d r0 r9 r8  ; 8.5\n"
+            "    mul.d r0 r8 r9  ; 15.0\n"
+            "    div.d r0 r9 r8  ; 6.66\n"
             ">\n";
 
     struct TestCase
@@ -319,6 +319,7 @@ TEST(NablaAutomatedExecutionTests, asms)
                 case TestInstructs::STEP:
                 {
                     NABLA::VSYS::ExecutionReturns step_result = vm.step(inspair.data);
+                    
                     CHECK_TRUE(step_result == NABLA::VSYS::ExecutionReturns::OKAY);
                     break;
                 }

@@ -42,6 +42,11 @@ namespace VSYS
                 ib
             );
         }
+
+        for(uint8_t i = 0; i < 16; i ++)
+        {
+            registers[i] = 0;
+        }
     }
 
     // ----------------------------------------------------------------
@@ -921,7 +926,11 @@ namespace VSYS
                 }
             }
 
-            hardware_execution_check();
+            // Check for hardware execution. If it fails we need to fail.
+            if(!hardware_execution_check())
+            {
+                return ExecutionReturns::UNKNOWN_INSTRUCTION;
+            }
 
             finalize_cycle();
         }
@@ -955,47 +964,38 @@ namespace VSYS
     //
     // ----------------------------------------------------------------
 
-    void ExecutionContext::hardware_execution_check()
+    bool ExecutionContext::hardware_execution_check()
     {
-                // Check action registers to see if a device needs to be called
+        //  Check action registers to see if a device needs to be called
         // ----------------------------------------------------------------------------
 
         if(this->registers[10] != 0)
         {
+            uint8_t device_id = util_extract_byte(this->registers[10], 7);
+            if(owner.externalDeviceMap.find(device_id) == owner.externalDeviceMap.end())
+            {
 
-            // Check paren't device map for device ID . Execute if found.
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                std::cerr << "Invalid device id in register 10" << std::endl;
+#endif
+                return false;
+            }
 
-            // Need to clear reg 10 ourselves to ensure it gets done
+            if( nullptr == owner.externalDeviceMap[device_id])
+            {
 
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+                std::cerr << "Somehow device " << device_id << " was a nullptr!" << std::endl;
+                return false;
+#endif
+            }
 
-            /*
-                Devices take in both device pointer, AND VM, as the interface for the devices 
-                has been set as-such to ensure that the device is logically seperated from the 
-                machine. This gives us some flex for future work
-            */
-//             uint8_t device_id = util_extract_byte(this->registers[10], 7);
-//
-//             switch(device_id)
-//             {
-//             case VM_SETTINGS_DEVICE_ADDRESS_IO:
-//                 io_process(this->io_device, vm);
-//                 break;
-//
-//             case VM_SETTINGS_DEVICE_ADDRESS_NET:
-//                 net_process(this->net_device, vm);
-//                 break;
-//
-//             case VM_SETTINGS_DEVICE_ADDRESS_HOST:
-//                 host_process(this->host_device, vm);
-//                 break;
-//
-//             default:
-// #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-//                     printf("Invalid device id found in register 10.\n");
-// #endif
-//                 return VM_RUN_ERROR_UNKNOWN_INSTRUCTION;
-//             };
+            // Ask device to perform some action 
+            owner.externalDeviceMap[device_id]->execute(registers, global_memory);
         }
+
+        // Even if nothing happens, we need to indicate everything is okay
+        return true;
     }
 
     // ----------------------------------------------------------------

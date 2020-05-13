@@ -3,6 +3,8 @@
 
 #include "VSysExternalIf.hpp"
 
+#include <stdio.h>
+
 namespace NABLA
 {
 namespace VSYS
@@ -18,6 +20,12 @@ namespace EXTERNAL
 
         // From ExternalIf
         virtual void execute(int64_t (&registers)[16], Memory<NABLA_VSYS_SETTINGS_GLOBAL_MEMORY_BYTES> &global_memory) override;
+
+    private:
+    
+        int    state;
+        FILE *  filePointer;
+        int byteIndex;
     };
 }
 }

@@ -36,7 +36,7 @@ namespace TEST
         {
             for(int i = 0; i < 16; i++)
             {
-                registers[i] = i;
+                registers[i] = 0;
             }
         }
 
