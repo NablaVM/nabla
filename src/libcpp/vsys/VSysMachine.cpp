@@ -36,6 +36,20 @@ namespace VSYS
     //
     // ----------------------------------------------------------------
     
+    ExecutionContext * Machine::getExecutionContext(uint64_t id)
+    {
+        if(executionContexts.size() < id)
+        {
+            return nullptr;
+        }
+
+        return &executionContexts[id];
+    }
+
+    // ----------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------
+    
     ExecutionReturns Machine::step(uint64_t steps)
     {
         if(inErrorState)

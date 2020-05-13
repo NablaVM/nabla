@@ -705,14 +705,12 @@ namespace VSYS
                     if(stackDest == GLOBAL_STACK)
                     {
                         okay = this->global_memory.set_64(destAddress, val);
-                    std::cout << "STW STORE : " << val << " @ GM " << destAddress << std::endl;
                     }
                     else if ( stackDest == LOCAL_STACK )
                     {
                         okay = this->contextFunctions[currentInstructionBlock].function_memory.set_64(
                             destAddress, val
                         );
-                    std::cout << "STW STORE : " << val << " @ FM " << destAddress << std::endl;
                     }
                     assert(okay);
                     break;

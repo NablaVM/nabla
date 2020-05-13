@@ -28,6 +28,8 @@ namespace VSYS
         void executionContextGarbageCollection();
 
         bool isRunning() const;
+
+        ExecutionContext * getExecutionContext(uint64_t id);
     
     protected:
 

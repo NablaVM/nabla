@@ -26,7 +26,6 @@ namespace VSYS
 
         bool isContextComplete() const;
 
-        // Registers that can be used specific to this context
         int64_t registers[16];
         
     protected:
