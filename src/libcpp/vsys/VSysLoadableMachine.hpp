@@ -1,7 +1,3 @@
-/*
-    A machine that is loaded from a compiled binary file
-*/
-
 #ifndef NABLA_VSYS_LOADABLE_MACHINE
 #define NABLA_VSYS_LOADABLE_MACHINE
 
@@ -14,10 +10,13 @@ namespace NABLA
 {
 namespace VSYS
 {
+    //! \brief A virtual machine implementation that supports being loaded from a
+    //!        bytecode file. 
     class LoadableMachine : public Machine
     {
     public:
 
+        //! \brief Result codes returned by loadFile function
         enum class LoadResultCodes
         {
             OKAY,
@@ -25,12 +24,19 @@ namespace VSYS
             ERROR_FAILED_TO_LOAD_CONSTANTS,
             ERROR_FAILED_TO_LOAD_FUCNTION,
             ERROR_UNHANDLED_INSTRUCTION,
-            ERROR_EOB_NOT_FOUND
+            ERROR_EOB_NOT_FOUND,
+            ERROR_MACHINE_IN_ERROR_STATE
         };
 
+        //! \brief Create a loadable machine
         LoadableMachine();
+
+        //! \brief Detroy a loadable machine
         ~LoadableMachine();
 
+        //! \brief Attempt to populate the machine from file
+        //! \param path The path to a file containing bytecode generated from the assembler
+        //! \returns A LoadResultCodes enumeration indicating the result of the load
         LoadResultCodes loadFile(std::string path);
 
     private:

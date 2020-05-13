@@ -199,33 +199,38 @@ int  handle_bin_exec(std::string file)
         {
             break;
         }
+        case NABLA::VSYS::LoadableMachine::LoadResultCodes::ERROR_MACHINE_IN_ERROR_STATE:
+        {
+            std::cerr << "Machine was in error state when attempting to load file" << std::endl;
+            return 1;
+        }
         case NABLA::VSYS::LoadableMachine::LoadResultCodes::UNABLE_TO_OPEN_FILE :
         {
-            std::cout << "Unable to open file!" << std::endl;
+            std::cerr << "Unable to open file!" << std::endl;
             return 1;
         }
         case NABLA::VSYS::LoadableMachine::LoadResultCodes::ERROR_FAILED_TO_LOAD_CONSTANTS :
         {
-            std::cout << "Failed to load constants" << std::endl;
+            std::cerr << "Failed to load constants" << std::endl;
             return 1;
         }
         case NABLA::VSYS::LoadableMachine::LoadResultCodes::ERROR_FAILED_TO_LOAD_FUCNTION :
         {
-            std::cout << "Failed to load function" << std::endl;
+            std::cerr << "Failed to load function" << std::endl;
             return 1;
         }
         case NABLA::VSYS::LoadableMachine::LoadResultCodes::ERROR_UNHANDLED_INSTRUCTION :
         {
-            std::cout << "Unhandled instruction" << std::endl;
+            std::cerr << "Unhandled instruction" << std::endl;
             return 1;
         }
         case NABLA::VSYS::LoadableMachine::LoadResultCodes::ERROR_EOB_NOT_FOUND :
         {
-            std::cout << "EOB not found" << std::endl;
+            std::cerr << "EOB not found" << std::endl;
             return 1;
         }
         default:
-            std::cout << "Unhandled load return" << std::endl;
+            std::cerr << "Unhandled load return" << std::endl;
             return 1;
     }
 

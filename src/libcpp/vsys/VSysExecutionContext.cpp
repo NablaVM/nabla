@@ -962,6 +962,12 @@ namespace VSYS
 
         if(this->registers[10] != 0)
         {
+
+            // Check paren't device map for device ID . Execute if found.
+
+            // Need to clear reg 10 ourselves to ensure it gets done
+
+
             /*
                 Devices take in both device pointer, AND VM, as the interface for the devices 
                 has been set as-such to ensure that the device is logically seperated from the 

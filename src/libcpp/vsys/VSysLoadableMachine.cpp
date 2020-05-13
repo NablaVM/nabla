@@ -15,7 +15,13 @@ namespace VSYS
  
     LoadableMachine::LoadableMachine()
     {
-
+        if(!this->addStandardExternalDevices())
+        {
+#ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
+            std::cerr << "Unable to attach standard external devices to VM!" << std::endl;
+            this->inErrorState = true;
+#endif
+        }
     }
 
     // ----------------------------------------------------------------
@@ -26,6 +32,10 @@ namespace VSYS
     {
 
     }
+
+    // ----------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------
 
     void LoadableMachine::load_numerical_constant(FILE* file, uint8_t nBytes, int *result)
     {
@@ -288,6 +298,12 @@ namespace VSYS
 
     LoadableMachine::LoadResultCodes LoadableMachine::loadFile(std::string path)
     {
+        if(inErrorState)
+        {
+            std::cerr << "LoadableMachine : In error state. Can not attempt to load file. " << std::endl;
+            return LoadResultCodes::ERROR_MACHINE_IN_ERROR_STATE;
+        }
+
         FILE * file = fopen(path.c_str(), "rb");
 
         if(file == NULL)

@@ -5,6 +5,7 @@ namespace NABLA
 {
 namespace VSYS
 {
+    //! \brief Return values from asking something to be executed. 
     enum class ExecutionReturns
     {
         OKAY,

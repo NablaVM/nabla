@@ -8,13 +8,15 @@
 #include <vector>
 #include <ieee754.h>
 
-#include "CppUTest/TestHarness.h"
 
 #include "VSysMachine.hpp"
 #include "VSysMemory.hpp"
 #include "VSysExecutionContext.hpp"
 #include "VSysExecutionReturns.hpp"
 #include <vector>
+
+// Always include this last
+#include "CppUTest/TestHarness.h"
 
 namespace TEST
 {

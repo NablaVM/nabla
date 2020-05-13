@@ -20,7 +20,43 @@ namespace VSYS
     
     Machine::~Machine()
     {
+        executionContexts.clear();
+        externalDeviceMap.clear();
+    }
 
+    // ----------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------
+
+    bool Machine::attachExternal(uint16_t id, EXTERNAL::ExternalIf &external)
+    {
+        if(externalDeviceMap.find(id) != externalDeviceMap.end())
+        {
+            // Already exists
+            return false;
+        }
+
+        // Set the device
+        externalDeviceMap[id] = &external;
+        return true;
+    }
+
+    // ----------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------
+
+    bool Machine::addStandardExternalDevices()
+    {
+        // ADD IO
+        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_IO,   external_device_IO) ) { return false; }
+
+        // Add Net
+        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_NET,  external_device_Net) ) { return false; }
+
+        // Add Host
+        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_HOST, external_device_Host) ) { return false; }
+
+        return true;
     }
 
     // ----------------------------------------------------------------
