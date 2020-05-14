@@ -89,7 +89,7 @@ loop_top:
 
     lsh r5 $0 $32      ; Load the start address of the file string 
     
-    or r5 r5 $16        ; Load the end address of the file string
+    or r5 r5 $15        ; Load the end address of the file string
 
     mov r11 r5         ; Move the stack address information into register io device will expect
     

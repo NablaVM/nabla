@@ -28,7 +28,7 @@ namespace VSYS
     public:
 
         //! \brief Construct a memory object
-        Memory() : data_back(0) 
+        Memory() : data_back(0)
         {
             memory.reserve(T);
         }
@@ -61,7 +61,6 @@ namespace VSYS
             put_n(data_back, data, 8);
 
             data_back++;
-
             return true;
         }
 

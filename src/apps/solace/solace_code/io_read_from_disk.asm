@@ -69,7 +69,7 @@ loop_top:
     ; Make the stdout instruction seen in devices.md for stdout
     or r0 r0 r1 
 
-    mov r1 $52
+    mov r1 $45
     mov r2 $25
 
 loop_top:

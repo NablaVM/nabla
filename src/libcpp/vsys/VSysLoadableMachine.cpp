@@ -122,9 +122,6 @@ namespace VSYS
             return;
         }
 
-        int      shifter    = 7;
-        uint64_t stackValue = 0;
-
         for(int i = 0; i < strSize; i++)
         {
             uint8_t currentChunk = 0;
@@ -134,28 +131,14 @@ namespace VSYS
                 return;
             }
 
-            stackValue |= (uint64_t)currentChunk << (shifter * 8);
+            bool res = this->global_memory.push_8(currentChunk);
+
+            
 
 #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
             std::cout << (char)currentChunk;
 #endif
-            shifter--;
 
-            // If we are below 0 that means this stack value is full
-            // we need to reset the shifter, and push the value onto the stack
-            if(shifter < 0 || i == strSize-1)
-            {
-                shifter = 7;
-
-                if(!this->global_memory.push_64(stackValue))
-                {
-                    *result = -1;
-                    return;
-                }
-
-                // Reset the stack value
-                stackValue = 0;
-            }
         }
 
         *result = 0;

@@ -109,10 +109,10 @@ namespace VSYS
         bool newExecutionContext(uint64_t address);
 
         // Standard external processing 'devices' 
-
-        EXTERNAL::IO   external_device_IO;
-        EXTERNAL::Net  external_device_Net;
-        EXTERNAL::Host external_device_Host;
+        // Created iff addStandardExternalDevices is called
+        EXTERNAL::IO   * external_device_IO;
+        EXTERNAL::Net  * external_device_Net;
+        EXTERNAL::Host * external_device_Host;
     };
 } 
 }

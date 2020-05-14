@@ -2,6 +2,8 @@
 #define NABLA_EXTERNAL_IF_HPP
 
 #include "VSysMemory.hpp"
+#include "VSysSettings.hpp"
+
 #include <stdint.h>
 
 namespace NABLA

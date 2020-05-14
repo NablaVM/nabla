@@ -9,7 +9,8 @@ namespace VSYS
     //
     // ----------------------------------------------------------------
     
-    Machine::Machine() : running(false), inErrorState(false), entryAddress(0)
+    Machine::Machine() : running(false), inErrorState(false), entryAddress(0),
+                         external_device_IO(nullptr), external_device_Net(nullptr), external_device_Host(nullptr)
     {
 
     }
@@ -22,6 +23,10 @@ namespace VSYS
     {
         executionContexts.clear();
         externalDeviceMap.clear();
+
+        delete external_device_IO;
+        delete external_device_Net;
+        delete external_device_Host;        
     }
 
     // ----------------------------------------------------------------
@@ -47,14 +52,24 @@ namespace VSYS
 
     bool Machine::addStandardExternalDevices()
     {
+        // If any of these are defined, then we've already added them
+        if(external_device_IO != nullptr || external_device_Net != nullptr || external_device_Host != nullptr)
+        {
+            return false;
+        }
+
+        external_device_IO   = new EXTERNAL::IO  ();
+        external_device_Net  = new EXTERNAL::Net ();
+        external_device_Host = new EXTERNAL::Host();
+
         // ADD IO
-        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_IO,   external_device_IO) ) { return false; }
+        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_IO,   *external_device_IO) ) { return false; }
 
         // Add Net
-        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_NET,  external_device_Net) ) { return false; }
+        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_NET,  *external_device_Net) ) { return false; }
 
         // Add Host
-        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_HOST, external_device_Host) ) { return false; }
+        if(! attachExternal(NABLA_VSYS_SETTINGS_EXTERNALS_ADDRESS_HOST, *external_device_Host) ) { return false; }
 
         return true;
     }

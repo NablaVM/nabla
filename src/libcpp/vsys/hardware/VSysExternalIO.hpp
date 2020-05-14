@@ -11,11 +11,15 @@ namespace VSYS
 {
 namespace EXTERNAL
 {
+    //! \brief An external 'device' that adds IO functionality
     class IO : public ExternalIf 
     {
     public:
 
+        //! \brief Create the external device
         IO();
+
+        //! \brief Destroy the external device
         ~IO();
 
         // From ExternalIf
@@ -23,7 +27,12 @@ namespace EXTERNAL
 
     private:
     
+        // Save device state from one operation to the next by preserving 
+        // the hidden device enumeration
         int     state;
+
+        // Uses C-Style as the previous implementation was written in C, and this
+        // object acts as a wrapper for the previous implementation
         FILE *  filePointer;
     };
 }
