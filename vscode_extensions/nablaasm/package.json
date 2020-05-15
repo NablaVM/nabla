@@ -1,0 +1,27 @@
+{
+    "name": "vsc-nablaasm-extension",
+    "displayName": "Nabla ASM Syntax Highlighting",
+    "description": "A VSC extension to support Nabla ASM syntax",
+    "icon": "./images/nabla.png",
+    "publisher": "Josh A. Bosley",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.35.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "asm",
+            "aliases": ["asm", "asm"],
+            "extensions": [".asm"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "asm",
+            "scopeName": "source.asm",
+            "path": "./syntaxes/asm.tmLanguage.json"
+        }]
+    }
+}
