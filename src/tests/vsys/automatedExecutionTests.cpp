@@ -50,6 +50,7 @@ namespace
         TestInstructs instruct;
         int data;
         int64_t expected;
+        uint64_t context;
     };
 
     const std::string ASM_YIELD =
@@ -131,12 +132,40 @@ namespace
             ">\n";
 
     const std::string ASM_BIG_MOVE =
-        ".file \"newmov\"\n"
-        ".init main\n"
-        "<main:\n"
-        "    mov r0 $-2147483647\n"
-        "    mov r0 $2147483646 \n"
-        ">\n";
+            ".file \"newmov\"\n"
+            ".init main\n"
+            "<main:\n"
+            "    mov r0 $-2147483647\n"
+            "    mov r0 $2147483646 \n"
+            ">\n";
+
+    const std::string ASM_PCALL =
+            ".file \"Pcall\"\n"
+            ".init main\n"
+            "<par_call:\n"
+            "    mov r0 $3\n"
+            "    mov r0 $3\n"
+            "    mov r0 $3\n"
+            "    mov r0 $3\n"
+            ">\n"
+            "<par:\n"
+            "    mov r0 $2\n"
+            "    mov r0 $2\n"
+            "    call par_call\n"
+            ">\n"
+            "<main_call:\n"
+            "    mov r0 $10\n"
+            "    mov r0 $10\n"
+            "    mov r0 $10\n"
+            ">\n"
+            "<main:\n"
+            "    mov r0 $1\n"
+            "    mov r0 $1\n"
+            "    pcall par \n"
+            "    mov r0 $1\n"
+            "    mov r0 $1\n"
+            "    call main_call\n"
+            ">\n";
 
     struct TestCase
     {
@@ -152,13 +181,13 @@ namespace
         { 
             ASM_YIELD, "Yield Tests", 
             { 
-                {TestInstructs::STEP,      4,  0},
-                {TestInstructs::CHECK_REG, 0,  1},
-                {TestInstructs::STEP,      3,  0},
-                {TestInstructs::CHECK_REG, 0, 99},
-                {TestInstructs::STEP,      3,  0},
-                {TestInstructs::CHECK_REG, 0,  2},
-                {TestInstructs::STEP,      3,  0},
+                {TestInstructs::STEP,      4,  0, 0},
+                {TestInstructs::CHECK_REG, 0,  1, 0},
+                {TestInstructs::STEP,      3,  0, 0},
+                {TestInstructs::CHECK_REG, 0, 99, 0},
+                {TestInstructs::STEP,      3,  0, 0},
+                {TestInstructs::CHECK_REG, 0,  2, 0},
+                {TestInstructs::STEP,      3,  0, 0},
             } 
         },
 
@@ -167,15 +196,15 @@ namespace
         {
             ASM_LOAD_STORE, "Load Store Tests",
             {
-                {TestInstructs::STEP,      1,   0},
-                {TestInstructs::CHECK_REG, 0,  42},
-                {TestInstructs::STEP,      1,   0},
-                {TestInstructs::CHECK_REG, 1,  69},
-                {TestInstructs::STEP,      3,   0},
-                {TestInstructs::STEP,      1,   0},
-                {TestInstructs::CHECK_REG, 0,  42},
-                {TestInstructs::STEP,      1,   0},
-                {TestInstructs::CHECK_REG, 1,  69}
+                {TestInstructs::STEP,      1,   0, 0},
+                {TestInstructs::CHECK_REG, 0,  42, 0},
+                {TestInstructs::STEP,      1,   0, 0},
+                {TestInstructs::CHECK_REG, 1,  69, 0},
+                {TestInstructs::STEP,      3,   0, 0},
+                {TestInstructs::STEP,      1,   0, 0},
+                {TestInstructs::CHECK_REG, 0,  42, 0},
+                {TestInstructs::STEP,      1,   0, 0},
+                {TestInstructs::CHECK_REG, 1,  69, 0}
             }
         },
 
@@ -184,40 +213,40 @@ namespace
         {
             ASM_STD_ARITH, "Standard Arithmetic",
             {
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,   12},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,   24},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 1,   30},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,   40},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,    8},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,    0},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 1,   -6},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,   16},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,    4},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,   16},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 1,   32},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 1,  128},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,   20},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,    1},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 0,   50},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 1,   25},
-                {TestInstructs::STEP,      1,    0},
-                {TestInstructs::CHECK_REG, 1,    4},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,   12, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,   24, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 1,   30, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,   40, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,    8, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,    0, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 1,   -6, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,   16, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,    4, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,   16, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 1,   32, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 1,  128, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,   20, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,    1, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 0,   50, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 1,   25, 0},
+                {TestInstructs::STEP,      1,    0, 0},
+                {TestInstructs::CHECK_REG, 1,    4, 0},
             }
         },
 
@@ -227,16 +256,16 @@ namespace
             ASM_DBL_ARITH, "Double-based Arithmetic",
             {
                 // Step all of the loads - we aren't testing those here
-                {TestInstructs::STEP,      9,  0},
-                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(11.5))},
-                {TestInstructs::STEP,      1,  0},
-                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(8.5))},
-                {TestInstructs::STEP,      1,  0},
-                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(15.0))},
-                {TestInstructs::STEP,      1,  0},
+                {TestInstructs::STEP,      9,  0, 0},
+                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(11.5)), 0},
+                {TestInstructs::STEP,      1,  0, 0},
+                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(8.5)),  0},
+                {TestInstructs::STEP,      1,  0, 0},
+                {TestInstructs::CHECK_REG, 0,  static_cast<int64_t>(TEST::doubleToUint64(15.0)), 0},
+                {TestInstructs::STEP,      1,  0, 0},
 
                 // To ensure full precision and not rely on double casting for checks we use the raw value here. (~6.666667)
-                {TestInstructs::CHECK_REG, 0,  4619192017806338731},
+                {TestInstructs::CHECK_REG, 0,  4619192017806338731, 0},
             }
         },
         
@@ -245,10 +274,42 @@ namespace
         { 
             ASM_BIG_MOVE, "Big move Tests", 
             { 
-                {TestInstructs::STEP,      1,  0},
-                {TestInstructs::CHECK_REG, 0, -2147483647},
-                {TestInstructs::STEP,      1,  0},
-                {TestInstructs::CHECK_REG, 0,  2147483646}
+                {TestInstructs::STEP,      1,  0, 0},
+                {TestInstructs::CHECK_REG, 0, -2147483647, 0},
+                {TestInstructs::STEP,      1,  0, 0},
+                {TestInstructs::CHECK_REG, 0,  2147483646, 0}
+            } 
+        },
+
+        // PCALL TESTS 
+        TestCase 
+        { 
+            ASM_PCALL, "PCall Tests", 
+            { 
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 1, 0},
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 1, 0},
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 1, 0},
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 2, 1},
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 1, 0},
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 2, 1},
+                {TestInstructs::STEP,      3, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 10, 0},
+                {TestInstructs::CHECK_REG, 0, 3, 1},
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 10, 0},
+                {TestInstructs::CHECK_REG, 0, 3, 1},
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 10, 0},
+                {TestInstructs::CHECK_REG, 0, 3, 1},
+                {TestInstructs::STEP,      1, 0, 0},
+                {TestInstructs::CHECK_REG, 0, 3, 1},
+                {TestInstructs::CHECK_REG, 0, 10, 0}
             } 
         },
     };
@@ -349,8 +410,8 @@ TEST(NablaAutomatedExecutionTests, asms)
                 // Check the contents of a register
                 case TestInstructs::CHECK_REG:
                 {
-                    // There is only one context for tests
-                    NABLA::VSYS::ExecutionContext * ec = vm.getExecutionContext(0);
+                    // Get the execution for the specified context
+                    NABLA::VSYS::ExecutionContext * ec = vm.getExecutionContext(inspair.context);
 
                     CHECK_FALSE(nullptr == ec);
 

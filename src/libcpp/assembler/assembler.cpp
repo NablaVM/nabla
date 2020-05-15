@@ -70,6 +70,7 @@
         popw            X                   X                  X
         ldw             X                   X                  X
         stw             X                   X                  X
+        pcall           X                   X                  X
         label           X                   NA                 NA
 
 */
@@ -145,6 +146,8 @@ bool instruction_pushw();
 bool instruction_popw();
 bool instruction_stw();
 bool instruction_ldw();
+
+bool instruction_pcall();
 
 namespace 
 {
@@ -268,6 +271,7 @@ void populate_parser_map()
         // Function movement
         MatchCall{ std::regex("^jmp$")       , instruction_jmp       },
         MatchCall{ std::regex("^call$")      , instruction_call      },
+        MatchCall{ std::regex("^pcall$")     , instruction_pcall     },
         MatchCall{ std::regex("^ret$")       , instruction_return    },
 
         MatchCall{ std::regex("^yield$")     , instruction_yield     },
@@ -315,7 +319,6 @@ inline std::vector<std::string> chunkLine(std::string line)
     if (token.length() > 0) {
         chunks.push_back(token);
     }
-
     return chunks;
 }
 
@@ -687,15 +690,6 @@ inline bool isDouble(std::string piece)
 inline bool isRegister(std::string piece)
 {
     return std::regex_match(piece, std::regex("^r{1}([0-9]|1[0-5])$"));
-}
-
-// -----------------------------------------------
-//
-// -----------------------------------------------
-
-inline bool isSystemRegister(std::string piece)
-{
-    return std::regex_match(piece, std::regex("^sys{1}[0-1]$"));
 }
 
 // -----------------------------------------------
@@ -1928,6 +1922,43 @@ bool instruction_call()
     {
         addBytegenInstructionToCurrentFunction(i);
     }
+    return true;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+bool instruction_pcall()
+{
+    if(!isSystemBuildingFunction)
+    {
+        std::cerr << "All Instructions must exist within a function" << std::endl;
+        return false;
+    }
+
+    if(currentPieces.size() != 2)
+    {
+        std::cerr << "Invalid pcall instruction : " << currentLine << std::endl;
+        return false;
+    }
+
+    if(!isFunctionInPayload(currentPieces[1]))
+    {
+        std::cerr << "Function [" << currentPieces[1] << "] has not been declared" << std::endl;
+        return false;
+    }
+
+    uint32_t destination    = preProcessedFunctions[currentPieces[1]];
+
+    if(isParserVerbose)
+    {
+        std::cout << "Creating pcall from : " << currentFunction.name << " to : " << currentPieces[1] << " @ " << preProcessedFunctions[currentPieces[1]] << std::endl;
+    }
+
+    addBytegenInstructionToCurrentFunction(
+        nablaByteGen.createPcallInstruction(destination)
+        );
     return true;
 }
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <chrono>
 #include <vector>
 
 #include "VSysLoadableMachine.hpp"
@@ -19,6 +20,8 @@ namespace
     };
 
     std::vector<Args> NablaArguments;
+
+    constexpr double SECONDS_BETWEEN_GC_CYCLES = 30.0;
 }
 
 int handle_bin_exec(std::string file);
@@ -236,6 +239,8 @@ int  handle_bin_exec(std::string file)
 
     bool continueRunning = true;
 
+    auto start = std::chrono::steady_clock::now();
+
     while(continueRunning)
     {
         switch(virtualMachine.step(1))
@@ -277,7 +282,15 @@ int  handle_bin_exec(std::string file)
             continueRunning = false;
         }
 
-        // Add a timer and run garbage collection
+        // Timered context garbage collection
+        std::chrono::duration<double> elapsed_seconds = std::chrono::steady_clock::now() - start;
+
+        if(SECONDS_BETWEEN_GC_CYCLES < elapsed_seconds.count())
+        {
+            virtualMachine.executionContextGarbageCollection();
+
+            start = std::chrono::steady_clock::now();
+        }
     }
 
     return 0;
