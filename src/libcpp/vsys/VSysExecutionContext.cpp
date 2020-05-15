@@ -525,7 +525,9 @@ namespace VSYS
                     // Move numerival value into a register
                     else if (id == 1)
                     {
-                        int8_t rval = util_extract_byte(ins, 5);
+                        int32_t rval = (uint32_t)util_extract_two_bytes(ins, 5) << 16 | 
+                                       (uint32_t)util_extract_two_bytes(ins, 3);
+
                         this->registers[lhs] =  rval;
                     }
                     else

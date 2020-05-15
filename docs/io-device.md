@@ -62,8 +62,7 @@ This command will report to r11 what state is set (diskin, diskout, etc) without
 **stdin** 
 
 Reads from standard input a up-to a specified number of bytes and won't return until TERMINATION byte is read in. Bytes read in will be pushed onto the global stack,
-with the number of bytes read in stored in r11, and number of stack frames generated in r12 Once bytes are read in, 
-r10 will be cleared and the IODevice will be in a 'closed' state.
+with the number of bytes read in stored in r11. Once bytes are read in, r10 will be cleared and the IODevice will be in a 'closed' state.
 
            ID         STATE     [ ---------- NUM BYTES TO READ ------------ ]   [ TERM  ]   [ UNUSED ]
         0000 1010 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 
@@ -140,7 +139,7 @@ If failure to open occurs, the IO Device will be placed in a 'close' state.
         0000 1010 | 0110 0100 | 0000 1010 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000 | 0000 0000
 
 
-The number of bytes read in will be reported into r11, with the number of stack frames produced in r12.
+The number of bytes read in will be reported into r11.
 If a fail to read happens r11 and r12 will still be reported indicating how much data they received before
 the fail to read occurs. The device will stay open.
 

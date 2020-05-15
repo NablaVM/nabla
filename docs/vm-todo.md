@@ -1,19 +1,5 @@
-# TODO
-
-Need to write up documentation on how the VM functions, and what all the aspects of the VM are for. Especially important is how the devices will work, and what the registers are used for
-
-io_stdin triggerd by '1' in register 10. Bytes count for read in foes in r11, Frames produced count in r12
-io_stdout triggerd by '2' in register 10. Writes byte-by-byte what is in r11 starting with MSB
-
-Registers r10 - r15 Shouldn't be touched unless something is intended to be done with a device
 
 ## Later
-
-VM Tests. WOOOHOO 
-
-
-
-Test tf out of the loader to make sure that sillyness doesn't creep in
 
 Update asm_instructions - There should be a nice table of ALL instructions, and their hex representation.
 A showing of who uses id bits, etc
@@ -59,15 +45,6 @@ After _EVERYTHING_ above is done and **all** instructions in existence are teste
 
 Think about these:
     rmod r0 r1 (ub | umb | lmb | lb) ; get upper byte, upper middle, lower middle, lower byte of r1 and store it in r0
-
-    lshft r0 r0 $2 ; left shift r0 by 2 and store it in r0
-    rshft r0 r0 $2 ; right shift r0 by 2 and store it in r0
-
-    not r0 r0 r1 
-    and r0 r0 r1 ; and r0 and r1
-    or 
-    xor
-
 
 ## External modifications
 

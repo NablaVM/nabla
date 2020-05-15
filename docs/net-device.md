@@ -217,7 +217,7 @@ could be contained by the global stack given the addresses, the receive will be 
 will be reported in r11.
 
 The network object will attempt to receive information up-to the size given in NUM BYTES. If it is a success
-r11 will contain the number of stack frames produced from recv, otherwise it will be '0'
+r11 will contain the number of bytes produced from recv, otherwise it will be '0'
 
 ## **netudp commands**
 
@@ -290,7 +290,7 @@ will be reported in r11.
 r12 is the socket used to identify the remote object
 
 The network object will attempt to receive information up-to the size given in NUM BYTES. If it is a success
-r11 will contain number of stack frames produced by recv, otherwise it will be '0'
+r11 will contain number of bytes produced by recv, otherwise it will be '0'
 
 
 ## **shutdown**

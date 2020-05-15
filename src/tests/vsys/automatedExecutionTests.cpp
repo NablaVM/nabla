@@ -7,7 +7,9 @@
     This test ensures that the loadable machine can be loaded, stepped, etc. It also
     functions as a test of yield, call, store, and loads.
 
-    In the future I'd like to add more tests here just to increase coverage
+    In the future I'd like to add more tests here just to increase coverage, the reason I don't want to abandon the other
+    tests in favor of this method, is that in the other tests its easier to introduce a level of randomness to ensure wide
+    ranges of cases are tested, while here that would be slightly more difficult. I think they play different roles.
 */
 
 #include "VSysLoadableMachine.hpp"
@@ -128,6 +130,14 @@ namespace
             "    div.d r0 r9 r8  ; 6.66\n"
             ">\n";
 
+    const std::string ASM_BIG_MOVE =
+        ".file \"newmov\"\n"
+        ".init main\n"
+        "<main:\n"
+        "    mov r0 $-2147483647\n"
+        "    mov r0 $2147483646 \n"
+        ">\n";
+
     struct TestCase
     {
         std::string data;
@@ -228,6 +238,18 @@ namespace
                 // To ensure full precision and not rely on double casting for checks we use the raw value here. (~6.666667)
                 {TestInstructs::CHECK_REG, 0,  4619192017806338731},
             }
+        },
+        
+        // Big move TESTS 
+        TestCase 
+        { 
+            ASM_BIG_MOVE, "Big move Tests", 
+            { 
+                {TestInstructs::STEP,      1,  0},
+                {TestInstructs::CHECK_REG, 0, -2147483647},
+                {TestInstructs::STEP,      1,  0},
+                {TestInstructs::CHECK_REG, 0,  2147483646}
+            } 
         },
     };
 

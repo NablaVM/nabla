@@ -50,7 +50,8 @@ TEST(NablaMovTests, movIns)
         else
         {
             // REG_NUM needs to ensure int8_t as the numerical encoding is limited to int8_t
-            expectedResult =  (int8_t)TEST::getRandomS16(-120, 120);
+            expectedResult =  TEST::getRandomS32(std::numeric_limits<int32_t>::min(),
+                                                 std::numeric_limits<int32_t>::max());
             arg1 = expectedResult;
         } 
 

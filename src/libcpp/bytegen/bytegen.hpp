@@ -190,7 +190,7 @@ namespace NABLA
         //! \param setup Flag for what argument 2 represents (reg v.s num)
         //! \param reg1  Register 1 (dest)
         //! \param reg2  Register 2 (src)
-        Instruction createMovInstruction(MovSetup setup, uint8_t reg1, uint8_t reg2);
+        Instruction createMovInstruction(MovSetup setup, uint8_t reg1, uint32_t reg2);
 
         //! \brief Create a push instruction
         //! \param stack The stack to push to

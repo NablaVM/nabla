@@ -15,6 +15,14 @@ namespace
         return dis(gen);
     }
 
+    uint32_t getRandom32(uint32_t low, uint32_t high)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(low, high);
+        return dis(gen);
+    }
+
     // Just in case the register addresses need to change, we don't want to have to change
     // the tests to accomodate
     uint8_t integerToRegister(int16_t reg)
@@ -64,6 +72,9 @@ TEST(MovTests, AllMovTests)
         NABLA::Bytegen::MovSetup setup = (j % 2 == 0 ) ? NABLA::Bytegen::MovSetup::REG_REG :
                                                          NABLA::Bytegen::MovSetup::REG_NUM;
         
+        uint8_t  arg_one;
+        uint32_t arg_two;
+
         if(setup == NABLA::Bytegen::MovSetup::REG_REG)
         {
             expectedIns.bytes[0] = NABLA::VSYS::INS_MOV;
@@ -74,24 +85,30 @@ TEST(MovTests, AllMovTests)
             expectedIns.bytes[5] = 0xFF;
             expectedIns.bytes[6] = 0xFF;
             expectedIns.bytes[7] = 0xFF;
+
+            arg_one = expectedIns.bytes[1];
+            arg_two = expectedIns.bytes[2];
         }
         else
         {
+            uint32_t randomNum = getRandom32(0, 65500);
             expectedIns.bytes[0] = (NABLA::VSYS::INS_MOV | 0x01);
             expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9)) ;
-            expectedIns.bytes[2] = getRandom8(0, 9);
-            expectedIns.bytes[3] = 0xFF;
-            expectedIns.bytes[4] = 0xFF;
-            expectedIns.bytes[5] = 0xFF;
+            expectedIns.bytes[2] = (randomNum & 0xFF000000) >> 24 ;
+            expectedIns.bytes[3] = (randomNum & 0x00FF0000) >> 16 ;
+            expectedIns.bytes[4] = (randomNum & 0x0000FF00) >> 8  ;
+            expectedIns.bytes[5] = (randomNum & 0x000000FF) >> 0  ;
             expectedIns.bytes[6] = 0xFF;
             expectedIns.bytes[7] = 0xFF;
+            
+            arg_one = expectedIns.bytes[1];
+            arg_two = randomNum;
         }
-        
         
         NABLA::Bytegen::Instruction ins = byteGen.createMovInstruction(
             setup,
-            expectedIns.bytes[1],
-            expectedIns.bytes[2]
+            arg_one,
+            arg_two
         );
 
         // Build expected ins

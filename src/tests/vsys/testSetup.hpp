@@ -7,7 +7,7 @@
 #include <random>
 #include <vector>
 #include <ieee754.h>
-
+#include <limits>
 
 #include "VSysMachine.hpp"
 #include "VSysMemory.hpp"
@@ -174,6 +174,18 @@ namespace TEST
     // ---------------------------------------------------------------
     
     static int16_t getRandomS16(int16_t low, int16_t high)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(low, high);
+        return dis(gen);
+    }
+
+    // ---------------------------------------------------------------
+    // 
+    // ---------------------------------------------------------------
+    
+    static int32_t getRandomS32(int32_t low, int32_t high)
     {
         std::random_device rd;
         std::mt19937 gen(rd());

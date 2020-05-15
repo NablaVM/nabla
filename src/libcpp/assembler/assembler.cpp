@@ -148,10 +148,6 @@ bool instruction_ldw();
 
 namespace 
 {
-    constexpr int      MAXIMUM_STRING_ALLOWED   = 255;
-    constexpr uint64_t MAXIMUM_STACK_OFFSET     = 4294967295;
-    constexpr uint16_t INPLACE_NUM_RANGE        = 32767;
-
     NABLA::Bytegen nablaByteGen;
 
     struct constantdata
@@ -723,11 +719,11 @@ inline bool isDirectGlobalStackPointer(std::string piece)
 // -----------------------------------------------
 //
 // -----------------------------------------------
- inline uint32_t getOffsetFromStackOffset(std::string piece)
+ inline int64_t getOffsetFromStackOffset(std::string piece)
 {
     std::string str = piece.substr(1, piece.size()-5);
 
-    uint32_t n = std::stoi(str);
+    uint32_t n = std::stoll(str);
 
     return n;
 }
@@ -738,9 +734,9 @@ inline bool isDirectGlobalStackPointer(std::string piece)
 
 inline bool isStackOffsetInRange(std::string piece)
 {
-    return ( getOffsetFromStackOffset(piece) < MAXIMUM_STACK_OFFSET );
+    return ( getOffsetFromStackOffset(piece) < std::numeric_limits<uint32_t>::max() && 
+             getOffsetFromStackOffset(piece) >= 0 );
 }
-
 
 // -----------------------------------------------
 //
@@ -798,11 +794,10 @@ inline bool isRegisterBasedLocalStackpointer(std::string piece)
 //
 // -----------------------------------------------
 
-inline int getNumberFromNumericalOrRegister(std::string numerical)
+inline int64_t getNumberFromNumericalOrRegister(std::string numerical)
 {
     std::string str = numerical.substr(1, numerical.size());
-
-    return std::stoi(str);
+    return std::stoll(str);
 }
 
 // -----------------------------------------------
@@ -811,9 +806,9 @@ inline int getNumberFromNumericalOrRegister(std::string numerical)
 
 inline bool isDirectNumericalInRange(std::string numerical)
 {
-    int n = getNumberFromNumericalOrRegister(numerical);
+    int64_t n = getNumberFromNumericalOrRegister(numerical);
 
-    return ( n < INPLACE_NUM_RANGE && n > - INPLACE_NUM_RANGE );
+    return ( n < std::numeric_limits<int16_t>::max() && n > std::numeric_limits<int16_t>::min() );
 }
 
 // -----------------------------------------------
@@ -825,6 +820,21 @@ inline bool isDirectNumerical(std::string piece)
     if(std::regex_match(piece, std::regex("(^\\$[0-9]+$)|(^\\$\\-[0-9]+$)")))
     {
         return isDirectNumericalInRange(piece);
+    }
+    return false;
+}
+
+// -----------------------------------------------
+//
+// -----------------------------------------------
+
+inline bool isLargeDirectNumerical(std::string piece)
+{
+    if(std::regex_match(piece, std::regex("(^\\$[0-9]+$)|(^\\$\\-[0-9]+$)")))
+    {
+        std::string integerStr = piece.substr(1, piece.size());
+        int64_t n = std::stoll(integerStr);
+        return ( n < std::numeric_limits<int32_t>::max() && n > std::numeric_limits<int32_t>::min() );
     }
     return false;
 }
@@ -1251,14 +1261,14 @@ bool instruction_mov()
     {
         setup = NABLA::Bytegen::MovSetup::REG_REG;
     }
-    else if (isDirectNumerical(currentPieces[2]))
+    else if (isLargeDirectNumerical(currentPieces[2]))
     {
         // Ensure mov-specific constraint
         int check = getNumberFromNumericalOrRegister(currentPieces[2]);
 
-        if(check > 127 || check < -128)
+        if(check > std::numeric_limits<int32_t>::max() || check < std::numeric_limits<int32_t>::min())
         {
-            std::cerr << "MOV instruction is constrained to the range of a signed 8-bit int (-128, 127) : " 
+            std::cerr << "MOV instruction is constrained to the range of a signed 32-bit signed int : " 
                       << check << " is out of range on line : " << currentLine << std::endl;
             return false;
         }
@@ -1267,15 +1277,16 @@ bool instruction_mov()
     }
     else
     {
-        std::cerr << "Argument 2 of 'mov' must be a register or a direct numerical constant" << std::endl;
+        std::cout << ">>>>>>>>>>>>>>> " << currentPieces[2] << std::endl;
+        std::cerr << "Argument 2 of 'mov' must be a register or a large direct numerical constant" << std::endl;
         return false;
     }
 
     if(isParserVerbose) { std::cout << "Creating mov instruction : " << currentLine << std::endl; }
 
     // Both are confirmed registers!
-    uint8_t reg1 = getNumberFromNumericalOrRegister(currentPieces[1]);
-    uint8_t reg2 = getNumberFromNumericalOrRegister(currentPieces[2]);
+    uint8_t  reg1 = getNumberFromNumericalOrRegister(currentPieces[1]);
+    uint32_t reg2 = getNumberFromNumericalOrRegister(currentPieces[2]);
 
     // Generate the bytes and add to the current function
     addBytegenInstructionToCurrentFunction(
@@ -2098,13 +2109,6 @@ bool instruction_directive()
         if(str.size() == 0)
         {
             std::cerr << "Constant .string " << currentPieces[1] << " was determined to be empty after removeing \"s" << std::endl;
-            return false;
-        }
-
-        // Ensure it isn't too big
-        if(str.size() > MAXIMUM_STRING_ALLOWED)
-        {
-            std::cerr << "Constant string exceeds allowed maximum : " << (int)MAXIMUM_STRING_ALLOWED << std::endl;
             return false;
         }
 

@@ -413,7 +413,7 @@ namespace NABLA
     // createMovInstruction
     // ------------------------------------------------------------------------
 
-    Bytegen::Instruction Bytegen::createMovInstruction(Bytegen::MovSetup setup, uint8_t reg1, uint8_t arg2)
+    Bytegen::Instruction Bytegen::createMovInstruction(Bytegen::MovSetup setup, uint8_t reg1, uint32_t arg2)
     {
         
         Instruction ins;
@@ -433,10 +433,10 @@ namespace NABLA
         {
             ins.bytes[0] = (NABLA::VSYS::INS_MOV | 0x01);
             ins.bytes[1] = integerToRegister(reg1) ;
-            ins.bytes[2] = arg2;
-            ins.bytes[3] = 0xFF;
-            ins.bytes[4] = 0xFF;
-            ins.bytes[5] = 0xFF;
+            ins.bytes[2] = (arg2 & 0xFF000000) >> 24 ;
+            ins.bytes[3] = (arg2 & 0x00FF0000) >> 16 ;
+            ins.bytes[4] = (arg2 & 0x0000FF00) >> 8  ;
+            ins.bytes[5] = (arg2 & 0x000000FF) >> 0  ;
             ins.bytes[6] = 0xFF;
             ins.bytes[7] = 0xFF;
         }

@@ -6,7 +6,7 @@ Prefixed with 'r' there are 16 8-byte registers [ r0, r15 ]
 These registers are used to read/write any data to/from.
 The addresses for the registers are [0b, 15b]
 
-[128 bytes overhead]
+[128 bytes overhead] * Number of execution contexts (more on that later)
 
 ## Comments
 
@@ -118,8 +118,8 @@ If 'd' is specified and the value in a given register is not a floating point, t
 |      stb         |   *sp     |   r      |  Store Arg2 data at Arg1 (arg1=addr)         |
 |      push        |    sp     |   r      |  Data from Arg2 into Arg1                    |
 |      pop         |    r      |   sp     |  Data from Arg2 into Arg1                    |
-|      pushw       |    sp     |   r      |  Word from Arg2 into Arg1                    |
-|      popw        |    r      |   sp     |  Word from Arg2 into Arg1                    |
+|      pushw       |    sp     |   r      |  Word (8 bytes) from Arg2 into Arg1          |
+|      popw        |    r      |   sp     |  Word (8 bytes) from Arg2 into Arg1          |
 
 ## Jump / Call
 
@@ -254,15 +254,15 @@ Here is an example of a bit layout for a branch operation
 
 Indication Bits:
 00 - Register, Register
-01 - Register, Numerical Constant - **Note** : This numerical constant is limited to the range of a signed 8-bit integer (-128 to 127)
+01 - Register, Numerical Constant - **Note** : This numerical constant is limited to the range of a signed 32-bit integer.
 
     INS    ID   REGISTER    REGISTER    [ ----------------------- UNUSED ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-    INS    ID   REGISTER     INTEGER    [ ----------------------- UNUSED ---------------------- ]
+    INS    ID   REGISTER    [ ---------------  INTEGER ------------------ ] [ ---- UNUSED ----- ]
     111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**stb** - Store bytes
+**stb** - Store byte
 
 Indication Bits:
 00 - Stack with numerical offset, Source Register
@@ -274,7 +274,7 @@ Indication Bits:
     INS    ID    STACK      REGISTER     REGISTER   [ ------------------ UNUSED ----------------]
     111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**ldb** - Load bytes
+**ldb** - Load byte
 
 Indication Bits:
 00 - Destination Register, Stack with numerical offset
@@ -286,7 +286,7 @@ Indication Bits:
     INS    ID    REGISTER      STACK     REGISTER   [ ------------------ UNUSED ----------------]
     111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**stw** - Store bytes
+**stw** - Store word (8 bytes)
 
 Indication Bits:
 00 - Stack with numerical offset, Source Register
@@ -298,7 +298,7 @@ Indication Bits:
     INS    ID    STACK      REGISTER     REGISTER   [ ------------------ UNUSED ----------------]
     111111 01 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**ldw** - Load bytes
+**ldw** - Load word (8 bytes)
 
 Indication Bits:
 00 - Destination Register, Stack with numerical offset
@@ -320,12 +320,12 @@ Indication Bits:
     INS    ID   REGISTER      STACK     [ --------------------   UNUSED  ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**pushw** - Push
+**pushw** - Pushw (8 bytes)
 
     INS    ID      STACK     REGISTER   [ ------------------- UNUSED -------------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-**popw** - Pop
+**popw** - Popw (8 bytes)
 
     INS    ID   REGISTER      STACK     [ --------------------   UNUSED  ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
