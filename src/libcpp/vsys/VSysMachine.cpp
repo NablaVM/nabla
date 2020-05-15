@@ -123,7 +123,6 @@ namespace VSYS
         uint64_t completedContexts = 0;
         for(uint64_t idx = 0; idx < executionContexts.size(); idx++)
         {
-
             // Its possible that GC hasn't run yet, so we count dead contexts
             if(executionContexts[idx].isContextComplete())
             {
@@ -142,6 +141,22 @@ namespace VSYS
             }
         }
 
+        // Check if a context has asked for a new context to be spawned
+        if(queuedContexts.size() > 0)
+        {
+            // Spawn all queued contexts
+            for(auto & address : queuedContexts)
+            {
+                if(!newExecutionContext(address))
+                {
+                    return ExecutionReturns::FAILED_TO_SPAWN_EXECUTION_CONTEXT;
+                }
+            }
+
+            // Clear all in queue
+            queuedContexts.clear();
+        }
+
         // If everything has completed, we die
         if(completedContexts == executionContexts.size())
         {
@@ -155,7 +170,6 @@ namespace VSYS
     // ----------------------------------------------------------------
     //
     // ----------------------------------------------------------------
-    
 
     bool Machine::newExecutionContext(uint64_t address)
     {
@@ -171,10 +185,21 @@ namespace VSYS
     // ----------------------------------------------------------------
     //
     // ----------------------------------------------------------------
+
+    void Machine::queueNewExecutionContext(uint64_t address)
+    {
+        queuedContexts.push_back(address);
+    }
+
+    // ----------------------------------------------------------------
+    //
+    // ----------------------------------------------------------------
     
     void Machine::executionContextGarbageCollection()
     {
         std::vector<ExecutionContext> tmp;
+
+        uint64_t i = 0;
 
         for(auto & ec : executionContexts)
         {

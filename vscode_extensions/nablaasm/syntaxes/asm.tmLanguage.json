@@ -26,7 +26,7 @@
 			"patterns": [
 				{
 				"name": "keyword.control.asm",
-				"match": "\\b(?i)(call|jmp|yield|ret|exit|bgt\\.d|bgte\\.d|blt\\.d|blte\\.d|beq\\.d|bne\\.d|bgt|bgte|blt|blte|beq|bne)\\b"
+				"match": "\\b(?i)(pcall|call|jmp|yield|ret|exit|bgt\\.d|bgte\\.d|blt\\.d|blte\\.d|beq\\.d|bne\\.d|bgt|bgte|blt|blte|beq|bne)\\b"
 				},
 				{
 				"name": "keyword.operator.asm",

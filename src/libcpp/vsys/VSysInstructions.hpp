@@ -46,6 +46,7 @@ namespace VSYS
     constexpr uint8_t INS_POP             = 0xE0;
     constexpr uint8_t INS_JUMP            = 0xE4;
     constexpr uint8_t INS_CALL            = 0xE8;
+    constexpr uint8_t INS_PCALL           = 0x2C;
     constexpr uint8_t INS_RET             = 0xEC;
     constexpr uint8_t INS_EXIT            = 0xF0;
     constexpr uint8_t INS_YIELD           = 0x40;

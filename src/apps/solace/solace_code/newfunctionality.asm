@@ -1,6 +1,6 @@
 .file "newoffsets"
 
-.init main
+.init  main
 
 .int8  small 42
 .int8  tiny  9
@@ -14,7 +14,6 @@
   ldb r0 $0(gs)  ; 42
   ldw r1 $2(gs)  ; 69
 >
-
 
 <do_push:
     push  ls r0 ; Pushes LSB to ls 

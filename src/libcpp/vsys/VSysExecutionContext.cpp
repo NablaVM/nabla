@@ -539,9 +539,8 @@ namespace VSYS
                     }
 
     #ifdef NABLA_VIRTUAL_MACHINE_DEBUG_OUTPUT
-                    printf("MOV result : %li\n", (int64_t)this->registers[lhs]);
+                    std::cout << "MOV result : " << (int64_t)this->registers[lhs] << std::endl;
     #endif
-
                     break;
                 }
                 case INS_LDB  :
@@ -840,7 +839,6 @@ namespace VSYS
                         ].instruction_pointer = destAddress; 
                     continue;
                 }          
-
                 case INS_YIELD:
                 {
                     if(this->callStack.empty())
@@ -868,7 +866,6 @@ namespace VSYS
 
                     break;
                 }
-
                 case INS_CS_SF :
                 {
                     // Call Stack Store function ( The function to return to when next return hits)
@@ -878,7 +875,6 @@ namespace VSYS
                     this->callStack.push(func_from);
                     break;
                 }
-
                 case INS_CS_SR :
                 {
                     // Call Stack Store Region Of Interest ( Instruction Pointer )
@@ -888,7 +884,6 @@ namespace VSYS
                     this->callStack.push(roi);
                     break;
                 }
-
                 case INS_CALL :
                 {
                     // Call
@@ -899,7 +894,16 @@ namespace VSYS
 
                     this->switchingFunction = true;
                     break;
-                }       
+                }      
+                case INS_PCALL :
+                {
+                    // P Call
+                    uint64_t destAddress =  (uint64_t)util_extract_two_bytes(ins, 6) << 16| 
+                                            (uint64_t)util_extract_two_bytes(ins, 4);
+
+                    owner.queueNewExecutionContext(destAddress);
+                    break;
+                }
                 case INS_RET  :
                 {
                     // Attempt a return. If it returns, true will be signaled

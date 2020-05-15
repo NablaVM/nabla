@@ -104,8 +104,13 @@ namespace VSYS
         // External devices
         std::map<uint16_t, EXTERNAL::ExternalIf*> externalDeviceMap;
 
-        // Create a new execution context (called at start of machine by machine, and triggered
-        // by a currently running execution context)
+        // Contexts that should be generated at the end of a cycle
+        std::vector<uint32_t> queuedContexts;
+
+        // Queue an execution context to be created at the end of a given step cycle
+        void queueNewExecutionContext(uint64_t address);
+
+        // Create a new execution context 
         bool newExecutionContext(uint64_t address);
 
         // Standard external processing 'devices' 

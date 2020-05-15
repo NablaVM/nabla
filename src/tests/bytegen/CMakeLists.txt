@@ -17,6 +17,7 @@ add_executable(nablaBytegenTests
         branchTests.cpp
         constantTests.cpp
         callTests.cpp
+        pcallTests.cpp
         exitTests.cpp
         jumpTests.cpp
         movTests.cpp

@@ -831,6 +831,24 @@ namespace NABLA
     }
 
     // ------------------------------------------------------------------------
+    // createPcallInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createPcallInstruction(uint32_t address)
+    {
+        Instruction ins;
+        ins.bytes[0] = NABLA::VSYS::INS_PCALL;
+        ins.bytes[1] = (address & 0xFF000000) >> 24;
+        ins.bytes[2] = (address & 0x00FF0000) >> 16;
+        ins.bytes[3] = (address & 0x0000FF00) >> 8 ;
+        ins.bytes[4] = (address & 0x000000FF) >> 0 ;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
     // createSegConstInstruction
     // ------------------------------------------------------------------------
 

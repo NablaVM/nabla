@@ -127,6 +127,7 @@ If 'd' is specified and the value in a given register is not a floating point, t
 |---          |---       |---                                                |
 | jmp         | label    | Jump to label                                     |
 | call        | function | Call function - return address stored call stack  |
+| pcall       | function | Parallel call - Spawns a new execution context    |
 | ret         |          | Return to the address stored on top of call stack |
 | yield       |          | Yield operation of function to caller             |
 
@@ -330,7 +331,7 @@ Indication Bits:
     INS    ID   REGISTER      STACK     [ --------------------   UNUSED  ---------------------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
 
-### Jump / return operation
+### Jump/ call/ pcall/ ret/ yield operations
 
 **jmp** - Jump
 
@@ -343,6 +344,16 @@ The jump operation is straight forward. The only data in the jump is the address
 
 Upon executing the call instruction, the address immediately after call's address will be stored in
 the system stack. 
+
+    INS    ID   [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
+    111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111
+    
+**pcall** - pcall
+
+Upon executing the pcall instruction, the destination address will be sent to the virtual machine to
+have a new context spawned at that address location. The VM will stay alive until all contexts are completed. 
+The context will be completed once the new context's call stack is empty and instructions from the destination
+address are completed.
 
     INS    ID   [ ---------------   ADDRESS  --------------- ]  [ ---------- UNUSED ----------- ]
     111111 00 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111 | 1111 1111

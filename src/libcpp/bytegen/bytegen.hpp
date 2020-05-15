@@ -250,6 +250,10 @@ namespace NABLA
         //! \returns Multiple instructions must be created for calls to occur
         std::vector<Instruction> createCallInstruction(uint32_t funcFrom, uint32_t ret, uint32_t address);
 
+        //! \brief Create a pcall instruction
+        //! \param address The address of the function to pcall
+        Instruction createPcallInstruction(uint32_t adddress);
+
         //! \brief Create exit instruction
         Instruction createExitInstruction();
 
