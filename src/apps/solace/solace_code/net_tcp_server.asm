@@ -8,16 +8,16 @@
 
 .init main
 
-.string setupError "Failed to create the socket" ; 0 - 4
-.string exiting    "Exiting"                     ; 4 - 4
-.string newConn    "New connection!"             ; 5 - 7
-.string createdSoc "Socket created!"             ; 7 - 9
-.string bindErr    "Error binding socket"        ; 9 - 12
-.string listenErr  "Error setting listen"        ; 12 - 15
-.string starting   "Starting server"             ; 15 - 17
-.string serverStr  "Hello client, I am server"   ; 17 - 21
-.string recvErr    "Error receiving data"        ; 21 - 24
-.string recvGood   "Client sent us some data!"   ; 24 - 28
+.string setupError "Failed to create the socket" ; 0 - 27
+.string exiting    "Exiting"                     ; 27 - 34
+.string newConn    "New connection!"             ; 34 - 49
+.string createdSoc "Socket created!"             ; 49 - 64
+.string bindErr    "Error binding socket"        ; 64 - 84
+.string listenErr  "Error setting listen"        ; 84 - 104
+.string starting   "Starting server"             ; 104 - 119
+.string serverStr  "Hello client, I am server"   ; 119 - 144
+.string recvErr    "Error receiving data"        ; 144 - 164
+.string recvGood   "Client sent us some data!"   ; 166 - 193
 
 <main:
     ; Create the TCP socket - 127.0.0.1 , port 4096
@@ -37,8 +37,8 @@
     call shutdown_network_device
 
     ; Tell the user we are exiting
-    mov r5 $4
-    mov r6 $4
+    mov r5 $27
+    mov r6 $34
     call println
 >
 
@@ -153,8 +153,8 @@ loop_top:
     call println
 
     ; Tell the user we are exiting
-    mov r5 $4
-    mov r6 $4
+    mov r5 $27
+    mov r6 $34
     call println
 
     exit 
@@ -165,12 +165,12 @@ success:
     rsh r0 r0  $48      ; Move id to LSB
     
 
-    push gs r0          ; Store the object id on the global stack
+    pushw gs r0          ; Store the object id on the global stack
 
     ; Tell the user we created the socket
 
-    mov r5 $7 
-    mov r6 $9
+    mov r5 $49 
+    mov r6 $64
     call println
 
     ret
@@ -181,14 +181,14 @@ success:
 ;
 <bind_tcp:
 
-    pop r9 gs ; Get the socket object
+    popw r9 gs ; Get the socket object
 
     lsh r0 $11 $56  ; Network device
     lsh r1 $1  $48  ; net in tcp
     lsh r2 $10 $40  ; bind 
     lsh r3 r9  $24  ; socket id
 
-    push gs r9 ; Store the object again
+    pushw gs r9 ; Store the object again
 
     or r0 r0 r1 
     or r0 r0 r2
@@ -201,13 +201,13 @@ success:
     bne r0 r11 success 
 
     ; Error binding socket - tell user
-    mov r5 $9
-    mov r6 $12
+    mov r5 $64
+    mov r6 $84
     call println
 
     ; Tell the user we are exiting
-    mov r5 $4
-    mov r6 $4
+    mov r5 $27
+    mov r6 $34
     call println
 
     exit
@@ -221,7 +221,7 @@ success:
 ;
 <listen_tcp:
 
-    pop r9 gs ; Get the socket object
+    popw r9 gs ; Get the socket object
 
     lsh r0 $11 $56  ; Network device
     lsh r1 $1  $48  ; net in tcp
@@ -229,7 +229,7 @@ success:
     lsh r3 r9  $24  ; socket id
     lsh r4 $5  $8   ; backlog = 8
 
-    push gs r9 ; Store the object again
+    pushw gs r9 ; Store the object again
 
     or r0 r0 r1 
     or r0 r0 r2
@@ -242,14 +242,14 @@ success:
     mov r0 $0
     bne r0 r11 success 
 
-    ; Error binding socket - tell user
-    mov r5 $12
-    mov r6 $15
+    ; Error listening socket - tell user
+    mov r5 $84
+    mov r6 $104
     call println
 
     ; Tell the user we are exiting
-    mov r5 $4
-    mov r6 $4
+    mov r5 $27
+    mov r6 $34
     call println
 
     exit
@@ -264,18 +264,18 @@ success:
 <serve_tcp:
 
     ; Print 'starting'
-    mov r5 $15
-    mov r6 $17
+    mov r5 $104
+    mov r6 $119
     call println
 
-    pop r9 gs ; Get the socket object
+    popw r9 gs ; Get the socket object
 
     lsh r0 $11 $56  ; Network device
     lsh r1 $1  $48  ; net in tcp
     lsh r2 $12 $40  ; accept 
     lsh r3 r9  $24  ; socket id
 
-    push gs r9 ; Store the object again
+    pushw gs r9 ; Store the object again
 
     or r0 r0 r1 
     or r0 r0 r2
@@ -311,14 +311,14 @@ new_connection:
     ; Save connection id because println will wipe it out
     mov r9 r11
 
-    ; Print 'new connection'
-    mov r5 $5
-    mov r6 $7
+    ; Print 'new connection'   34 - 49
+    mov r5 $34
+    mov r6 $49
     call println
 
     ; Get current size of gs
     size r1 gs 
-    push ls r1 
+    pushw ls r1 
 
     ; Expand global stack to store data 
     mov r1 $0
@@ -326,13 +326,13 @@ new_connection:
     add r3 $200 $50
 
 expand_stack:
-    push gs r1
+    pushw gs r1
     add r2 r2 $1
     blt r2 r3 expand_stack
 
     ; Get new size of gs
     size r1 gs 
-    push ls r1  
+    pushw ls r1  
 
     ; Get the socket id for new connection
     lsh r9 r9  $8      ; Get rid of result byte
@@ -355,9 +355,9 @@ expand_stack:
 
     ; store gs info for recv in r11 
 
-    pop r3 ls  ; end 
-    pop r4 ls  ; begin
-    push ls r4
+    popw r3 ls  ; end 
+    popw r4 ls  ; begin
+    pushw ls r4
 
     lsh r4 r4 $32
 
@@ -370,13 +370,13 @@ expand_stack:
     bne r4 r11 success
 
     ; Error, indicate it to user
-    mov r5 $21
-    mov r6 $24
+    add r5 $140 $4
+    add r6 $160 $4
     call println
 
     ; Tell the user we are exiting
-    mov r5 $4
-    mov r6 $4
+    mov r5 $27
+    mov r6 $34
     call println
 
     exit
@@ -384,17 +384,19 @@ expand_stack:
 success:
 
     ; Tell the user we got data
-    mov r5 $24
-    mov r6 $28
+    add r5 $160 $4
+    add r6 $190 $3
     call println
 
     ; Bring print functions in from user io to dump the 
     ; data from the client to stdout
 
     ; Start of the gs data-in
-    pop r5 ls
+    popw r5 ls
 
-    add r6 r5 r11 ; Add number of stack frames produced to the start index
+    add r6 r5 $16
+
+    add r6 r6 r11 ; Add number of stack frames produced to the start index
 
     ; Print the data received to screen 
     call println
@@ -408,7 +410,7 @@ success:
     lsh r2 $0  $48  ; net out tcp
     lsh r3 $21 $40  ; send 
     lsh r4 r9  $24  ; socket id    
-    lsh r5 $32 $8 ; bytes to send - Must be < (gs end - gs start * 8)
+    lsh r5 $32 $8   ; bytes to send - Must be < (gs end - gs start * 8)
 
     or r1 r1 r2 
     or r1 r1 r3
@@ -416,8 +418,8 @@ success:
     or r1 r1 r5
 
     ; Build stack source info (constant str)
-    lsh r3 $17 $32
-    lsh r4 $21 $0
+    lsh r3 $119 $32
+    lsh r4 $144 $0
     or r11 r3 r4
 
     ; Call send

@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include "CppUTest/TestHarness.h"
 
@@ -15,28 +15,36 @@ namespace
         return dis(gen);
     }
 
+    uint32_t getRandom32(uint32_t low, uint32_t high)
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(low, high);
+        return dis(gen);
+    }
+
     // Just in case the register addresses need to change, we don't want to have to change
     // the tests to accomodate
     uint8_t integerToRegister(int16_t reg)
     {
         switch(reg)
         {
-            case 0 : return REGISTER_0 ;
-            case 1 : return REGISTER_1 ;
-            case 2 : return REGISTER_2 ;
-            case 3 : return REGISTER_3 ;
-            case 4 : return REGISTER_4 ;
-            case 5 : return REGISTER_5 ;
-            case 6 : return REGISTER_6 ;
-            case 7 : return REGISTER_7 ;
-            case 8 : return REGISTER_8 ;
-            case 9 : return REGISTER_9 ;
-            case 10: return REGISTER_10;
-            case 11: return REGISTER_11;
-            case 12: return REGISTER_12;
-            case 13: return REGISTER_13;
-            case 14: return REGISTER_14;
-            case 15: return REGISTER_15;
+            case 0 : return NABLA::VSYS::REGISTER_0 ;
+            case 1 : return NABLA::VSYS::REGISTER_1 ;
+            case 2 : return NABLA::VSYS::REGISTER_2 ;
+            case 3 : return NABLA::VSYS::REGISTER_3 ;
+            case 4 : return NABLA::VSYS::REGISTER_4 ;
+            case 5 : return NABLA::VSYS::REGISTER_5 ;
+            case 6 : return NABLA::VSYS::REGISTER_6 ;
+            case 7 : return NABLA::VSYS::REGISTER_7 ;
+            case 8 : return NABLA::VSYS::REGISTER_8 ;
+            case 9 : return NABLA::VSYS::REGISTER_9 ;
+            case 10: return NABLA::VSYS::REGISTER_10;
+            case 11: return NABLA::VSYS::REGISTER_11;
+            case 12: return NABLA::VSYS::REGISTER_12;
+            case 13: return NABLA::VSYS::REGISTER_13;
+            case 14: return NABLA::VSYS::REGISTER_14;
+            case 15: return NABLA::VSYS::REGISTER_15;
             default: 
                 std::cerr << "Someone tried something silly with : " << reg  << ". IN THE BRANCH TEST!" << std::endl;
                 exit(EXIT_FAILURE); 
@@ -64,9 +72,12 @@ TEST(MovTests, AllMovTests)
         NABLA::Bytegen::MovSetup setup = (j % 2 == 0 ) ? NABLA::Bytegen::MovSetup::REG_REG :
                                                          NABLA::Bytegen::MovSetup::REG_NUM;
         
+        uint8_t  arg_one;
+        uint32_t arg_two;
+
         if(setup == NABLA::Bytegen::MovSetup::REG_REG)
         {
-            expectedIns.bytes[0] = INS_MOV;
+            expectedIns.bytes[0] = NABLA::VSYS::INS_MOV;
             expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9)) ;
             expectedIns.bytes[2] = integerToRegister(getRandom8(0, 9)) ;
             expectedIns.bytes[3] = 0xFF;
@@ -74,24 +85,30 @@ TEST(MovTests, AllMovTests)
             expectedIns.bytes[5] = 0xFF;
             expectedIns.bytes[6] = 0xFF;
             expectedIns.bytes[7] = 0xFF;
+
+            arg_one = expectedIns.bytes[1];
+            arg_two = expectedIns.bytes[2];
         }
         else
         {
-            expectedIns.bytes[0] = (INS_MOV | 0x01);
+            uint32_t randomNum = getRandom32(0, 65500);
+            expectedIns.bytes[0] = (NABLA::VSYS::INS_MOV | 0x01);
             expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9)) ;
-            expectedIns.bytes[2] = getRandom8(0, 9);
-            expectedIns.bytes[3] = 0xFF;
-            expectedIns.bytes[4] = 0xFF;
-            expectedIns.bytes[5] = 0xFF;
+            expectedIns.bytes[2] = (randomNum & 0xFF000000) >> 24 ;
+            expectedIns.bytes[3] = (randomNum & 0x00FF0000) >> 16 ;
+            expectedIns.bytes[4] = (randomNum & 0x0000FF00) >> 8  ;
+            expectedIns.bytes[5] = (randomNum & 0x000000FF) >> 0  ;
             expectedIns.bytes[6] = 0xFF;
             expectedIns.bytes[7] = 0xFF;
+            
+            arg_one = expectedIns.bytes[1];
+            arg_two = randomNum;
         }
-        
         
         NABLA::Bytegen::Instruction ins = byteGen.createMovInstruction(
             setup,
-            expectedIns.bytes[1],
-            expectedIns.bytes[2]
+            arg_one,
+            arg_two
         );
 
         // Build expected ins

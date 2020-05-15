@@ -9,12 +9,12 @@
 <main:
 
     size r0 gs
-    push ls r0      ; Store the current size of the global stack locally
+    pushw ls r0      ; Store the current size of the global stack locally
 
     call prompt_user
     call get_user_input
 
-    pop r0 ls       ; Get the original size of the global stack into r0
+    popw r0 ls       ; Get the original size of the global stack into r0
 
     call write_user_input_to_disk
 >
@@ -31,7 +31,7 @@
     or r0 r0 r1 
 
     size r1 gs 
-    mov  r2 $2       ; Get only the second string
+    mov  r2 $15       ; Get only the second string
 
 loop_top:
 
@@ -69,7 +69,7 @@ loop_top:
 <write_user_input_to_disk:
 
     ; Original global stack size (before user input) is in r0
-    push ls r0         
+    pushw ls r0         
 
 
     ;
@@ -85,15 +85,15 @@ loop_top:
     or r5 r5 r7        ; Assemble the command
     or r5 r5 r8
 
-    push ls r5         ; Store the command in ls 
+    pushw ls r5         ; Store the command in ls 
 
     lsh r5 $0 $32      ; Load the start address of the file string 
     
-    or r5 r5 $2        ; Load the end address of the file string
+    or r5 r5 $15        ; Load the end address of the file string
 
     mov r11 r5         ; Move the stack address information into register io device will expect
     
-    pop r5 ls          ; Pop the command into r5 so we don't lose it after call
+    popw r5 ls          ; popw the command into r5 so we don't lose it after call
     
     mov r10 r5         ; Move command into trigger register
 
@@ -113,7 +113,7 @@ loop_top:
     mov r0 r5          ; store in r0
 
 
-    pop r2 ls          ; Pop the original stack size into r2 for counter globalStack[userInputIdx]
+    popw r2 ls          ; popw the original stack size into r2 for counter globalStack[userInputIdx]
 
     size r5 gs
 

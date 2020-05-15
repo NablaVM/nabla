@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include<ieee754.h>
 #include "CppUTest/TestHarness.h"
@@ -59,7 +59,7 @@ TEST(ConstantTests, integers)
 
         std::vector<uint8_t> expectedBytes;
 
-        expectedBytes.push_back( CONST_INT  |  0x0 );
+        expectedBytes.push_back( NABLA::VSYS::CONST_INT  |  0x0 );
         expectedBytes.push_back( ( val & 0x000000FF) >> 0  );
 
         std::vector<uint8_t> actual = byteGen.createConstantInt(val, NABLA::Bytegen::Integers::EIGHT);
@@ -79,7 +79,7 @@ TEST(ConstantTests, integers)
 
         std::vector<uint8_t> expectedBytes;
 
-        expectedBytes.push_back( CONST_INT  |  0x1 );
+        expectedBytes.push_back( NABLA::VSYS::CONST_INT  |  0x1 );
         expectedBytes.push_back( (val & 0x0000FF00) >> 8  );
         expectedBytes.push_back( (val & 0x000000FF) >> 0  );
 
@@ -100,7 +100,7 @@ TEST(ConstantTests, integers)
 
         std::vector<uint8_t> expectedBytes;
 
-        expectedBytes.push_back( CONST_INT  |  0x2 );
+        expectedBytes.push_back( NABLA::VSYS::CONST_INT  |  0x2 );
         expectedBytes.push_back( (val & 0xFF000000) >> 24 );
         expectedBytes.push_back( (val & 0x00FF0000) >> 16 );
         expectedBytes.push_back( (val & 0x0000FF00) >> 8  );
@@ -123,7 +123,7 @@ TEST(ConstantTests, integers)
 
         std::vector<uint8_t> expectedBytes;
 
-        expectedBytes.push_back( CONST_INT  |  0x3 );
+        expectedBytes.push_back( NABLA::VSYS::CONST_INT  |  0x3 );
         expectedBytes.push_back( (val & 0xFF00000000000000) >> 56 );
         expectedBytes.push_back( (val & 0x00FF000000000000) >> 48 );
         expectedBytes.push_back( (val & 0x0000FF0000000000) >> 40 );
@@ -165,7 +165,7 @@ TEST(ConstantTests, doublePrecisionFp)
                           (uint64_t)ied.ieee.mantissa0 << 32|
                           (uint64_t)ied.ieee.mantissa1 << 0;
 
-        expected.push_back( CONST_DBL      );
+        expected.push_back( NABLA::VSYS::CONST_DBL      );
         expected.push_back( (packed & 0xFF00000000000000) >> 56 );
         expected.push_back( (packed & 0x00FF000000000000) >> 48 );
         expected.push_back( (packed & 0x0000FF0000000000) >> 40 );
@@ -211,7 +211,7 @@ TEST(ConstantTests, leStringies)
     {
         std::vector<uint8_t> expected;
         
-        expected.push_back( CONST_STR );
+        expected.push_back( NABLA::VSYS::CONST_STR );
 
         // If the string size is greater than max, then we will lop-off any extra.
         uint8_t strSize = ( (s.size() > 255) ? 255 : s.size() );

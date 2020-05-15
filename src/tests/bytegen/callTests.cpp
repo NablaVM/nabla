@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include "CppUTest/TestHarness.h"
 
@@ -37,7 +37,7 @@ TEST(CallTests, AllCallTests)
 
 
         NABLA::Bytegen::Instruction cssf;
-        cssf.bytes[0] = INS_CS_SF;
+        cssf.bytes[0] = NABLA::VSYS::INS_CS_SF;
         cssf.bytes[1] = (sourceAddress & 0xFF000000) >> 24;
         cssf.bytes[2] = (sourceAddress & 0x00FF0000) >> 16;
         cssf.bytes[3] = (sourceAddress & 0x0000FF00) >> 8 ;
@@ -49,7 +49,7 @@ TEST(CallTests, AllCallTests)
         instructions.push_back(cssf);
 
         NABLA::Bytegen::Instruction cssr;
-        cssr.bytes[0] = INS_CS_SR;
+        cssr.bytes[0] = NABLA::VSYS::INS_CS_SR;
         cssr.bytes[1] = (sourceRegion & 0xFF000000) >> 24;
         cssr.bytes[2] = (sourceRegion & 0x00FF0000) >> 16;
         cssr.bytes[3] = (sourceRegion & 0x0000FF00) >> 8 ;
@@ -62,7 +62,7 @@ TEST(CallTests, AllCallTests)
 
         NABLA::Bytegen::Instruction call;
 
-        call.bytes[0] = INS_CALL;
+        call.bytes[0] = NABLA::VSYS::INS_CALL;
         call.bytes[1] = (destinationAddress & 0xFF000000) >> 24;
         call.bytes[2] = (destinationAddress & 0x00FF0000) >> 16;
         call.bytes[3] = (destinationAddress & 0x0000FF00) >> 8 ;

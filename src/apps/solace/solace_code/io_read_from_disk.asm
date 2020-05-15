@@ -16,19 +16,19 @@
 <main:
 
     size r0 gs
-    push ls r0      ; Store the current size of the global stack locally
+    pushw ls r0      ; Store the current size of the global stack locally
 
     call prompt_user
     call get_user_input
 
-    pop r0 ls       ; Get the original size of the global stack into r0
+    popw r0 ls       ; Get the original size of the global stack into r0
 
     size r1 gs      ; Store new size  
-    push ls r1
+    pushw ls r1
 
     call read_from_disk
 
-    pop r0 ls       ; Pop previous size of gs
+    popw r0 ls       ; popw previous size of gs
     call display_loaded_contents
 >
 
@@ -44,7 +44,7 @@
     ; Make the stdout instruction seen in devices.md for stdout
     or r0 r0 r1 
 
-    mov r1 $4 
+    mov r1 $25 
     mov r2 $0
 
 loop_top:
@@ -69,12 +69,12 @@ loop_top:
     ; Make the stdout instruction seen in devices.md for stdout
     or r0 r0 r1 
 
-    mov r1 $7 
-    mov r2 $4
+    mov r1 $45
+    mov r2 $25
 
 loop_top:
 
-    ldb r11 r2(gs)  ; Load from gs index ( basicelly  gs[r1] )
+    ldb r11 r2(gs)  ; Load from gs index ( basicelly  gs[r2] )
 
     mov r10 r0      ; Trigger stdout
 
@@ -118,7 +118,7 @@ loop_top:
     or r5 r5 r6        ; Assemble the command
     or r5 r5 r7        ; Assemble the command
 
-    push ls r5         ; Store the command in ls 
+    pushw ls r5         ; Store the command in ls 
 
     size r1 gs
 
@@ -128,7 +128,7 @@ loop_top:
 
     mov r11 r5         ; Move the stack address information into register io device will expect
 
-    pop r5 ls          ; Pop the command into r5 so we don't lose it after call
+    popw r5 ls          ; popw the command into r5 so we don't lose it after call
     
     mov r10 r5         ; Move command into trigger register
 
@@ -139,7 +139,7 @@ loop_top:
     lsh r5 $10  $56    ; Load 0x0A into MSB register 5
     lsh r6 $100 $48    ; Set target to 'diskin'
     lsh r7 $10  $40    ; Set instruction to 'read'
-    lsh r8 $1   $8     ; Number of bytes to read
+    lsh r8 $100 $8     ; Number of bytes to read
     
     or r5 r5 r6        ; Assemble the command
     or r5 r5 r7        ; Assemble the command

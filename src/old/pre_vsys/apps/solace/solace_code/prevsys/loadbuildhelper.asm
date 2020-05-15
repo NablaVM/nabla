@@ -28,10 +28,10 @@
 
 ; ----------------------- Working -----------------------
 
-    ; ldb r1 $0(gs) ; Should be 96
-    ; ldb r2 $1(gs) ; Should be 42
-    ; ldb r3 $2(gs) ; Should be 55
-    ; ldb r4 $3(gs) ; Should be 568888
+     ldb r1 $0(gs) ; Should be 96
+     ldb r2 $8(gs) ; Should be 42
+     ldb r3 $16(gs) ; Should be 55
+     ldb r4 $32(gs) ; Should be 568888
 
     ; ldb r9 $0(gs)       ; load integer into 49
     ; add r9 r9 $1        ; add 1 to 96
@@ -57,8 +57,8 @@
     ; div r1 r0 $2       ; 25
     ; div r1 $100 r1     ; 4
 
-    ldb r9  $5(gs)       
-    ldb r10 $6(gs)      
+    ldb r9  $40(gs)       
+    ldb r10 $48(gs)      
     add.d r0 r9 r10      ; 11.5
     sub.d r0 r9 r10      ; 8.5
     mul.d r0 r10 r9      ; 15.0

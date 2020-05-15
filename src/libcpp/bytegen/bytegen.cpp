@@ -1,6 +1,6 @@
 #include "bytegen.hpp"
 
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <iostream>
 #include <bitset>
 #include <ieee754.h>
@@ -15,22 +15,22 @@ namespace NABLA
         {
             switch(reg)
             {
-                case 0 : return REGISTER_0 ;
-                case 1 : return REGISTER_1 ;
-                case 2 : return REGISTER_2 ;
-                case 3 : return REGISTER_3 ;
-                case 4 : return REGISTER_4 ;
-                case 5 : return REGISTER_5 ;
-                case 6 : return REGISTER_6 ;
-                case 7 : return REGISTER_7 ;
-                case 8 : return REGISTER_8 ;
-                case 9 : return REGISTER_9 ;
-                case 10: return REGISTER_10;
-                case 11: return REGISTER_11;
-                case 12: return REGISTER_12;
-                case 13: return REGISTER_13;
-                case 14: return REGISTER_14;
-                case 15: return REGISTER_15;
+                case 0 : return NABLA::VSYS::REGISTER_0 ;
+                case 1 : return NABLA::VSYS::REGISTER_1 ;
+                case 2 : return NABLA::VSYS::REGISTER_2 ;
+                case 3 : return NABLA::VSYS::REGISTER_3 ;
+                case 4 : return NABLA::VSYS::REGISTER_4 ;
+                case 5 : return NABLA::VSYS::REGISTER_5 ;
+                case 6 : return NABLA::VSYS::REGISTER_6 ;
+                case 7 : return NABLA::VSYS::REGISTER_7 ;
+                case 8 : return NABLA::VSYS::REGISTER_8 ;
+                case 9 : return NABLA::VSYS::REGISTER_9 ;
+                case 10: return NABLA::VSYS::REGISTER_10;
+                case 11: return NABLA::VSYS::REGISTER_11;
+                case 12: return NABLA::VSYS::REGISTER_12;
+                case 13: return NABLA::VSYS::REGISTER_13;
+                case 14: return NABLA::VSYS::REGISTER_14;
+                case 15: return NABLA::VSYS::REGISTER_15;
                 default: 
                     std::cerr << "Someone tried something silly with : " << reg  << std::endl;
                     exit(EXIT_FAILURE); 
@@ -44,9 +44,9 @@ namespace NABLA
             switch(stack)
             {
                 case Bytegen::Stacks::GLOBAL:
-                    return GLOBAL_STACK;
+                    return NABLA::VSYS::GLOBAL_STACK;
                 case Bytegen::Stacks::LOCAL:
-                    return LOCAL_STACK;
+                    return NABLA::VSYS::LOCAL_STACK;
                 default:
                     std::cerr << "Someone tried something silly awful with getStackAddress" << std::endl;
                     exit(EXIT_FAILURE); 
@@ -100,7 +100,7 @@ namespace NABLA
 
         address = functionCounter;
 
-        ins.bytes[0] = INS_FUNCTION_CREATE;
+        ins.bytes[0] = NABLA::VSYS::INS_FUNCTION_CREATE;
         ins.bytes[1] = (numInstructions & 0x00FF000000000000) >> 48 ;
         ins.bytes[2] = (numInstructions & 0x0000FF0000000000) >> 40 ;
         ins.bytes[3] = (numInstructions & 0x000000FF00000000) >> 32 ;
@@ -122,7 +122,7 @@ namespace NABLA
     {
         //std::cout << "Bytegen::createFunctionEnd()" << std::endl;
 
-        return Instruction{ INS_FUNCTION_END, 
+        return Instruction{ NABLA::VSYS::INS_FUNCTION_END, 
                             0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF 
         };
     }
@@ -137,7 +137,7 @@ namespace NABLA
 
 //        std::cout << "Bytegen::createConstantString(" << val << ")" << std::endl;
         
-        result.push_back( CONST_STR );
+        result.push_back( NABLA::VSYS::CONST_STR );
 
         uint8_t strSize = val.size();
 
@@ -169,20 +169,20 @@ namespace NABLA
         {
             case Integers::EIGHT:
             {
-                result.push_back( CONST_INT  |  0x0 );
+                result.push_back( NABLA::VSYS::CONST_INT  |  0x0 );
                 result.push_back( (val & 0x000000FF) >> 0  );
                 break;
             }
             case Integers::SIXTEEN:
             {
-                result.push_back( CONST_INT  |  0x1 );
+                result.push_back( NABLA::VSYS::CONST_INT  |  0x1 );
                 result.push_back( (val & 0x0000FF00) >> 8  );
                 result.push_back( (val & 0x000000FF) >> 0  );
                 break;
             }
             case Integers::THIRTY_TWO:
             {
-                result.push_back( CONST_INT  |  0x2 );
+                result.push_back( NABLA::VSYS::CONST_INT  |  0x2 );
                 result.push_back( (val & 0xFF000000) >> 24 );
                 result.push_back( (val & 0x00FF0000) >> 16 );
                 result.push_back( (val & 0x0000FF00) >> 8  );
@@ -191,7 +191,7 @@ namespace NABLA
             }
             case Integers::SIXTY_FOUR:
             {
-                result.push_back( CONST_INT  |  0x3 );
+                result.push_back( NABLA::VSYS::CONST_INT  |  0x3 );
                 result.push_back( (val & 0xFF00000000000000) >> 56 );
                 result.push_back( (val & 0x00FF000000000000) >> 48 );
                 result.push_back( (val & 0x0000FF0000000000) >> 40 );
@@ -224,7 +224,7 @@ namespace NABLA
                           (uint64_t)ied.ieee.mantissa0 << 32|
                           (uint64_t)ied.ieee.mantissa1 << 0;
 
-        result.push_back( CONST_DBL      );
+        result.push_back( NABLA::VSYS::CONST_DBL      );
         result.push_back( (packed & 0xFF00000000000000) >> 56 );
         result.push_back( (packed & 0x00FF000000000000) >> 48 );
         result.push_back( (packed & 0x0000FF0000000000) >> 40 );
@@ -249,14 +249,14 @@ namespace NABLA
 
         switch(type)
         {
-            case Bytegen::ArithmaticTypes::ADD : op = INS_ADD ; break;
-            case Bytegen::ArithmaticTypes::ADDD: op = INS_ADDD; break; 
-            case Bytegen::ArithmaticTypes::MUL : op = INS_MUL ; break;
-            case Bytegen::ArithmaticTypes::MULD: op = INS_MULD; break; 
-            case Bytegen::ArithmaticTypes::DIV : op = INS_DIV ; break;
-            case Bytegen::ArithmaticTypes::DIVD: op = INS_DIVD; break; 
-            case Bytegen::ArithmaticTypes::SUB : op = INS_SUB ; break;
-            case Bytegen::ArithmaticTypes::SUBD: op = INS_SUBD; break; 
+            case Bytegen::ArithmaticTypes::ADD : op = NABLA::VSYS::INS_ADD ; break;
+            case Bytegen::ArithmaticTypes::ADDD: op = NABLA::VSYS::INS_ADDD; break; 
+            case Bytegen::ArithmaticTypes::MUL : op = NABLA::VSYS::INS_MUL ; break;
+            case Bytegen::ArithmaticTypes::MULD: op = NABLA::VSYS::INS_MULD; break; 
+            case Bytegen::ArithmaticTypes::DIV : op = NABLA::VSYS::INS_DIV ; break;
+            case Bytegen::ArithmaticTypes::DIVD: op = NABLA::VSYS::INS_DIVD; break; 
+            case Bytegen::ArithmaticTypes::SUB : op = NABLA::VSYS::INS_SUB ; break;
+            case Bytegen::ArithmaticTypes::SUBD: op = NABLA::VSYS::INS_SUBD; break; 
             default:      exit(EXIT_FAILURE);  return ins; // Keep that compiler happy.
         }
 
@@ -359,18 +359,18 @@ namespace NABLA
         // Set the instruction op
         switch(type)
         {
-            case Bytegen::BranchTypes::BGT  : ins.bytes[0] = INS_BGT  ; break; 
-            case Bytegen::BranchTypes::BGTE : ins.bytes[0] = INS_BGTE ; break; 
-            case Bytegen::BranchTypes::BLT  : ins.bytes[0] = INS_BLT  ; break; 
-            case Bytegen::BranchTypes::BLTE : ins.bytes[0] = INS_BLTE ; break; 
-            case Bytegen::BranchTypes::BEQ  : ins.bytes[0] = INS_BEQ  ; break; 
-            case Bytegen::BranchTypes::BNE  : ins.bytes[0] = INS_BNE  ; break; 
-            case Bytegen::BranchTypes::BGTD : ins.bytes[0] = INS_BGTD ; break;
-            case Bytegen::BranchTypes::BGTED: ins.bytes[0] = INS_BGTED; break;
-            case Bytegen::BranchTypes::BLTD : ins.bytes[0] = INS_BLTD ; break;
-            case Bytegen::BranchTypes::BLTED: ins.bytes[0] = INS_BLTED; break;
-            case Bytegen::BranchTypes::BEQD : ins.bytes[0] = INS_BEQD ; break;
-            case Bytegen::BranchTypes::BNED : ins.bytes[0] = INS_BNED ; break;
+            case Bytegen::BranchTypes::BGT  : ins.bytes[0] = NABLA::VSYS::INS_BGT  ; break; 
+            case Bytegen::BranchTypes::BGTE : ins.bytes[0] = NABLA::VSYS::INS_BGTE ; break; 
+            case Bytegen::BranchTypes::BLT  : ins.bytes[0] = NABLA::VSYS::INS_BLT  ; break; 
+            case Bytegen::BranchTypes::BLTE : ins.bytes[0] = NABLA::VSYS::INS_BLTE ; break; 
+            case Bytegen::BranchTypes::BEQ  : ins.bytes[0] = NABLA::VSYS::INS_BEQ  ; break; 
+            case Bytegen::BranchTypes::BNE  : ins.bytes[0] = NABLA::VSYS::INS_BNE  ; break; 
+            case Bytegen::BranchTypes::BGTD : ins.bytes[0] = NABLA::VSYS::INS_BGTD ; break;
+            case Bytegen::BranchTypes::BGTED: ins.bytes[0] = NABLA::VSYS::INS_BGTED; break;
+            case Bytegen::BranchTypes::BLTD : ins.bytes[0] = NABLA::VSYS::INS_BLTD ; break;
+            case Bytegen::BranchTypes::BLTED: ins.bytes[0] = NABLA::VSYS::INS_BLTED; break;
+            case Bytegen::BranchTypes::BEQD : ins.bytes[0] = NABLA::VSYS::INS_BEQD ; break;
+            case Bytegen::BranchTypes::BNED : ins.bytes[0] = NABLA::VSYS::INS_BNED ; break;
             default:                          return ins; // Keep that compiler happy.
         }
 
@@ -395,7 +395,7 @@ namespace NABLA
     {
         Instruction ins;
 
-        ins.bytes[0] = INS_JUMP;
+        ins.bytes[0] = NABLA::VSYS::INS_JUMP;
         ins.bytes[1] = (location & 0xFF000000) >> 24 ;
         ins.bytes[2] = (location & 0x00FF0000) >> 16 ;
         ins.bytes[3] = (location & 0x0000FF00) >> 8  ;
@@ -413,14 +413,14 @@ namespace NABLA
     // createMovInstruction
     // ------------------------------------------------------------------------
 
-    Bytegen::Instruction Bytegen::createMovInstruction(Bytegen::MovSetup setup, uint8_t reg1, uint8_t arg2)
+    Bytegen::Instruction Bytegen::createMovInstruction(Bytegen::MovSetup setup, uint8_t reg1, uint32_t arg2)
     {
         
         Instruction ins;
 
         if(setup == Bytegen::MovSetup::REG_REG)
         {
-            ins.bytes[0] = INS_MOV;
+            ins.bytes[0] = NABLA::VSYS::INS_MOV;
             ins.bytes[1] = integerToRegister(reg1) ;
             ins.bytes[2] = integerToRegister(arg2) ;
             ins.bytes[3] = 0xFF;
@@ -431,12 +431,12 @@ namespace NABLA
         }
         else
         {
-            ins.bytes[0] = (INS_MOV | 0x01);
+            ins.bytes[0] = (NABLA::VSYS::INS_MOV | 0x01);
             ins.bytes[1] = integerToRegister(reg1) ;
-            ins.bytes[2] = arg2;
-            ins.bytes[3] = 0xFF;
-            ins.bytes[4] = 0xFF;
-            ins.bytes[5] = 0xFF;
+            ins.bytes[2] = (arg2 & 0xFF000000) >> 24 ;
+            ins.bytes[3] = (arg2 & 0x00FF0000) >> 16 ;
+            ins.bytes[4] = (arg2 & 0x0000FF00) >> 8  ;
+            ins.bytes[5] = (arg2 & 0x000000FF) >> 0  ;
             ins.bytes[6] = 0xFF;
             ins.bytes[7] = 0xFF;
         }
@@ -453,7 +453,7 @@ namespace NABLA
     Bytegen::Instruction Bytegen::createPushInstruction(Stacks stack, uint8_t reg)
     {
         Instruction ins;
-        ins.bytes[0] = INS_PUSH;
+        ins.bytes[0] = NABLA::VSYS::INS_PUSH;
         ins.bytes[1] = getStackAddress(stack);
         ins.bytes[2] = integerToRegister(reg);
         ins.bytes[3] = 0xFF;
@@ -474,7 +474,50 @@ namespace NABLA
     Bytegen::Instruction Bytegen::createPopInstruction(Stacks stack, uint8_t reg)
     {
         Instruction ins;
-        ins.bytes[0] = INS_POP;
+        ins.bytes[0] = NABLA::VSYS::INS_POP;
+        ins.bytes[1] = integerToRegister(reg);
+        ins.bytes[2] = getStackAddress(stack);
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        //dumpInstruction(ins);
+        
+        return ins;
+    }
+
+
+    // ------------------------------------------------------------------------
+    // createPushwInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createPushwInstruction(Stacks stack, uint8_t reg)
+    {
+        Instruction ins;
+        ins.bytes[0] = NABLA::VSYS::INS_PUSHW;
+        ins.bytes[1] = getStackAddress(stack);
+        ins.bytes[2] = integerToRegister(reg);
+        ins.bytes[3] = 0xFF;
+        ins.bytes[4] = 0xFF;
+        ins.bytes[5] = 0xFF;
+        ins.bytes[6] = 0xFF;
+        ins.bytes[7] = 0xFF;
+
+        //dumpInstruction(ins);
+
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
+    // createPopwInstruction
+    // ------------------------------------------------------------------------
+
+    Bytegen::Instruction Bytegen::createPopwInstruction(Stacks stack, uint8_t reg)
+    {
+        Instruction ins;
+        ins.bytes[0] = NABLA::VSYS::INS_POPW;
         ins.bytes[1] = integerToRegister(reg);
         ins.bytes[2] = getStackAddress(stack);
         ins.bytes[3] = 0xFF;
@@ -500,7 +543,7 @@ namespace NABLA
         {
             case Bytegen::LoadStoreSetup::NUMBER_BASED:
             {
-                ins.bytes[0] = INS_STB;
+                ins.bytes[0] = NABLA::VSYS::INS_STB;
                 ins.bytes[1] = getStackAddress(stack);
                 ins.bytes[2] = (location & 0xFF000000) >> 24 ;
                 ins.bytes[3] = (location & 0x00FF0000) >> 16 ;
@@ -513,7 +556,7 @@ namespace NABLA
 
             case Bytegen::LoadStoreSetup::REGISTER_BASED:
             {
-                ins.bytes[0] = (INS_STB | 0x01);
+                ins.bytes[0] = (NABLA::VSYS::INS_STB | 0x01);
                 ins.bytes[1] = getStackAddress(stack);
                 ins.bytes[2] = integerToRegister(location);
                 ins.bytes[3] = integerToRegister(reg);
@@ -536,6 +579,53 @@ namespace NABLA
     }
 
     // ------------------------------------------------------------------------
+    // createStwInstruction
+    // ------------------------------------------------------------------------
+    
+    Bytegen::Instruction Bytegen::createStwInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg)
+    {
+        Instruction ins;
+
+        switch(setup)
+        {
+            case Bytegen::LoadStoreSetup::NUMBER_BASED:
+            {
+                ins.bytes[0] = NABLA::VSYS::INS_STW;
+                ins.bytes[1] = getStackAddress(stack);
+                ins.bytes[2] = (location & 0xFF000000) >> 24 ;
+                ins.bytes[3] = (location & 0x00FF0000) >> 16 ;
+                ins.bytes[4] = (location & 0x0000FF00) >> 8  ;
+                ins.bytes[5] = (location & 0x000000FF) >> 0  ;
+                ins.bytes[6] = integerToRegister(reg);
+                ins.bytes[7] = 0xFF;
+                break;
+            }
+
+            case Bytegen::LoadStoreSetup::REGISTER_BASED:
+            {
+                ins.bytes[0] = (NABLA::VSYS::INS_STW | 0x01);
+                ins.bytes[1] = getStackAddress(stack);
+                ins.bytes[2] = integerToRegister(location);
+                ins.bytes[3] = integerToRegister(reg);
+                ins.bytes[4] = 0xFF;
+                ins.bytes[5] = 0xFF;
+                ins.bytes[6] = 0xFF;
+                ins.bytes[7] = 0xFF;
+                break;
+            }
+            default:
+                std::cerr << "Someone is doing something wrong with bytegen createStwInstruction!" << std::endl;
+                exit(EXIT_FAILURE); 
+                break;
+        }
+
+
+        //dumpInstruction(ins);
+
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
     // createLdbInstruction
     // ------------------------------------------------------------------------
     
@@ -547,7 +637,7 @@ namespace NABLA
         {
             case Bytegen::LoadStoreSetup::NUMBER_BASED:
             {
-                ins.bytes[0] = INS_LDB;
+                ins.bytes[0] = NABLA::VSYS::INS_LDB;
                 ins.bytes[1] = integerToRegister(reg);
                 ins.bytes[2] = getStackAddress(stack);
                 ins.bytes[3] = (location & 0xFF000000) >> 24 ;
@@ -560,7 +650,7 @@ namespace NABLA
 
             case Bytegen::LoadStoreSetup::REGISTER_BASED:
             {
-                ins.bytes[0] = (INS_LDB | 0x01);
+                ins.bytes[0] = (NABLA::VSYS::INS_LDB | 0x01);
                 ins.bytes[1] = integerToRegister(reg);
                 ins.bytes[2] = getStackAddress(stack);
                 ins.bytes[3] = integerToRegister(location);
@@ -583,13 +673,60 @@ namespace NABLA
     }
 
     // ------------------------------------------------------------------------
+    // createLdwInstruction
+    // ------------------------------------------------------------------------
+    
+    Bytegen::Instruction Bytegen::createLdwInstruction(Stacks stack, LoadStoreSetup setup, uint32_t location, uint8_t reg)
+    {
+        Instruction ins;
+
+        switch(setup)
+        {
+            case Bytegen::LoadStoreSetup::NUMBER_BASED:
+            {
+                ins.bytes[0] = NABLA::VSYS::INS_LDW;
+                ins.bytes[1] = integerToRegister(reg);
+                ins.bytes[2] = getStackAddress(stack);
+                ins.bytes[3] = (location & 0xFF000000) >> 24 ;
+                ins.bytes[4] = (location & 0x00FF0000) >> 16 ;
+                ins.bytes[5] = (location & 0x0000FF00) >> 8  ;
+                ins.bytes[6] = (location & 0x000000FF) >> 0  ;
+                ins.bytes[7] = 0xFF;
+                break;
+            }
+
+            case Bytegen::LoadStoreSetup::REGISTER_BASED:
+            {
+                ins.bytes[0] = (NABLA::VSYS::INS_LDW | 0x01);
+                ins.bytes[1] = integerToRegister(reg);
+                ins.bytes[2] = getStackAddress(stack);
+                ins.bytes[3] = integerToRegister(location);
+                ins.bytes[4] = 0xFF;
+                ins.bytes[5] = 0xFF;
+                ins.bytes[6] = 0xFF;
+                ins.bytes[7] = 0xFF;
+                break;
+            }
+
+            default:
+                std::cerr << "Someone is doing something wrong with bytegen createLdwInstruction!" << std::endl;
+                exit(EXIT_FAILURE); 
+                break;
+        }
+
+        //dumpInstruction(ins);
+
+        return ins;
+    }
+
+    // ------------------------------------------------------------------------
     // createReturnInstruction
     // ------------------------------------------------------------------------
 
     Bytegen::Instruction Bytegen::createReturnInstruction()
     {
         Instruction ins;
-        ins.bytes[0] = INS_RET;
+        ins.bytes[0] = NABLA::VSYS::INS_RET;
         ins.bytes[1] = 0xFF;
         ins.bytes[2] = 0xFF;
         ins.bytes[3] = 0xFF;
@@ -610,7 +747,7 @@ namespace NABLA
     Bytegen::Instruction Bytegen::createExitInstruction()
     {
         Instruction ins;
-        ins.bytes[0] = INS_EXIT;
+        ins.bytes[0] = NABLA::VSYS::INS_EXIT;
         ins.bytes[1] = 0xFF;
         ins.bytes[2] = 0xFF;
         ins.bytes[3] = 0xFF;
@@ -631,7 +768,7 @@ namespace NABLA
     Bytegen::Instruction Bytegen::createYieldInstruction()
     {
         Instruction ins;
-        ins.bytes[0] = INS_YIELD;
+        ins.bytes[0] = NABLA::VSYS::INS_YIELD;
         ins.bytes[1] = 0xFF;
         ins.bytes[2] = 0xFF;
         ins.bytes[3] = 0xFF;
@@ -654,7 +791,7 @@ namespace NABLA
         std::vector<Instruction> ins;
 
         Instruction cssf;
-        cssf.bytes[0] = INS_CS_SF;
+        cssf.bytes[0] = NABLA::VSYS::INS_CS_SF;
         cssf.bytes[1] = (funcFrom & 0xFF000000) >> 24;
         cssf.bytes[2] = (funcFrom & 0x00FF0000) >> 16;
         cssf.bytes[3] = (funcFrom & 0x0000FF00) >> 8 ;
@@ -666,7 +803,7 @@ namespace NABLA
         ins.push_back(cssf);
 
         Instruction cssr;
-        cssr.bytes[0] = INS_CS_SR;
+        cssr.bytes[0] = NABLA::VSYS::INS_CS_SR;
         cssr.bytes[1] = (ret & 0xFF000000) >> 24;
         cssr.bytes[2] = (ret & 0x00FF0000) >> 16;
         cssr.bytes[3] = (ret & 0x0000FF00) >> 8 ;
@@ -679,7 +816,7 @@ namespace NABLA
 
         Instruction call;
 
-        call.bytes[0] = INS_CALL;
+        call.bytes[0] = NABLA::VSYS::INS_CALL;
         call.bytes[1] = (address & 0xFF000000) >> 24;
         call.bytes[2] = (address & 0x00FF0000) >> 16;
         call.bytes[3] = (address & 0x0000FF00) >> 8 ;
@@ -701,7 +838,7 @@ namespace NABLA
     {
         std::vector<uint8_t> result;
 
-        result.push_back( INS_SEG_CONST );
+        result.push_back( NABLA::VSYS::INS_SEG_CONST );
         result.push_back( (count & 0xFF00000000000000) >> 56 );
         result.push_back( (count & 0x00FF000000000000) >> 48 );
         result.push_back( (count & 0x0000FF0000000000) >> 40 );
@@ -722,7 +859,7 @@ namespace NABLA
     {
         std::vector<uint8_t> result;
 
-        result.push_back( INS_SEG_FUNC );
+        result.push_back( NABLA::VSYS::INS_SEG_FUNC );
         result.push_back( (entryAddress & 0xFF00000000000000) >> 56 );
         result.push_back( (entryAddress & 0x00FF000000000000) >> 48 );
         result.push_back( (entryAddress & 0x0000FF0000000000) >> 40 );
@@ -745,7 +882,7 @@ namespace NABLA
 
         // In the future I'd like to dump a checksum here so we are using
         // a vector. For now, we just load 0xFF
-        result.push_back( INS_SEG_BEOF );
+        result.push_back( NABLA::VSYS::INS_SEG_BEOF );
         result.push_back( 0xFF );
         result.push_back( 0xFF );
         result.push_back( 0xFF );
@@ -768,12 +905,12 @@ namespace NABLA
 
         switch(type)
         {
-            case Bytegen::BitwiseTypes::LSH : op = INS_LSH; break; 
-            case Bytegen::BitwiseTypes::RSH : op = INS_RSH; break; 
-            case Bytegen::BitwiseTypes::AND : op = INS_AND; break; 
-            case Bytegen::BitwiseTypes::OR  : op = INS_OR ; break; 
-            case Bytegen::BitwiseTypes::XOR : op = INS_XOR; break; 
-            case Bytegen::BitwiseTypes::NOT : op = INS_NOT; break;
+            case Bytegen::BitwiseTypes::LSH : op = NABLA::VSYS::INS_LSH; break; 
+            case Bytegen::BitwiseTypes::RSH : op = NABLA::VSYS::INS_RSH; break; 
+            case Bytegen::BitwiseTypes::AND : op = NABLA::VSYS::INS_AND; break; 
+            case Bytegen::BitwiseTypes::OR  : op = NABLA::VSYS::INS_OR ; break; 
+            case Bytegen::BitwiseTypes::XOR : op = NABLA::VSYS::INS_XOR; break; 
+            case Bytegen::BitwiseTypes::NOT : op = NABLA::VSYS::INS_NOT; break;
             default:  std::cerr << "Type error - Bytegen bitwiseInstruction" << std::endl; 
                       exit(EXIT_FAILURE); // Keep that compiler happy.
         }
@@ -894,7 +1031,7 @@ namespace NABLA
     {
         Instruction ins;
 
-        ins.bytes[0] = INS_NOP;
+        ins.bytes[0] = NABLA::VSYS::INS_NOP;
         ins.bytes[1] = 0xFF;
         ins.bytes[2] = 0xFF;
         ins.bytes[3] = 0xFF;
@@ -914,7 +1051,7 @@ namespace NABLA
     {
         Instruction ins;
 
-        ins.bytes[0] = INS_SIZE;
+        ins.bytes[0] = NABLA::VSYS::INS_SIZE;
         ins.bytes[1] = integerToRegister(reg);
         ins.bytes[2] = getStackAddress(stack);
         ins.bytes[3] = 0xFF;

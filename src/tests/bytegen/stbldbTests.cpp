@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include "CppUTest/TestHarness.h"
 
@@ -29,22 +29,22 @@ namespace
     {
         switch(reg)
         {
-            case 0 : return REGISTER_0 ;
-            case 1 : return REGISTER_1 ;
-            case 2 : return REGISTER_2 ;
-            case 3 : return REGISTER_3 ;
-            case 4 : return REGISTER_4 ;
-            case 5 : return REGISTER_5 ;
-            case 6 : return REGISTER_6 ;
-            case 7 : return REGISTER_7 ;
-            case 8 : return REGISTER_8 ;
-            case 9 : return REGISTER_9 ;
-            case 10: return REGISTER_10;
-            case 11: return REGISTER_11;
-            case 12: return REGISTER_12;
-            case 13: return REGISTER_13;
-            case 14: return REGISTER_14;
-            case 15: return REGISTER_15;
+            case 0 : return NABLA::VSYS::REGISTER_0 ;
+            case 1 : return NABLA::VSYS::REGISTER_1 ;
+            case 2 : return NABLA::VSYS::REGISTER_2 ;
+            case 3 : return NABLA::VSYS::REGISTER_3 ;
+            case 4 : return NABLA::VSYS::REGISTER_4 ;
+            case 5 : return NABLA::VSYS::REGISTER_5 ;
+            case 6 : return NABLA::VSYS::REGISTER_6 ;
+            case 7 : return NABLA::VSYS::REGISTER_7 ;
+            case 8 : return NABLA::VSYS::REGISTER_8 ;
+            case 9 : return NABLA::VSYS::REGISTER_9 ;
+            case 10: return NABLA::VSYS::REGISTER_10;
+            case 11: return NABLA::VSYS::REGISTER_11;
+            case 12: return NABLA::VSYS::REGISTER_12;
+            case 13: return NABLA::VSYS::REGISTER_13;
+            case 14: return NABLA::VSYS::REGISTER_14;
+            case 15: return NABLA::VSYS::REGISTER_15;
             default: 
                 std::cerr << "Someone tried something silly with : " << reg  << ". IN THE STB TEST!" << std::endl;
                 exit(EXIT_FAILURE); 
@@ -58,9 +58,9 @@ namespace
         switch(stack)
         {
             case NABLA::Bytegen::Stacks::GLOBAL:
-                return GLOBAL_STACK;
+                return NABLA::VSYS::GLOBAL_STACK;
             case NABLA::Bytegen::Stacks::LOCAL:
-                return LOCAL_STACK;
+                return NABLA::VSYS::LOCAL_STACK;
             default:
                 std::cerr << "Someone tried something silly awful with getStackAddress in StbLdbTests" << std::endl;
                 exit(EXIT_FAILURE); 
@@ -90,7 +90,7 @@ TEST(StbLdbTests, StbNumberBased)
 
         uint32_t location = getRandom32(0, 0xFFFFFFF);
 
-        expectedIns.bytes[0] = INS_STB;
+        expectedIns.bytes[0] = NABLA::VSYS::INS_STB;
         expectedIns.bytes[1] = getStackAddress(stackType);
         expectedIns.bytes[2] = (location & 0xFF000000) >> 24 ;
         expectedIns.bytes[3] = (location & 0x00FF0000) >> 16 ;
@@ -116,8 +116,6 @@ TEST(StbLdbTests, StbNumberBased)
         CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Register fail");
         CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
     }
-
-    
 }
 
 // ---------------------------------------------------------------
@@ -132,7 +130,7 @@ TEST(StbLdbTests, StbRegisterBased)
 
         NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
 
-        expectedIns.bytes[0] = (INS_STB | 0x01);
+        expectedIns.bytes[0] = (NABLA::VSYS::INS_STB | 0x01);
         expectedIns.bytes[1] = getStackAddress(stackType);
         expectedIns.bytes[2] = integerToRegister(getRandom8(0, 9));
         expectedIns.bytes[3] = integerToRegister(getRandom8(0, 9));
@@ -174,7 +172,7 @@ TEST(StbLdbTests, LdbNumberBased)
 
         uint32_t location = getRandom32(0, 0xFFFFFFF);
 
-        expectedIns.bytes[0] = INS_LDB;
+        expectedIns.bytes[0] = NABLA::VSYS::INS_LDB;
         expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9));
         expectedIns.bytes[2] = getStackAddress(stackType);
         expectedIns.bytes[3] = (location & 0xFF000000) >> 24 ;
@@ -214,7 +212,7 @@ TEST(StbLdbTests, LdbRegisterBased)
 
         NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
         
-        expectedIns.bytes[0] = (INS_LDB | 0x01);
+        expectedIns.bytes[0] = (NABLA::VSYS::INS_LDB | 0x01);
         expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9));
         expectedIns.bytes[2] = getStackAddress(stackType);
         expectedIns.bytes[3] = integerToRegister(getRandom8(0, 9));
@@ -224,6 +222,172 @@ TEST(StbLdbTests, LdbRegisterBased)
         expectedIns.bytes[7] = 0xFF;
         
         NABLA::Bytegen::Instruction ins = byteGen.createLdbInstruction(
+            stackType,
+            NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED,
+            expectedIns.bytes[3],
+            expectedIns.bytes[1]
+        );
+
+        // Build expected ins
+        CHECK_EQUAL_TEXT(ins.bytes[0], expectedIns.bytes[0], "Opcode fail");
+        CHECK_EQUAL_TEXT(ins.bytes[1], expectedIns.bytes[1], "Incorrect Register");
+        CHECK_EQUAL_TEXT(ins.bytes[2], expectedIns.bytes[2], "Incorrect stack");
+        CHECK_EQUAL_TEXT(ins.bytes[3], expectedIns.bytes[3], "Byte 3 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[4], expectedIns.bytes[4], "Byte 4 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[5], expectedIns.bytes[5], "Byte 5 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Byte 6 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
+    }
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(StbLdbTests, StwNumberBased)
+{
+    for(int16_t j = 0; j < 50; j++)
+    {
+        NABLA::Bytegen::Instruction expectedIns;
+
+        NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
+
+        uint32_t location = getRandom32(0, 0xFFFFFFF);
+
+        expectedIns.bytes[0] = NABLA::VSYS::INS_STW;
+        expectedIns.bytes[1] = getStackAddress(stackType);
+        expectedIns.bytes[2] = (location & 0xFF000000) >> 24 ;
+        expectedIns.bytes[3] = (location & 0x00FF0000) >> 16 ;
+        expectedIns.bytes[4] = (location & 0x0000FF00) >> 8  ;
+        expectedIns.bytes[5] = (location & 0x000000FF) >> 0  ;
+        expectedIns.bytes[6] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[7] = 0xFF;
+        
+        NABLA::Bytegen::Instruction ins = byteGen.createStwInstruction(
+            stackType,
+            NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED,
+            location,
+            expectedIns.bytes[6]
+        );
+
+        // Build expected ins
+        CHECK_EQUAL_TEXT(ins.bytes[0], expectedIns.bytes[0], "Opcode fail");
+        CHECK_EQUAL_TEXT(ins.bytes[1], expectedIns.bytes[1], "Incorrect Stack");
+        CHECK_EQUAL_TEXT(ins.bytes[2], expectedIns.bytes[2], "Byte 1 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[3], expectedIns.bytes[3], "Byte 3 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[4], expectedIns.bytes[4], "Byte 4 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[5], expectedIns.bytes[5], "Byte 5 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Register fail");
+        CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
+    }
+
+    
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(StbLdbTests, StwRegisterBased)
+{
+    for(int16_t j = 0; j < 50; j++)
+    {
+        NABLA::Bytegen::Instruction expectedIns;
+
+        NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
+
+        expectedIns.bytes[0] = (NABLA::VSYS::INS_STW | 0x01);
+        expectedIns.bytes[1] = getStackAddress(stackType);
+        expectedIns.bytes[2] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[3] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[4] = 0xFF;
+        expectedIns.bytes[5] = 0xFF;
+        expectedIns.bytes[6] = 0xFF;
+        expectedIns.bytes[7] = 0xFF;
+        
+        NABLA::Bytegen::Instruction ins = byteGen.createStwInstruction(
+            stackType,
+            NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED,
+            expectedIns.bytes[2],
+            expectedIns.bytes[3]
+        );
+
+        // Build expected ins
+        CHECK_EQUAL_TEXT(ins.bytes[0], expectedIns.bytes[0], "Opcode fail");
+        CHECK_EQUAL_TEXT(ins.bytes[1], expectedIns.bytes[1], "Incorrect Stack");
+        CHECK_EQUAL_TEXT(ins.bytes[2], expectedIns.bytes[2], "Byte 1 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[3], expectedIns.bytes[3], "Byte 3 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[4], expectedIns.bytes[4], "Byte 4 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[5], expectedIns.bytes[5], "Byte 5 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Byte 6 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
+    }   
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(StbLdbTests, LdwNumberBased)
+{
+    for(int16_t j = 0; j < 50; j++)
+    {
+        NABLA::Bytegen::Instruction expectedIns;
+
+        NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
+
+        uint32_t location = getRandom32(0, 0xFFFFFFF);
+
+        expectedIns.bytes[0] = NABLA::VSYS::INS_LDW;
+        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[2] = getStackAddress(stackType);
+        expectedIns.bytes[3] = (location & 0xFF000000) >> 24 ;
+        expectedIns.bytes[4] = (location & 0x00FF0000) >> 16 ;
+        expectedIns.bytes[5] = (location & 0x0000FF00) >> 8  ;
+        expectedIns.bytes[6] = (location & 0x000000FF) >> 0  ;
+        expectedIns.bytes[7] = 0xFF;
+        
+        NABLA::Bytegen::Instruction ins = byteGen.createLdwInstruction(
+            stackType,
+            NABLA::Bytegen::LoadStoreSetup::NUMBER_BASED,
+            location,
+            expectedIns.bytes[1]
+        );
+
+        // Build expected ins
+        CHECK_EQUAL_TEXT(ins.bytes[0], expectedIns.bytes[0], "Opcode fail");
+        CHECK_EQUAL_TEXT(ins.bytes[1], expectedIns.bytes[1], "Incorrect Register");
+        CHECK_EQUAL_TEXT(ins.bytes[2], expectedIns.bytes[2], "Incorrect stack");
+        CHECK_EQUAL_TEXT(ins.bytes[3], expectedIns.bytes[3], "Byte 3 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[4], expectedIns.bytes[4], "Byte 4 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[5], expectedIns.bytes[5], "Byte 5 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[6], expectedIns.bytes[6], "Byte 6 fail");
+        CHECK_EQUAL_TEXT(ins.bytes[7], expectedIns.bytes[7], "Byte 7 fail");
+    }
+}
+
+// ---------------------------------------------------------------
+// 
+// ---------------------------------------------------------------
+
+TEST(StbLdbTests, LdwRegisterBased)
+{
+    for(int16_t j = 0; j < 50; j++)
+    {
+        NABLA::Bytegen::Instruction expectedIns;
+
+        NABLA::Bytegen::Stacks stackType = (j % 2 == 0) ? NABLA::Bytegen::Stacks::GLOBAL : NABLA::Bytegen::Stacks::LOCAL;
+        
+        expectedIns.bytes[0] = (NABLA::VSYS::INS_LDW | 0x01);
+        expectedIns.bytes[1] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[2] = getStackAddress(stackType);
+        expectedIns.bytes[3] = integerToRegister(getRandom8(0, 9));
+        expectedIns.bytes[4] = 0xFF;
+        expectedIns.bytes[5] = 0xFF;
+        expectedIns.bytes[6] = 0xFF;
+        expectedIns.bytes[7] = 0xFF;
+        
+        NABLA::Bytegen::Instruction ins = byteGen.createLdwInstruction(
             stackType,
             NABLA::Bytegen::LoadStoreSetup::REGISTER_BASED,
             expectedIns.bytes[3],

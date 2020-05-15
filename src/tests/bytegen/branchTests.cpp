@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include "CppUTest/TestHarness.h"
 
@@ -28,22 +28,22 @@ namespace
     {
         switch(reg)
         {
-            case 0 : return REGISTER_0 ;
-            case 1 : return REGISTER_1 ;
-            case 2 : return REGISTER_2 ;
-            case 3 : return REGISTER_3 ;
-            case 4 : return REGISTER_4 ;
-            case 5 : return REGISTER_5 ;
-            case 6 : return REGISTER_6 ;
-            case 7 : return REGISTER_7 ;
-            case 8 : return REGISTER_8 ;
-            case 9 : return REGISTER_9 ;
-            case 10: return REGISTER_10;
-            case 11: return REGISTER_11;
-            case 12: return REGISTER_12;
-            case 13: return REGISTER_13;
-            case 14: return REGISTER_14;
-            case 15: return REGISTER_15;
+            case 0 : return NABLA::VSYS::REGISTER_0 ;
+            case 1 : return NABLA::VSYS::REGISTER_1 ;
+            case 2 : return NABLA::VSYS::REGISTER_2 ;
+            case 3 : return NABLA::VSYS::REGISTER_3 ;
+            case 4 : return NABLA::VSYS::REGISTER_4 ;
+            case 5 : return NABLA::VSYS::REGISTER_5 ;
+            case 6 : return NABLA::VSYS::REGISTER_6 ;
+            case 7 : return NABLA::VSYS::REGISTER_7 ;
+            case 8 : return NABLA::VSYS::REGISTER_8 ;
+            case 9 : return NABLA::VSYS::REGISTER_9 ;
+            case 10: return NABLA::VSYS::REGISTER_10;
+            case 11: return NABLA::VSYS::REGISTER_11;
+            case 12: return NABLA::VSYS::REGISTER_12;
+            case 13: return NABLA::VSYS::REGISTER_13;
+            case 14: return NABLA::VSYS::REGISTER_14;
+            case 15: return NABLA::VSYS::REGISTER_15;
             default: 
                 std::cerr << "Someone tried something silly with : " << reg  << ". IN THE BRANCH TEST!" << std::endl;
                 exit(EXIT_FAILURE); 
@@ -75,18 +75,18 @@ TEST(BranchTests, AllBranchTests)
 
         switch(type)
         {
-            case NABLA::Bytegen::BranchTypes::BGT  : expectedIns.bytes[0] = INS_BGT  ; break; 
-            case NABLA::Bytegen::BranchTypes::BGTE : expectedIns.bytes[0] = INS_BGTE ; break; 
-            case NABLA::Bytegen::BranchTypes::BLT  : expectedIns.bytes[0] = INS_BLT  ; break; 
-            case NABLA::Bytegen::BranchTypes::BLTE : expectedIns.bytes[0] = INS_BLTE ; break; 
-            case NABLA::Bytegen::BranchTypes::BEQ  : expectedIns.bytes[0] = INS_BEQ  ; break; 
-            case NABLA::Bytegen::BranchTypes::BNE  : expectedIns.bytes[0] = INS_BNE  ; break; 
-            case NABLA::Bytegen::BranchTypes::BGTD : expectedIns.bytes[0] = INS_BGTD ; break;
-            case NABLA::Bytegen::BranchTypes::BGTED: expectedIns.bytes[0] = INS_BGTED; break;
-            case NABLA::Bytegen::BranchTypes::BLTD : expectedIns.bytes[0] = INS_BLTD ; break;
-            case NABLA::Bytegen::BranchTypes::BLTED: expectedIns.bytes[0] = INS_BLTED; break;
-            case NABLA::Bytegen::BranchTypes::BEQD : expectedIns.bytes[0] = INS_BEQD ; break;
-            case NABLA::Bytegen::BranchTypes::BNED : expectedIns.bytes[0] = INS_BNED ; break;
+            case NABLA::Bytegen::BranchTypes::BGT  : expectedIns.bytes[0] = NABLA::VSYS::INS_BGT  ; break; 
+            case NABLA::Bytegen::BranchTypes::BGTE : expectedIns.bytes[0] = NABLA::VSYS::INS_BGTE ; break; 
+            case NABLA::Bytegen::BranchTypes::BLT  : expectedIns.bytes[0] = NABLA::VSYS::INS_BLT  ; break; 
+            case NABLA::Bytegen::BranchTypes::BLTE : expectedIns.bytes[0] = NABLA::VSYS::INS_BLTE ; break; 
+            case NABLA::Bytegen::BranchTypes::BEQ  : expectedIns.bytes[0] = NABLA::VSYS::INS_BEQ  ; break; 
+            case NABLA::Bytegen::BranchTypes::BNE  : expectedIns.bytes[0] = NABLA::VSYS::INS_BNE  ; break; 
+            case NABLA::Bytegen::BranchTypes::BGTD : expectedIns.bytes[0] = NABLA::VSYS::INS_BGTD ; break;
+            case NABLA::Bytegen::BranchTypes::BGTED: expectedIns.bytes[0] = NABLA::VSYS::INS_BGTED; break;
+            case NABLA::Bytegen::BranchTypes::BLTD : expectedIns.bytes[0] = NABLA::VSYS::INS_BLTD ; break;
+            case NABLA::Bytegen::BranchTypes::BLTED: expectedIns.bytes[0] = NABLA::VSYS::INS_BLTED; break;
+            case NABLA::Bytegen::BranchTypes::BEQD : expectedIns.bytes[0] = NABLA::VSYS::INS_BEQD ; break;
+            case NABLA::Bytegen::BranchTypes::BNED : expectedIns.bytes[0] = NABLA::VSYS::INS_BNED ; break;
             default:  FAIL("Something bad happened"); break; // Keep that compiler happy.
         }
         expectedIns.bytes[1] = integerToRegister(reg1);

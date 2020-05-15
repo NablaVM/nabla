@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include "CppUTest/TestHarness.h"
 
@@ -29,22 +29,22 @@ namespace
     {
         switch(reg)
         {
-            case 0 : return REGISTER_0 ;
-            case 1 : return REGISTER_1 ;
-            case 2 : return REGISTER_2 ;
-            case 3 : return REGISTER_3 ;
-            case 4 : return REGISTER_4 ;
-            case 5 : return REGISTER_5 ;
-            case 6 : return REGISTER_6 ;
-            case 7 : return REGISTER_7 ;
-            case 8 : return REGISTER_8 ;
-            case 9 : return REGISTER_9 ;
-            case 10: return REGISTER_10;
-            case 11: return REGISTER_11;
-            case 12: return REGISTER_12;
-            case 13: return REGISTER_13;
-            case 14: return REGISTER_14;
-            case 15: return REGISTER_15;
+            case 0 : return NABLA::VSYS::REGISTER_0 ;
+            case 1 : return NABLA::VSYS::REGISTER_1 ;
+            case 2 : return NABLA::VSYS::REGISTER_2 ;
+            case 3 : return NABLA::VSYS::REGISTER_3 ;
+            case 4 : return NABLA::VSYS::REGISTER_4 ;
+            case 5 : return NABLA::VSYS::REGISTER_5 ;
+            case 6 : return NABLA::VSYS::REGISTER_6 ;
+            case 7 : return NABLA::VSYS::REGISTER_7 ;
+            case 8 : return NABLA::VSYS::REGISTER_8 ;
+            case 9 : return NABLA::VSYS::REGISTER_9 ;
+            case 10: return NABLA::VSYS::REGISTER_10;
+            case 11: return NABLA::VSYS::REGISTER_11;
+            case 12: return NABLA::VSYS::REGISTER_12;
+            case 13: return NABLA::VSYS::REGISTER_13;
+            case 14: return NABLA::VSYS::REGISTER_14;
+            case 15: return NABLA::VSYS::REGISTER_15;
             default: 
                 std::cerr << "Someone tried something silly with : " << reg  << ". IN THE ARITH TEST!" << std::endl;
                 exit(EXIT_FAILURE); 
@@ -156,14 +156,14 @@ TEST(ArithmaticTests, AllArithmatics)
         // Set the expected op + ins
         switch(type)
         {
-            case NABLA::Bytegen::ArithmaticTypes::ADD : expectedIns.bytes[0] = addOppCode(INS_ADD , setup); break;
-            case NABLA::Bytegen::ArithmaticTypes::ADDD: expectedIns.bytes[0] = addOppCode(INS_ADDD, setup); break; 
-            case NABLA::Bytegen::ArithmaticTypes::MUL : expectedIns.bytes[0] = addOppCode(INS_MUL , setup); break;
-            case NABLA::Bytegen::ArithmaticTypes::MULD: expectedIns.bytes[0] = addOppCode(INS_MULD, setup); break; 
-            case NABLA::Bytegen::ArithmaticTypes::DIV : expectedIns.bytes[0] = addOppCode(INS_DIV , setup); break;
-            case NABLA::Bytegen::ArithmaticTypes::DIVD: expectedIns.bytes[0] = addOppCode(INS_DIVD, setup); break; 
-            case NABLA::Bytegen::ArithmaticTypes::SUB : expectedIns.bytes[0] = addOppCode(INS_SUB , setup); break;
-            case NABLA::Bytegen::ArithmaticTypes::SUBD: expectedIns.bytes[0] = addOppCode(INS_SUBD, setup); break; 
+            case NABLA::Bytegen::ArithmaticTypes::ADD : expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_ADD , setup); break;
+            case NABLA::Bytegen::ArithmaticTypes::ADDD: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_ADDD, setup); break; 
+            case NABLA::Bytegen::ArithmaticTypes::MUL : expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_MUL , setup); break;
+            case NABLA::Bytegen::ArithmaticTypes::MULD: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_MULD, setup); break; 
+            case NABLA::Bytegen::ArithmaticTypes::DIV : expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_DIV , setup); break;
+            case NABLA::Bytegen::ArithmaticTypes::DIVD: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_DIVD, setup); break; 
+            case NABLA::Bytegen::ArithmaticTypes::SUB : expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_SUB , setup); break;
+            case NABLA::Bytegen::ArithmaticTypes::SUBD: expectedIns.bytes[0] = addOppCode(NABLA::VSYS::INS_SUBD, setup); break; 
             default:     FAIL("Something bad happened");  break; // Keep that compiler happy.
         }
 

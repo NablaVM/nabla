@@ -1,6 +1,6 @@
 #include <iostream>
 #include "bytegen.hpp"
-#include "VmInstructions.h"
+#include "VSysInstructions.hpp"
 #include <random>
 #include "CppUTest/TestHarness.h"
 
@@ -21,7 +21,7 @@ TEST(ReturnTests, Return)
     {
         NABLA::Bytegen::Instruction expectedIns;
 
-        expectedIns.bytes[0] = INS_RET;
+        expectedIns.bytes[0] = NABLA::VSYS::INS_RET;
         expectedIns.bytes[1] = 0xFF;
         expectedIns.bytes[2] = 0xFF;
         expectedIns.bytes[3] = 0xFF;
