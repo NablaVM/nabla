@@ -2,11 +2,22 @@
 <center> <h1> <b> ∇ Nabla </b> </h1> </center>
 
 [![Build Status](https://travis-ci.com/bosley/nabla.svg?branch=master)](https://travis-ci.com/bosley/nabla)
+![](https://img.shields.io/badge/License-MIT-blueviolet)
+![](https://img.shields.io/badge/Built%20with-C%2B%2B-red)
 
+## Development Updates: 
+
+***15/ May/ 2020***
+
+:rocket: Assembly and byte code have been fully fleshed out. [Check out the examples](https://github.com/bosley/nabla/tree/master/examples/asm)! 
+
+:boom: There now exists an ASM syntax highlighting extension for VSCode (see below).
+
+:space_invader: The Nabla HLL will now begin to be developed. 
 
 ### About 
 
-The goal of Nabla is to establish a high level programming language on top of a register based stack machine. The purpose is to explore the different aspects of language and virtual machine creation. 
+The goal of Nabla is to establish a high level programming language on top of a register based virtual machine. The purpose is to explore the different aspects of language and virtual machine creation. 
 
 ### Language and Instruction set
 

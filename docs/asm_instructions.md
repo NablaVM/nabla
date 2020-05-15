@@ -425,7 +425,7 @@ id bits ignored, size is 9 bytes fixed
 
 ## The stack
 
-In this system, there are multiple stacks, but only 2 that can be accessed at any given time programatically. The local stack, and the global stack. Each slot of each stack is 8 bytes. 
+In this system, there are multiple stacks, but only 2 that can be accessed at any given time programatically. The local stack, and the global stack.
 
 ### Local stack
 
