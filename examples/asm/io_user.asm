@@ -54,11 +54,11 @@
 
 loop_top:
 
-    ldb r11 r2(gs)  ; Load from gs index ( basicelly  gs[r1] )
+    ldb r11 r2(gs)  ; Load from gs index ( basically  gs[r1] )
 
     mov r10 r0      ; Trigger stdout
 
-    add r2 r2 $1    ; add one to conuter 
+    add r2 r2 $1    ; add one to counter 
 
     blt r2 r1 loop_top
 >

@@ -1,3 +1,7 @@
+;
+;   Prompts user for input and writes their input to the file /tmp/myfile.txt
+;
+
 .file "diskio"
 .init main
 

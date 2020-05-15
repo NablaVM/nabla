@@ -20,11 +20,9 @@ To find out more about the Nabla byte code, check out the documentation [here](h
 
 ### Applications
 
-Inside the src of this repo there exists an 'apps' directory. In this directory 3 apps can be found. Solace, Harp, and Nabla. 
+Inside the src of this repo there exists an 'apps' directory. In this directory 2 apps can be found. Solace, and Nabla. 
 
 **Solace** : This is the assembler. It takes hand-crafted assembly instructions and generates a binary file that can be executed by nabla.
-
-**Harp** : Harp is an analyzer that can read in a compiled binary and help debug problems with code. As of the writing of this readme, you can manually step the VM 1 instruction at a time, check out all of the memory and register values, and even dump all instructions that are loaded into any given function. Its really neat, and had been a huge help in developing Nabla. 
 
 **Nabla** : Obviously this is where the cake is. Nabla is the application that takes in and executes byte code. It currently works only with compiled binary files produced by Solace, but as the high level language is developed, it will also be responsible for dropping a user into an interpreter. _wow!_ This means that code will be able to be compiled to byte code AND interpreted! Wild. The particulars of how the interpreter will work, and what the syntax for the high level language hasn't been thought out yet. Once they start to get created documents in the Nabla wiki will be made available. 
 

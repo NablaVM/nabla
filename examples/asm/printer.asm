@@ -16,6 +16,7 @@
     ;   Print
     ;
     mul r0 $432 $292 ; Move has a 2^8 limit for raw numericals, so we leverage math here to get big numbs
+    mul r0 $432 $292 ; Move has a 2^8 limit for raw numericals, so we leverage math here to get big numbs
     call print_int_ascii
     call print_nl
 
@@ -51,10 +52,10 @@
     
     blt r1 r2 modspecial
 
-    push ls r1
-    push ls r2 
-    push ls r3
-    push ls r4
+    pushw ls r1
+    pushw ls r2 
+    pushw ls r3
+    pushw ls r4
 
 	mov r3 $0   		; Init temp, and result
 	div r3 r1 r2		; Divide Num/Denom
@@ -70,10 +71,10 @@ moduinz:
 		jmp moddone
 moddone:
 
-    pop r4 ls 
-    pop r3 ls 
-    pop r2 ls 
-    pop r1 ls 
+    popw r4 ls 
+    popw r3 ls 
+    popw r2 ls 
+    popw r1 ls 
     ret
 
 modspecial:
@@ -107,7 +108,7 @@ cont:
     mov r8 $20
 
 loop:
-    push gs r0        ; Save the value they want to display in gs
+    pushw gs r0        ; Save the value they want to display in gs
 
     mov r1 r0 
     mov r2 $10
@@ -115,10 +116,10 @@ loop:
     call modulus      ; result in r0
 
     add r0 r0 $48
-    push ls r0        ; Save the ascii of that number
+    pushw ls r0        ; Save the ascii of that number
     add r6 r6 $1      ; Count significant
 
-    pop r0 gs         ; Get the rolling number they asked us to convert
+    popw r0 gs         ; Get the rolling number they asked us to convert
 
     div r0 r0 $10
 
@@ -151,10 +152,11 @@ dont_display_neg:
     mov r2 $0         ; counter
     mov r3 $48 
     size r5 ls        ; size of stack  - ending at localStack.size()
+    div r5 r5 $8      ; We popw, so we want to div size by word length to get words of stack
 
 output_loop:
 
-    pop r11 ls 
+    popw r11 ls 
 
     bne r0 r1 display
 
@@ -168,7 +170,7 @@ continue:
 
     add r2 r2 $1      ; counter += 1
     
-    bne r2 r5 output_loop
+    blt r2 r5 output_loop
 
     bne r0 r1 done
 
