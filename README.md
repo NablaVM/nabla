@@ -2,6 +2,7 @@
 <center> <h1> <b> ∇ Nabla </b> </h1> </center>
 
 [![Build Status](https://travis-ci.com/bosley/nabla.svg?branch=master)](https://travis-ci.com/bosley/nabla)
+[![Coverage Status](https://coveralls.io/repos/github/bosley/nabla/badge.svg?branch=master)](https://coveralls.io/github/bosley/nabla?branch=master)
 ![](https://img.shields.io/badge/License-MIT-blueviolet)
 ![](https://img.shields.io/badge/Built%20with-C%2B%2B-red)
 
