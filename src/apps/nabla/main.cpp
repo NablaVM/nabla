@@ -3,6 +3,7 @@
 #include <chrono>
 #include <vector>
 
+#include "projectfs.hpp"
 #include "VSysLoadableMachine.hpp"
 
 /*
@@ -144,7 +145,28 @@ int handle_interpretation_project(std::string project_dir)
 
     std::cerr << "Project Interpreter has not yet been completed" << std::endl;
 
-    return 1;
+    NABLA::ProjectFS project;
+
+    switch(project.load(project_dir))
+    {
+        case NABLA::ProjectFS::LoadResultCodes::OKAY:
+            std::cout << "[" << project_dir << "] loaded!" << std::endl;
+            break;
+
+        case NABLA::ProjectFS::LoadResultCodes::ERROR_GIVEN_PATH_NOT_DIRECTORY:
+            std::cerr << "[" << project_dir << "] Is not a directory" << std::endl;
+            return 1;
+
+        case NABLA::ProjectFS::LoadResultCodes::ERROR_FAILED_TO_OPEN_CONFIG:
+            std::cerr << "Unable to open config.json" << std::endl;
+            return 1;
+
+        case NABLA::ProjectFS::LoadResultCodes::ERROR_FAILED_TO_LOAD_CONFIG:
+            std::cerr << "Unable to load config.json" << std::endl;
+            return 1;
+    }
+
+    return 0;
 }
 
 // --------------------------------------------

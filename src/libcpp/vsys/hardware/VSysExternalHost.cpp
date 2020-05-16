@@ -81,8 +81,6 @@ namespace EXTERNAL
                 break;
         }
 
-        std::cout << " >> " << registers[11] << std::endl;
-
         registers[10] = 0;
     }
 }

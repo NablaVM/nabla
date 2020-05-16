@@ -133,17 +133,7 @@ TEST(NablaPushPopTests, pushPopIns)
         vm.step(1);
 
         // Depending on the stack, get the value that should have been pushed
-        uint8_t val;
-        int result = 0;
-        if(stackLoc == NABLA::Bytegen::Stacks::GLOBAL)
-        {
-            val = vm.getGlobalByte(0);
-        }
-        else
-        {
-            assert(false);
-            // Local memory no longer reachable from execution context.
-        }
+        uint8_t val = vm.getGlobalByte(0);
 
         CHECK_EQUAL((int64_t)(vm.getActiveReg(pushReg) ), (int64_t)val);
 

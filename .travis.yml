@@ -10,9 +10,9 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-7
+            - g++-9
       env:
-        - MATRIX_EVAL="CXX_COMPILER=g++-7"
+        - MATRIX_EVAL="CXX_COMPILER=g++-9"
     
 before_install:
   - eval "${MATRIX_EVAL}"
@@ -20,13 +20,20 @@ before_install:
   - PARENTDIR=$(pwd)
   
   - mkdir $PARENTDIR/build
+  - mkdir $PARENTDIR/build-release
 
   - bash install_cpputest.sh
 
 install:
 
 script:
+  - export CC=gcc-9
+  - export CXX=g++-9
 
   - cd $PARENTDIR/build
-  - cmake $PARENTDIR/src
-  - make -j2
+  - cmake $PARENTDIR/src -DCMAKE_BUILD_TYPE=Debug
+  - make -j9
+
+  - cd $PARENTDIR/build-release
+  - cmake $PARENTDIR/src -DCMAKE_BUILD_TYPE=Release
+  - make -j9

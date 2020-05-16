@@ -195,7 +195,8 @@ namespace EXTERNAL
                     {
                         bytesReadIn++;
 
-                        assert( vm->global_memory.push_8(currentByte) );
+                        bool res = vm->global_memory.push_8(currentByte);
+                        assert(res);
                     }
 
                 } // End for loop
@@ -433,7 +434,11 @@ namespace EXTERNAL
             char currentByte = (char)util_extract_byte(out, i);
 
             // Write that byte
-            write(stream, &currentByte, 1);
+            if(-1 == write(stream, &currentByte, 1))
+            {
+                process_close_io(io, vm);
+                return;
+            }
         }
 
         // Unmark trigger flag

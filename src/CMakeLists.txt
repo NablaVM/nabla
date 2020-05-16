@@ -21,6 +21,12 @@ if(SOLACE_DEBUG_OUTPUT)
     add_definitions(-DNABLA_SOLACE_DEBUG_OUTPUT)
 endif()
 
+# Check if we are in release mode
+if( CMAKE_BUILD_TYPE STREQUAL "Release" )
+    add_definitions(-DNABLA_VIRTUAL_MACHINE_RELEASE_MODE)
+    message("Building in release mode")
+endif( CMAKE_BUILD_TYPE STREQUAL "Release" )
+
 # Get version info
 include(${CMAKE_SOURCE_DIR}/cmake/NablaVersion.cmake)
 
