@@ -1,7 +1,7 @@
 
 <center> <h1> <b> ∇ Nabla </b> </h1> </center>
 
-[![Build Status](https://travis-ci.com/bosley/nabla.svg?branch=master)](https://travis-ci.com/bosley/nabla)
+[![Build Status](https://travis-ci.com/NablaVM/nabla.svg?branch=master)](https://travis-ci.com/NablaVM/nabla)
 ![](https://img.shields.io/badge/License-MIT-blueviolet)
 ![](https://img.shields.io/badge/Built%20with-C%2B%2B-red)
 
