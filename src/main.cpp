@@ -3,8 +3,8 @@
 #include <chrono>
 #include <vector>
 
-#include "projectfs.hpp"
-#include "VSysLoadableMachine.hpp"
+#include <libnabla/projectfs.hpp>
+#include <libnabla/VSysLoadableMachine.hpp>
 
 /*
     LLL - Low level language    (LLL Binary is a binary generated from raw LLL through solace)
@@ -191,7 +191,7 @@ void show_help()
               << std::endl 
               << "Given no commands, Nabla will enter into interpreter."
               << std::endl 
-              << "Given a single file, Nabla will assume that it is a compiled HLL project and attempt to execute it."
+              << "Given a single file, Nabla will assume that it is a bytecode file and attempt to execute it."
               << std::endl;
 }
 
@@ -204,8 +204,6 @@ void show_version()
     std::cout << " ∇ Nabla ∇ | Version and build information"       << std::endl
               << "-------------------------------------------"      << std::endl 
               << "Nabla Version  : " << NABLA_VERSION_INFO          << std::endl
-              << "Short Build ID : " << NABLA_BUILD_ID_SHORT        << std::endl
-              << "Compiled       : " << NABLA_COMPILATION_TIMESTAMP << std::endl
               << "-------------------------------------------"      << std::endl;
     return;
 }

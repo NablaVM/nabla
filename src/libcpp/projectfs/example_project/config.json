@@ -1,9 +1,0 @@
-{
-    "author": "Josh A. Bosley",
-    "description": "An example application",
-    "project_type": "app",
-    "modules": [
-      "module_one",
-      "module_two"
-      ]
-  }
