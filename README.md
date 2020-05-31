@@ -7,6 +7,12 @@
 
 ## Development Updates: 
 
+***30/ May/ 2020***
+
+:sparkles: The first iteration of the Grammar has been written! Right now Nabla HLL gets piped to a code generator, but that generator isn't doing much except dumping some text of things that is has in-hand. I decided to do the merge to master to logically differenciate the grammar setup from the codegen. The next step will be to implement basic code generation so I can start writing the primitive memory managment stuff. Once the memory management code is in place the grammar will be extended to to support arrays, sets, and matrices. 
+
+:hammer: Hopefully the above won't take too long, but it might. After the basic types have been implemented, then I will figure out if I want to actually support user-defined objects. I probrably will. I like objects. Check the project board to see the state of development, as this README might not be updated until the first iteration of the HLL is implemented. 
+
 ***15/ May/ 2020***
 
 :rocket: Assembly and byte code have been fully fleshed out. 

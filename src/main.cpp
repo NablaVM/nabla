@@ -3,6 +3,10 @@
 #include <chrono>
 #include <vector>
 
+#include "CompilerFramework.hpp"
+#include "InterpreterFramework.hpp"
+#include "LibManifest.hpp"
+
 #include <libnabla/projectfs.hpp>
 #include <libnabla/VSysLoadableMachine.hpp>
 
@@ -23,6 +27,8 @@ namespace
     std::vector<Args> NablaArguments;
 
     constexpr double SECONDS_BETWEEN_GC_CYCLES = 30.0;
+
+    constexpr char LIB_LOCATION[] = "libs";
 }
 
 int handle_bin_exec(std::string file);
@@ -109,13 +115,60 @@ int main(int argc, char ** argv)
 }
 
 // --------------------------------------------
+// Load a project
+// --------------------------------------------
+
+bool load_project(std::string project_dir, NABLA::ProjectFS & project)
+{
+    switch(project.load(project_dir))
+    {
+        case NABLA::ProjectFS::LoadResultCodes::OKAY:
+            std::cout << "[" << project_dir << "] loaded!" << std::endl;
+            return true;
+
+        case NABLA::ProjectFS::LoadResultCodes::ERROR_GIVEN_PATH_NOT_DIRECTORY:
+            std::cerr << "[" << project_dir << "] Is not a directory" << std::endl;
+            return false;
+
+        case NABLA::ProjectFS::LoadResultCodes::ERROR_FAILED_TO_OPEN_CONFIG:
+            std::cerr << "Unable to open config.json" << std::endl;
+            return false;
+
+        case NABLA::ProjectFS::LoadResultCodes::ERROR_FAILED_TO_LOAD_CONFIG:
+            std::cerr << "Unable to load config.json" << std::endl;
+            return false;
+    }
+    return false;
+}
+
+// --------------------------------------------
 // Compile Nabla HLL
 // --------------------------------------------
     
-int handle_compilation(std::string file)
+int handle_compilation(std::string project_dir)
 {
-    std::cout << "Nabla compiler has not yet been developed" << std::endl;
-    return 1;
+    std::cout << " ∇ Nabla ∇ " << NABLA_VERSION_INFO     << std::endl 
+              << "Platform: "  << TARGET_PLATFORM_STRING << std::endl
+              << "------------------------------------"  << std::endl; 
+
+    NABLA::LibManifest lib_manifest;
+
+    // Load the system library manifest. Errors reported by method call
+    if(!lib_manifest.load_manifest(LIB_LOCATION))
+    {
+        return 1;
+    }
+
+    NABLA::ProjectFS project;
+
+    if(!load_project(project_dir, project))
+    {
+        return 1;
+    }
+
+    NABLA::CompilerFramework cfw(lib_manifest);
+
+    return cfw.compile_project(project);
 }
 
 // --------------------------------------------
@@ -128,9 +181,17 @@ int handle_interpretation_cli()
               << "Platform: "  << TARGET_PLATFORM_STRING << std::endl
               << "------------------------------------"  << std::endl; 
 
-    std::cerr << "CLI Interpreter has not yet been completed" << std::endl;
+    NABLA::LibManifest lib_manifest;
 
-    return 1;
+    // Load the system library manifest. Errors reported by method call
+    if(!lib_manifest.load_manifest(LIB_LOCATION))
+    {
+        return 1;
+    }
+
+    NABLA::InterpreterFramework interpfw(lib_manifest);
+
+    return interpfw.interpret_cli();
 }
 
 // --------------------------------------------
@@ -143,30 +204,26 @@ int handle_interpretation_project(std::string project_dir)
               << "Platform: "  << TARGET_PLATFORM_STRING << std::endl
               << "------------------------------------"  << std::endl; 
 
+    NABLA::LibManifest lib_manifest;
+
+    // Load the system library manifest. Errors reported by method call
+    if(!lib_manifest.load_manifest(LIB_LOCATION))
+    {
+        return 1;
+    }
+
     std::cerr << "Project Interpreter has not yet been completed" << std::endl;
 
     NABLA::ProjectFS project;
 
-    switch(project.load(project_dir))
+    if(!load_project(project_dir, project))
     {
-        case NABLA::ProjectFS::LoadResultCodes::OKAY:
-            std::cout << "[" << project_dir << "] loaded!" << std::endl;
-            break;
-
-        case NABLA::ProjectFS::LoadResultCodes::ERROR_GIVEN_PATH_NOT_DIRECTORY:
-            std::cerr << "[" << project_dir << "] Is not a directory" << std::endl;
-            return 1;
-
-        case NABLA::ProjectFS::LoadResultCodes::ERROR_FAILED_TO_OPEN_CONFIG:
-            std::cerr << "Unable to open config.json" << std::endl;
-            return 1;
-
-        case NABLA::ProjectFS::LoadResultCodes::ERROR_FAILED_TO_LOAD_CONFIG:
-            std::cerr << "Unable to load config.json" << std::endl;
-            return 1;
+        return 1;
     }
 
-    return 0;
+    NABLA::InterpreterFramework interpfw(lib_manifest);
+
+    return interpfw.interpret_project(project);
 }
 
 // --------------------------------------------

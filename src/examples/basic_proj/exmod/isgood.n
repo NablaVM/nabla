@@ -1,0 +1,10 @@
+
+global x_global = 2.1828
+
+def isgood() -> nil {
+
+    <asm> 
+        add r0 r0 $1  
+    </asm>
+
+}

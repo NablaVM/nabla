@@ -1,0 +1,6 @@
+{
+    "author": "Josh A. Bosley",
+    "description": "An example application",
+    "project_type": "app",
+    "modules": ["exmod"]
+  }

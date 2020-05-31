@@ -33,3 +33,13 @@
 *.exe
 *.out
 *.app
+
+*location.hh
+*position.hh
+*stack.hh
+*nhll_lexer.yy.cc
+*nhll_parser.output
+*nhll_parser.tab.cc
+*nhll_parser.tab.hh
+
+*build/

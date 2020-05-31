@@ -15,9 +15,14 @@ matrix:
         - MATRIX_EVAL="CXX_COMPILER=g++-9"
     
 before_install:
-  - eval "${MATRIX_EVAL}"
 
   - PARENTDIR=$(pwd)
+
+  - bash install_compiler_deps.sh
+
+  - cd $PARENTDIR
+
+  - eval "${MATRIX_EVAL}"
   
   - mkdir $PARENTDIR/build-release
 

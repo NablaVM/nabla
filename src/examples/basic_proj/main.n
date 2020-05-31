@@ -1,0 +1,60 @@
+
+
+// Import IO functionality - When imports happen the imports are prefixed with the library 
+// that contain them, but they are not to be used when calling the imported object
+#import std.io
+
+// Import an example module
+#import local.exmod
+
+global MY_GLOB = 3
+
+def main() -> int {
+
+    // io is the library, output is module within the io library, println is an exported function from the output module
+    io.output.println("Hello world")
+
+    exmod.isgood()
+
+    // exmod has a global, and it gets superficially scoped to exmod. 
+    io.output.println(exmod.x_global)
+
+    return 0
+}
+
+def other_stuff() -> int {
+
+    let hh = -0.0
+    let a = -11 - 1
+    let b = 10 rsh (2 * 3)
+
+    let g = 4 + 2 * 9
+
+    let k = k and someVar
+
+    let p = not (4 + 2 * (9-1) )
+
+    while((a>b) || (b>100) ) {
+
+        a = a + 1
+        let c = 0
+
+        loop.inner {
+
+            c = c + 1
+            break inner
+        }
+    }
+
+    yield 0
+
+    check {
+        [a < b] { io.output.println("if")     }
+        [a > b] { io.output.println("elseif") }
+        []      { io.output.println("else - required")   }
+    }
+
+
+
+    exit
+}
