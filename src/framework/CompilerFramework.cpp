@@ -35,6 +35,15 @@ namespace NABLA
     {
         std::cout << "Compile framework not yet setup" << std::endl;
 
+        /*
+        
+            The nhll compiler has been put on a tactical hold until I learn more about compiler development. 
+        
+        */
+
+        return 1;
+
+
         NHLL::Preprocessor preproc(lib_manifest, true);
 
         if(!preproc.process(project))

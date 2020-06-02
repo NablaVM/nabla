@@ -20,6 +20,7 @@ set(NHLL_COMPILER_HEADERS
     ${NHLL_COMPILER_DIR}
     ${NHLL_COMPILER_DIR}/preprocessor/Preprocessor.hpp
     ${NHLL_COMPILER_DIR}/codegen/CodeGen.hpp
+    ${NHLL_COMPILER_DIR}/codegen/AddressManager.hpp
     ${NHLL_COMPILER_DIR}/nhll.hpp
     ${NHLL_COMPILER_DIR}/nhll_driver.hpp
     ${NHLL_COMPILER_DIR}/nhll_scanner.hpp
@@ -29,6 +30,7 @@ set(NHLL_COMPILER_HEADERS
 set(NHLL_COMPILER_SOURCES
     ${NHLL_COMPILER_DIR}/preprocessor/Preprocessor.cpp
     ${NHLL_COMPILER_DIR}/codegen/CodeGen.cpp
+    ${NHLL_COMPILER_DIR}/codegen/AddressManager.cpp
     ${NHLL_COMPILER_DIR}/nhll.cpp
     ${NHLL_COMPILER_DIR}/nhll_driver.cpp
     ${NHLL_COMPILER_DIR}/nhll_postfix.cpp

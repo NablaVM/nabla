@@ -17,7 +17,25 @@ namespace NHLL
     //
     // --------------------------------------------------------------
 
-    void LetStmt::visit(NhllVisitor &visitor)
+    void DeclInteger::visit(NhllVisitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    // --------------------------------------------------------------
+    //
+    // --------------------------------------------------------------
+
+    void DeclReal::visit(NhllVisitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    // --------------------------------------------------------------
+    //
+    // --------------------------------------------------------------
+
+    void DeclString::visit(NhllVisitor &visitor)
     {
         visitor.accept(*this);
     }

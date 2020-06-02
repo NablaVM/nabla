@@ -56,38 +56,17 @@ namespace NHLL
     //
     //
     //
-    class UseStmt : public NhllElement
+    class DeclInteger : public NhllElement
     {
     public:
-        UseStmt() {}
+        DeclInteger() {}
 
-        UseStmt(std::string module, std::string as_name) 
-                            : module(module),
-                              as_name(as_name){}
-
-        UseStmt(UseStmt *o) : module(o->module),
-                              as_name(o->as_name){}
-
-        virtual void visit(NhllVisitor &visitor) override;
-
-        std::string module;
-        std::string as_name;
-    };
-
-    //
-    //
-    //
-    class LetStmt : public NhllElement
-    {
-    public:
-        LetStmt() {}
-
-        LetStmt(std::string lhs, std::string rhs, bool is_expr) 
+        DeclInteger(std::string lhs, std::string rhs, bool is_expr) 
                             : identifier(lhs),
                               set_to(rhs),
                               is_expr(is_expr){}
 
-        LetStmt(LetStmt *o) : identifier(o->identifier),
+        DeclInteger(DeclInteger *o) : identifier(o->identifier),
                               set_to(o->set_to),
                               is_expr(o->is_expr){}
 
@@ -96,6 +75,54 @@ namespace NHLL
         std::string identifier;
         std::string set_to;
         bool is_expr;
+    };
+
+    //
+    //
+    //
+    class DeclReal : public NhllElement
+    {
+    public:
+        DeclReal() {}
+
+        DeclReal(std::string lhs, std::string rhs, bool is_expr) 
+                            : identifier(lhs),
+                              set_to(rhs),
+                              is_expr(is_expr){}
+
+        DeclReal(DeclReal *o) : identifier(o->identifier),
+                              set_to(o->set_to),
+                              is_expr(o->is_expr){}
+
+        virtual void visit(NhllVisitor &visitor) override;
+
+        std::string identifier;
+        std::string set_to;
+        bool is_expr;
+    };
+
+    //
+    //
+    //
+    class DeclString : public NhllElement
+    {
+    public:
+        DeclString() {}
+
+        DeclString(std::string lhs, std::string rhs, uint64_t size) 
+                            : identifier(lhs),
+                              set_to(rhs),
+                              size(size){}
+
+        DeclString(DeclString *o) : identifier(o->identifier),
+                              set_to(o->set_to),
+                              size(o->size){}
+
+        virtual void visit(NhllVisitor &visitor) override;
+
+        std::string identifier;
+        std::string set_to;
+        uint64_t size;
     };
 
     //
@@ -372,7 +399,9 @@ namespace NHLL
     {
     public:
         virtual void accept(AsmStmt &stmt) = 0;
-        virtual void accept(LetStmt &stmt) = 0;
+        virtual void accept(DeclInteger &stmt) = 0;
+        virtual void accept(DeclReal &stmt) = 0;
+        virtual void accept(DeclString &stmt) = 0;
         virtual void accept(ReAssignStmt & stmt) = 0;
         virtual void accept(GlobalStmt & stmt) = 0;
         virtual void accept(WhileStmt &stmt) = 0;

@@ -7,11 +7,10 @@
 
 ## Development Updates: 
 
-***30/ May/ 2020***
+***1/ June/ 2020***
 
-:sparkles: The first iteration of the Grammar has been written! Right now Nabla HLL gets piped to a code generator, but that generator isn't doing much except dumping some text of things that is has in-hand. I decided to do the merge to master to logically differenciate the grammar setup from the codegen. The next step will be to implement basic code generation so I can start writing the primitive memory managment stuff. Once the memory management code is in place the grammar will be extended to to support arrays, sets, and matrices. 
+:scream: Compiler design is hard. I've been working with flex and bison to figure out a way I can get some HLL to get converted into Nabla ASM. I got _something_ working, but it isn't very nice. I don't want to create absolute garbage, so I bought a book. Once I do some research and learn the best way to go about constructing the HLL I will get going again. For now, what I have will be blocked off from the Nabla Application for compiling. The VM is still in working order, and still executes projects built with Solace. 
 
-:hammer: Hopefully the above won't take too long, but it might. After the basic types have been implemented, then I will figure out if I want to actually support user-defined objects. I probrably will. I like objects. Check the project board to see the state of development, as this README might not be updated until the first iteration of the HLL is implemented. 
 
 ***15/ May/ 2020***
 

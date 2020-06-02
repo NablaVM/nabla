@@ -102,7 +102,7 @@
 
 start 
    : END 
-   | input END
+   | input END { driver.indicate_complete(); }
    ; 
 
 input
@@ -216,8 +216,9 @@ asm_stmt
    ;
 
 let_stmt
-   : LET identifiers '=' expression       { $$ = driver.create_let_statement($2, $4);        }
-   | LET identifiers '=' STRING_LITERAL   { $$ = driver.create_let_statement($2, $4, false); }
+   : INT  IDENTIFIER '=' expression                             { $$ = driver.create_decl_integer($2, $4, true); }
+   | REAL IDENTIFIER '=' expression                             { $$ = driver.create_decl_real($2, $4,    true); }
+   | STR  IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL { $$ = driver.create_decl_string($2, $7, std::stol($4));    }
    ;
 
 reassign_stmt

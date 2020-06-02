@@ -54,6 +54,9 @@ namespace NHLL
 
         std::ofstream output;
 
+        std::vector<std::string> global_pool;
+        std::vector<std::string> line_pool;
+
         //  Process a project structure (starting at main.n or lib.n)
         //
         bool process_project_structure(NABLA::ProjectStructure ps);

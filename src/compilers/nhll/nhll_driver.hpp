@@ -37,6 +37,10 @@ namespace NHLL
       //! \brief Parse from an istream
       void parse( std::istream &iss );
 
+      //! \brief Indicate to the driver that everything is completed
+      //! \retval True completion execution was able to be run, False otherwise
+      bool indicate_complete();
+
       //! \brief Trigger the building of a given element
       //! \param el The element to build 
       //! \note This triggers visits contained by the element and each accept method 
@@ -50,7 +54,13 @@ namespace NHLL
       NHLL::NhllElement* create_function_statement(std::string name, std::vector<FunctionParam> params, DataPrims ret, ElementList elements);
 
       //! \brief Create the particular element
-      NHLL::NhllElement* create_let_statement(std::string lhs, std::string rhs, bool is_expression=true);
+      NHLL::NhllElement* create_decl_integer(std::string lhs, std::string rhs, bool is_expression=true);
+
+      //! \brief Create the particular element
+      NHLL::NhllElement* create_decl_real(std::string lhs, std::string rhs, bool is_expression=true);
+
+      //! \brief Create the particular element
+      NHLL::NhllElement* create_decl_string(std::string lhs, std::string rhs, uint64_t max_size);
 
       //! \brief Create the particular element
       NHLL::NhllElement* create_reassign_statement(std::string lhs, std::string rhs, bool is_expression=true);
@@ -86,7 +96,13 @@ namespace NHLL
       virtual void accept(AsmStmt &stmt) override;
 
       //! \brief Visit a set statement, triggers code generation
-      virtual void accept(LetStmt &stmt) override;
+      virtual void accept(DeclInteger &stmt) override;
+
+      //! \brief Visit a set statement, triggers code generation
+      virtual void accept(DeclReal &stmt) override;
+
+      //! \brief Visit a set statement, triggers code generation
+      virtual void accept(DeclString &stmt) override;
 
       //! \brief Visit a set statement, triggers code generation
       virtual void accept(ReAssignStmt &stmt) override;

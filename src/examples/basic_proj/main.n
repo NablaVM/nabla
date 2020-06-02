@@ -7,7 +7,12 @@
 // Import an example module
 #import local.exmod
 
-global MY_GLOB = 3
+// Globals get computed at compile-time and can only include
+// other globals in their exprssions
+global MY_GLOB = 2
+global OTHER_GLOB = MY_GLOB ^ 8
+global WEIRD_GLOB = (MY_GLOB * OTHER_GLOB - 46 * (33 - 9.0) + 1) 
+global STR_GLOB = "This is a global string!"
 
 def main() -> int {
 
@@ -24,6 +29,13 @@ def main() -> int {
 
 def other_stuff() -> int {
 
+    int my_int = 42
+
+    real my_real = 3.15159
+
+    str my_str[100] = "This is my string"
+
+/*
     let hh = -0.0
     let a = -11 - 1
     let b = 10 rsh (2 * 3)
@@ -33,15 +45,15 @@ def other_stuff() -> int {
     let k = k and someVar
 
     let p = not (4 + 2 * (9-1) )
-
+*/
     while((a>b) || (b>100) ) {
 
-        a = a + 1
-        let c = 0
+        //a = a + 1
+        //let c = 0
 
         loop.inner {
 
-            c = c + 1
+            //c = c + 1
             break inner
         }
     }

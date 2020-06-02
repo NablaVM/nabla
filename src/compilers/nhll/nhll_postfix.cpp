@@ -37,7 +37,7 @@ namespace NHLL
         ops["@"]  = std::make_pair(8,  0); // XOR
         ops["|"]  = std::make_pair(7,  0); // OR  - Bitwise
         ops[":"]  = std::make_pair(6,  0); // AND
-        ops["_"]  = std::make_pair(5,  0); // OR
+        ops["="]  = std::make_pair(5,  0); // OR
 
         std::vector<Element> element_vector;
 

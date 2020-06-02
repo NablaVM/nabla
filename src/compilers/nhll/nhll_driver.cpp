@@ -103,6 +103,11 @@ namespace NHLL
       return(stream);
    }
 
+   bool NHLL_Driver::indicate_complete()
+   {
+      return code_generator.finalize();
+   }
+
    // ----------------------------------------------------------
    //
    // ----------------------------------------------------------
@@ -151,9 +156,27 @@ namespace NHLL
    //
    // ----------------------------------------------------------
 
-   NHLL::NhllElement* NHLL_Driver::create_let_statement(std::string lhs, std::string rhs, bool is_expression)
+   NHLL::NhllElement* NHLL_Driver::create_decl_integer(std::string lhs, std::string rhs, bool is_expression)
    {
-      return new LetStmt(lhs, rhs, is_expression);
+      return new DeclInteger(lhs, rhs, is_expression);
+   }
+
+   // ----------------------------------------------------------
+   //
+   // ----------------------------------------------------------
+
+   NHLL::NhllElement* NHLL_Driver::create_decl_real(std::string lhs, std::string rhs, bool is_expression)
+   {
+      return new DeclReal(lhs, rhs, is_expression);
+   }
+
+   // ----------------------------------------------------------
+   //
+   // ----------------------------------------------------------
+
+   NHLL::NhllElement* NHLL_Driver::create_decl_string(std::string lhs, std::string rhs, uint64_t max_size)
+   {
+      return new DeclString(lhs, rhs, max_size);
    }
 
    // ----------------------------------------------------------
@@ -270,9 +293,33 @@ namespace NHLL
    //
    // ----------------------------------------------------------
    
-   void NHLL_Driver::accept(LetStmt &stmt)
+   void NHLL_Driver::accept(DeclInteger &stmt)
    {
-      if(!code_generator.declare_variable(stmt.identifier, stmt.set_to, stmt.is_expr))
+      if(!code_generator.declare_integer(stmt.identifier, stmt.set_to))
+      {
+         exit(EXIT_FAILURE);
+      }
+   }
+
+   // ----------------------------------------------------------
+   //
+   // ----------------------------------------------------------
+   
+   void NHLL_Driver::accept(DeclReal &stmt)
+   {
+      if(!code_generator.declare_real(stmt.identifier, stmt.set_to))
+      {
+         exit(EXIT_FAILURE);
+      }
+   }
+
+   // ----------------------------------------------------------
+   //
+   // ----------------------------------------------------------
+   
+   void NHLL_Driver::accept(DeclString &stmt)
+   {
+      if(!code_generator.declare_string(stmt.identifier, stmt.set_to, stmt.size))
       {
          exit(EXIT_FAILURE);
       }

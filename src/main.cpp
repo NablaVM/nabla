@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "CompilerFramework.hpp"
-#include "InterpreterFramework.hpp"
 #include "LibManifest.hpp"
 
 #include <libnabla/projectfs.hpp>
@@ -35,10 +34,6 @@ int handle_bin_exec(std::string file);
 
 int handle_compilation(std::string file);
 
-int handle_interpretation_cli();
-
-int handle_interpretation_project(std::string project_dir);
-
 void show_help();
 
 void show_version();
@@ -51,14 +46,14 @@ int main(int argc, char ** argv)
 {
     if(argc == 1)
     {
-        return handle_interpretation_cli();
+        std::cout << "No input given. Use -h for help" << std::endl;
+        return 0;
     }
 
     NablaArguments = {
 
         { "-h", "--nabla-help", "Display help message."},
         { "-v", "--version",    "Display the version of Nabla." },
-        { "-i", "--interpret",  "Interpret a Nabla HLL project."},
         { "-c", "--compile",    "Compile a nabla HLL project."}
     };
     
@@ -82,19 +77,6 @@ int main(int argc, char ** argv)
             return 0;
         }
 
-        // Interpret a nabla HLL project (run without compile)
-        //
-        if(args[i] == "-i" || args[i] == "--interpret")
-        {
-            if(i == argc - 1)
-            {
-                std::cout << "Error: Project directory not given" << std::endl;
-                return 1;
-            }
-
-            return handle_interpretation_project(args[i+1]);
-        }
-        
         // Compile a nabla HLL project
         //
         if(args[i] == "-c" || args[i] == "--compile")
@@ -172,61 +154,6 @@ int handle_compilation(std::string project_dir)
 }
 
 // --------------------------------------------
-// Interpret Nabla HLL cli
-// --------------------------------------------
-
-int handle_interpretation_cli()
-{
-    std::cout << " ∇ Nabla ∇ " << NABLA_VERSION_INFO     << std::endl 
-              << "Platform: "  << TARGET_PLATFORM_STRING << std::endl
-              << "------------------------------------"  << std::endl; 
-
-    NABLA::LibManifest lib_manifest;
-
-    // Load the system library manifest. Errors reported by method call
-    if(!lib_manifest.load_manifest(LIB_LOCATION))
-    {
-        return 1;
-    }
-
-    NABLA::InterpreterFramework interpfw(lib_manifest);
-
-    return interpfw.interpret_cli();
-}
-
-// --------------------------------------------
-// Interpret Nabla HLL Project
-// --------------------------------------------
-
-int handle_interpretation_project(std::string project_dir)
-{
-    std::cout << " ∇ Nabla ∇ " << NABLA_VERSION_INFO     << std::endl 
-              << "Platform: "  << TARGET_PLATFORM_STRING << std::endl
-              << "------------------------------------"  << std::endl; 
-
-    NABLA::LibManifest lib_manifest;
-
-    // Load the system library manifest. Errors reported by method call
-    if(!lib_manifest.load_manifest(LIB_LOCATION))
-    {
-        return 1;
-    }
-
-    std::cerr << "Project Interpreter has not yet been completed" << std::endl;
-
-    NABLA::ProjectFS project;
-
-    if(!load_project(project_dir, project))
-    {
-        return 1;
-    }
-
-    NABLA::InterpreterFramework interpfw(lib_manifest);
-
-    return interpfw.interpret_project(project);
-}
-
-// --------------------------------------------
 // Show help
 // --------------------------------------------
     
@@ -243,13 +170,6 @@ void show_help()
     {
         std::cout << na.short_arg << "\t" << na.long_arg << "\t" << na.description << std::endl;
     }
-
-    std::cout << "----------------------------------------------"
-              << std::endl 
-              << "Given no commands, Nabla will enter into interpreter."
-              << std::endl 
-              << "Given a single file, Nabla will assume that it is a bytecode file and attempt to execute it."
-              << std::endl;
 }
 
 // --------------------------------------------

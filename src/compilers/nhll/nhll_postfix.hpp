@@ -52,7 +52,7 @@ namespace NHLL
             LT   = '#',
             EQ   = '"',
             NE   = '$',
-            COR  = '_',
+            COR  = '=',
             CAND = ':',
             NONE = ' '
         };

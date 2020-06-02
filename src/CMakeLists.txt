@@ -49,7 +49,6 @@ include_directories(
 
 set(FRAMEWORK_SOURCES
     ${CMAKE_SOURCE_DIR}/framework/CompilerFramework.cpp
-    ${CMAKE_SOURCE_DIR}/framework/InterpreterFramework.cpp
     ${CMAKE_SOURCE_DIR}/framework/LibManifest.cpp
 )
 
