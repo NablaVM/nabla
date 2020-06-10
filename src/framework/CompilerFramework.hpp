@@ -2,8 +2,6 @@
 #define NABLA_COMPILER_FRAMEWORK_HPP
 
 #include <string>
-#include "LibManifest.hpp"
-#include <libnabla/projectfs.hpp>
 
 namespace NABLA
 {
@@ -12,17 +10,16 @@ namespace NABLA
     {
     public:
         //! \brief Create the Compiler Framework intance
-        CompilerFramework(NABLA::LibManifest & lib_manifest);
+        CompilerFramework();
 
         //! \brief Deconstruct the Interpreter Framework intance
         ~CompilerFramework();
 
-        //! \brief Compile a nabla project
-        //! \param project A reference to a loaded project
-        //! \retval Application return code
-        int compile_project(NABLA::ProjectFS & project);
+        //! \brief Kick-off compilation given a file path
+        int compile(std::string path);
+
     private:
-        NABLA::LibManifest & lib_manifest;
+        //NABLA::LibManifest & lib_manifest;
     };
 }
 

@@ -1,4 +1,7 @@
 # Prerequisites
+
+.DS_Store
+
 *.test
 *.d
 *solaceAsm

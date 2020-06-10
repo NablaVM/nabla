@@ -19,7 +19,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/NablaVersion.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/Platform.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated-register -Wno-Wconflicts-sr -Wno-unused-function")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated-register -Wno-unused-function")
 
 find_package(libnabla REQUIRED)
 

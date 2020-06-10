@@ -1,0 +1,12 @@
+
+
+def my_blank() -> nil {
+
+    return;
+}
+
+def main() -> int {
+
+    my_blank();
+    return 1;
+}
