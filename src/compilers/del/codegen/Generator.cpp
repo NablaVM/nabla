@@ -32,7 +32,7 @@ namespace DEL
         asm_support.import_init_start(o);
 
         // Add space for where stack frame offset is stored
-        o.push_back(".int64 __STACK_FRAME_OFFSET__ " + std::to_string(SETTINGS::GS_INDEX_PROGRAM_SPACE) + "\n");
+        o.push_back(".int64 __STACK_FRAME_OFFSET__\t" + std::to_string(SETTINGS::GS_INDEX_PROGRAM_SPACE) + "\n");
 
         // Add space in memory for parameter passing
         for(int i = 0; i < SETTINGS::GS_FUNC_PARAM_RESERVE; i++)
@@ -41,9 +41,9 @@ namespace DEL
         }
 
         // Add reserved space
-        for(int i = 0; i < SETTINGS::GS_GENERAL_RESERVE; i++)
+        for(int i = 0; i < SETTINGS::GS_RETURN_RESERVE; i++)
         {
-            o.push_back(".int64 __RESERVE__SPACE__" + std::to_string(i) + "__\t 0\n");
+            o.push_back(".int64 __RETURN_RESERVE__" + std::to_string(i) + "__\t 0\n");
         }
 
         // Add the start-up function

@@ -2,6 +2,7 @@
 #include "Generator.hpp"
 #include <libnabla/endian.hpp>
 #include <iostream>
+#include "SystemSettings.hpp"
 namespace DEL
 {
 namespace CODEGEN
@@ -125,7 +126,8 @@ namespace CODEGEN
         if(return_item)
         {
             instructions.push_back("\n\t; Get result for return \n");
-            instructions.push_back("\tpopw r0 ls \t; Return result\n");
+            instructions.push_back("\tpopw r0 ls\n");
+            instructions.push_back("\tstw $" + std::to_string(SETTINGS::GS_INDEX_RETURN_SPACE) + "(gs) r0\n");
         }
         
         instructions.push_back("\tret\n");

@@ -24,6 +24,10 @@ namespace DEL
         //! \brief Deconstruct tha analyzer
         ~Analyzer();
 
+        //! \brief Check for finalization
+        //!        If the program can not be finalized an error will be thrown
+        void check_for_finalization();
+
         //! \brief Build a function
         //! \param function The function to build
         void build_function(Function *function);
@@ -32,6 +36,7 @@ namespace DEL
         void accept(Assignment &stmt) override;
         void accept(ReturnStmt &stmt) override;
         void accept(Call       &stmt) override;
+
 
     private:
 
@@ -64,6 +69,17 @@ namespace DEL
 
         FunctionWatch function_watcher;
 
+        struct ProgramWatch
+        {
+            void setup()
+            {
+                has_main = false;
+            }
+
+            bool has_main;
+        };
+
+        ProgramWatch program_watcher;
     };
 }
 

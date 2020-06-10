@@ -117,6 +117,10 @@ namespace DEL
 
    void DEL_Driver::indicate_complete()
    {
+      // Check that the analyzer is okay with us being done
+      analyzer.check_for_finalization();
+
+      // Directly tell the code gen we want some ASM
       std::vector<std::string> ASM = code_gen.indicate_complete();
 
       /*

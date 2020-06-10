@@ -525,6 +525,8 @@ namespace DEL
 
                     if(cins->expect_return_value)
                     {
+                        current_function->instructions.push_back("\t; Get result from call \n\n");
+                        current_function->instructions.push_back("\tldw r0 $" + std::to_string(SETTINGS::GS_INDEX_RETURN_SPACE) + "(gs)\n");
                         current_function->instructions.push_back("\tpushw ls r0\t; Push return value to local stack for calculation\n");
                     }
                     break;

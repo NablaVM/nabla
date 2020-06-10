@@ -1,0 +1,10 @@
+
+
+def main() -> int {
+
+    char my_char = "J";
+
+    int some_int = my_char;
+
+    return 0;
+}

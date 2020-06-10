@@ -1,0 +1,6 @@
+
+
+def main() -> int {
+
+    // If a -> return value is declared, it MUST have a return
+}

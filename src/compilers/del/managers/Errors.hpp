@@ -71,6 +71,10 @@ namespace DEL
         //! \post This method is a default fatal that will trigger exit
         void report_no_return(std::string function);
 
+        //! \brief Report that a 'main' function was not found
+        //! \post This method is a default fatal that will trigger exit
+        void report_no_main_function();
+
         //! \brief Report that a call's return type isn't handled
         //! \param caller_function The function where the call originated
         //! \param callee The function being called
