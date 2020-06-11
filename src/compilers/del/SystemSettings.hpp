@@ -10,7 +10,7 @@ namespace SETTINGS
     //
     static constexpr int GS_FRAME_OFFSET_RESERVE  = 1;
     static constexpr int GS_FUNC_PARAM_RESERVE    = 10;
-    static constexpr int GS_GENERAL_RESERVE       = 5;
+    static constexpr int GS_RETURN_RESERVE        = 1;
 
     //  To avoid magic numbers, we say why use 8
     //
@@ -18,7 +18,9 @@ namespace SETTINGS
 
     //  The index into GS where program data will start 
     //
-    static constexpr int GS_INDEX_PROGRAM_SPACE   = SYSTEM_WORD_SIZE_BYTES * (GS_FRAME_OFFSET_RESERVE + GS_FUNC_PARAM_RESERVE + GS_GENERAL_RESERVE);
+    static constexpr int GS_INDEX_PROGRAM_SPACE   = SYSTEM_WORD_SIZE_BYTES * (GS_FRAME_OFFSET_RESERVE + GS_FUNC_PARAM_RESERVE + GS_RETURN_RESERVE );
+
+    static constexpr int GS_INDEX_RETURN_SPACE    = SYSTEM_WORD_SIZE_BYTES * (GS_FRAME_OFFSET_RESERVE + GS_FUNC_PARAM_RESERVE); 
 }
 }
 

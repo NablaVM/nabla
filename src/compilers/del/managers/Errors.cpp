@@ -169,4 +169,14 @@ namespace DEL
         std::cerr << get_error_start(true) << "Expected 'return <type>' for function :  " << f << std::endl;
         exit(EXIT_FAILURE);
     }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Errors::report_no_main_function()
+    {
+        std::cerr << get_error_start(true) << "No 'main' method found" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }

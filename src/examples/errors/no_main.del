@@ -1,0 +1,11 @@
+
+
+
+def entry() -> int {
+
+
+    // This should have been named main 
+
+    
+    return 0;
+}

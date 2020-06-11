@@ -19,7 +19,7 @@ namespace DEL
                                                                         endecoder(memory_man),
                                                                         intermediate_layer(memory, code_gen)
     {
-
+        program_watcher.setup();
     }
 
     // ----------------------------------------------------------
@@ -29,6 +29,18 @@ namespace DEL
     Analyzer::~Analyzer()
     {
         
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::check_for_finalization()
+    {
+        if(!program_watcher.has_main)
+        {
+            error_man.report_no_main_function();
+        }
     }
 
     // ----------------------------------------------------------
@@ -106,6 +118,12 @@ namespace DEL
         {
             // Dies if not unique
             error_man.report_previously_declared(function->name);
+        }
+
+        // Check for 'main'
+        if(function->name == "main")
+        {
+            program_watcher.has_main = true;
         }
 
         // Check for passign the hard-set limit on parameters

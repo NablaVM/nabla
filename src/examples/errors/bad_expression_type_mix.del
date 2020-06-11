@@ -1,0 +1,10 @@
+
+
+def main() -> int {
+
+    int a = 4 + 3 + 9 - 1;
+
+    a = a + 3.3;    // Doubles cant be assigned in ints!
+
+    return a;
+}
