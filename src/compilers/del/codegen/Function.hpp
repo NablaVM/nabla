@@ -26,6 +26,12 @@ namespace CODEGEN
         //! \brief Destruct the function
         ~Function();
 
+        //! \brief Add a block of code to the function
+        //! \param block A pointer to a block of code to add
+        //! \post The code from the block will be added to function instructions, and
+        //!       The then the function will delete the block 
+        void add_block(CODE::Block * block);
+
         //! \brief Indicate that the building of the function is complete
         //! \returns A vector of assembly code that represents the function and all
         //!          code generated pertaining to the function
@@ -35,17 +41,17 @@ namespace CODEGEN
         //! \param return_item Flag to mark the generation of code that will return a value to the caller via r0
         void build_return(bool return_item=true);
 
+        //! \brief Add bytes that will be required by the function
+        //! \param num_bytes The number of bytes required
+        void add_required_bytes(uint64_t num_bytes);
+
+    private:
         std::string name;                                   //! The name of the function
         std::vector<CODEGEN::TYPES::ParamInfo> params;      //! The parameter information given to the function
         std::vector<std::string> instructions;              //! Instructions within the function
         uint64_t bytes_required;                            //! How many bytes of stack space the function will take up
     
     
-        //! \brief Add a block of code to the function
-        //! \param block A pointer to a block of code to add
-        //! \post The code from the block will be added to function instructions, and
-        //!       The then the function will delete the block 
-        void add_block(CODE::Block * block);
     };
 }
 }

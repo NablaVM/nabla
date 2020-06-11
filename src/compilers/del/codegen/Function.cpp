@@ -45,9 +45,9 @@ namespace CODEGEN
         std::vector<std::string> lines;
 
         // Putting this limit in place while we get things working
-        if(bytes_required >= 4294967290)
+        if(bytes_required >= 2147483647)
         {
-            std::cerr << "Codegen::Function >>> Function size is currently limited to ~ 2^32 bytes" << std::endl;
+            std::cerr << "Codegen::Function >>> Function size is currently limited to bytes represented by an int32_t (2147483647 bytes)" << std::endl;
             exit(EXIT_FAILURE);
         }
 
@@ -142,6 +142,15 @@ namespace CODEGEN
         std::vector<std::string> code = block->get_code();
         instructions.insert(instructions.end(), code.begin(), code.end());
         delete block;
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Function::add_required_bytes(uint64_t num_bytes)
+    {
+       bytes_required += num_bytes;
     }
 }
 }
