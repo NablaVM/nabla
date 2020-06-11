@@ -1,0 +1,23 @@
+
+
+def main() -> int {
+
+    // int b =  1 + 1;
+    // b = 1 - b;
+    // b = 10 / 5;
+    // b = b * 2;
+    // b = b << 10;
+    // b = b >> 10;
+    // b = b or 1;
+    // b = not b;
+    // b = 3 and 4;
+    // b = 1 xor 0;
+
+    //int a = 10 || 20;
+
+    //int a = 10 && 20;
+
+    //int a = !0;
+
+    return 0;
+}

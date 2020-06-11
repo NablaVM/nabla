@@ -132,5 +132,16 @@ namespace CODEGEN
         
         instructions.push_back("\tret\n");
     }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Function::add_block(CODE::Block * block)
+    {
+        std::vector<std::string> code = block->get_code();
+        instructions.insert(instructions.end(), code.begin(), code.end());
+        delete block;
+    }
 }
 }

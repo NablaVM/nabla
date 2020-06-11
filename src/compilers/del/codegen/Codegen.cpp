@@ -61,6 +61,9 @@
 #include <libnabla/util.hpp>
 #include <libnabla/endian.hpp>
 
+
+#include "CodeBlock.hpp"
+
 namespace DEL
 {
     namespace
@@ -198,183 +201,33 @@ namespace DEL
 
        std::string calculate_unary = "r8 r8 \t ; Perform unary operation, store in r8\n\tpushw ls r8 \t ; Put result into ls\n";
 
-       bool is_double_variant = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE);
-
        for(auto & ins : command.instructions)
        {
            switch(ins->instruction)
            {
-               case CODEGEN::TYPES::InstructionSet::ADD:     
-                { 
-                    current_function->instructions.push_back("\n\t; <<< ADDITION >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ((is_double_variant) ? "\tadd.d " : "\tadd ") + calculation_chunk);
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::SUB:     
-                { 
-                    current_function->instructions.push_back("\n\t; <<< SUBTRACTION >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ((is_double_variant) ? "\tsub.d " : "\tsub ") + calculation_chunk);
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::DIV:     
-                { 
-                    current_function->instructions.push_back("\n\t; <<< DIVISION >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ((is_double_variant) ? "\tdiv.d " : "\tdiv ") + calculation_chunk);
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::MUL:     
-                { 
-                    current_function->instructions.push_back("\n\t; <<< MULTIPLICATION >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ((is_double_variant) ? "\tmul.d " : "\tmul ") + calculation_chunk);
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::RSH:     
-                { 
-                    current_function->instructions.push_back("\n\t; <<< RIGHT SHIFT >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ( "\tlsh " + calculation_chunk));
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::LSH:     
-                { 
-                    current_function->instructions.push_back("\n\t; <<< LEFT SHIFT >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ( "\trsh " + calculation_chunk));
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::BW_OR:   
-                { 
-                    current_function->instructions.push_back("\n\t; <<< BITWISE OR >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ( "\tor " + calculation_chunk ));
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::BW_NOT:  
-                { 
-                    current_function->instructions.push_back("\n\t; <<< BITWISE NOT >>> \n");
-                    current_function->instructions.push_back(remove_single_word_for_calc + ( "\tnot " + calculate_unary));
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::BW_XOR:  
-                { 
-                    current_function->instructions.push_back("\n\t; <<< BITWISE XOR >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ( "\txor " + calculation_chunk));
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::BW_AND:  
-                { 
-                    current_function->instructions.push_back("\n\t; <<< BITWISE AND >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc + ( "\tand " + calculation_chunk));
-                    break;                                          
-                }
-                case CODEGEN::TYPES::InstructionSet::LTE:        
-                {
-                    current_function->instructions.push_back("\n\t; <<< LTE >>> \n");
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "\tblte.d r8 r9 " : "\tblte r8 r9 ";
-                    std::vector<std::string> c = setup_check(label_id, comparison, remove_words_for_calc);
-                    current_function->instructions.insert(current_function->instructions.end(), c.begin(), c.end());
-                    label_id++;
-                    break;
-                }
-                case CODEGEN::TYPES::InstructionSet::LT:  
-                {
-                    current_function->instructions.push_back("\n\t; <<< LT >>> \n");
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "\tblt.d r8 r9 " : "\tblt r8 r9 ";
-                    std::vector<std::string> c = setup_check(label_id, comparison, remove_words_for_calc);
-                    current_function->instructions.insert(current_function->instructions.end(), c.begin(), c.end());
-                    label_id++;
-                    break;
-                }
-                case CODEGEN::TYPES::InstructionSet::GTE: 
-                {
-                    current_function->instructions.push_back("\n\t; <<< GTE >>> \n");
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "\tbgte.d r8 r9 " : "\tbgte r8 r9 ";
-                    std::vector<std::string> c = setup_check(label_id, comparison, remove_words_for_calc);
-                    current_function->instructions.insert(current_function->instructions.end(), c.begin(), c.end());
-                    label_id++;
-                    break;
-                }
-                case CODEGEN::TYPES::InstructionSet::GT:  
-                {
-                    current_function->instructions.push_back("\n\t; <<< GT >>> \n");
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "\tbgt.d r8 r9 " : "\tbgt r8 r9 ";
-                    std::vector<std::string> c = setup_check(label_id, comparison, remove_words_for_calc);
-                    current_function->instructions.insert(current_function->instructions.end(), c.begin(), c.end());
-                    label_id++;
-                    break;
-                }
-                case CODEGEN::TYPES::InstructionSet::EQ:  
-                {
-                    current_function->instructions.push_back("\n\t; <<< EQ >>> \n");
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "\tbeq.d r8 r9 " : "\tbeq r8 r9 ";
-                    std::vector<std::string> c = setup_check(label_id, comparison, remove_words_for_calc);
-                    current_function->instructions.insert(current_function->instructions.end(), c.begin(), c.end());
-                    label_id++;
-                    break;
-                }
-                case CODEGEN::TYPES::InstructionSet::NE:  
-                {
-                    current_function->instructions.push_back("\n\t; <<< NE >>> \n");
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "\tbne.d r8 r9 " : "\tbne r8 r9 ";
-                    std::vector<std::string> c = setup_check(label_id, comparison, remove_words_for_calc);
-                    current_function->instructions.insert(current_function->instructions.end(), c.begin(), c.end());
-                    label_id++;
-                    break;
-                }
-                case CODEGEN::TYPES::InstructionSet::OR:
-                {
-                    current_function->instructions.push_back("\n\t; <<< OR >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc);
-                    current_function->instructions.push_back("\n\tmov r7 $0\t; Comparison value");
-                    std::string true_label = "OR_is_true_"    + std::to_string(label_id);
-                    std::string complete   = "OR_is_complete_" + std::to_string(label_id);
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "bgt.d " : "bgt ";
-                    current_function->instructions.push_back("\n\n\t" + comparison + "r8 r7 " + true_label);
-                    current_function->instructions.push_back("\n\t" + comparison + "r9 r7 " + true_label);
-                    current_function->instructions.push_back("\n\n\tmov r8 $0 ; False");
-                    current_function->instructions.push_back("\n\tjmp " + complete + "\n\n");
-                    current_function->instructions.push_back(true_label + ":\n");
-                    current_function->instructions.push_back("\n\tmov r8 $1 ; False\n\n");
-                    current_function->instructions.push_back(complete + ":\n");
-                    current_function->instructions.push_back("\n\tpushw ls r8 \t ; Put result into ls\n");
-                    label_id++;
-                    break;
-                }
-                case CODEGEN::TYPES::InstructionSet::AND:
-                {
-                    current_function->instructions.push_back("\n\t; <<< AND >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc);
-                    current_function->instructions.push_back("\n\tmov r7 $0\t; Comparison value\n\n");
-                    std::string first_true  = "AND_first_true_" + std::to_string(label_id);
-                    std::string second_true = "AND_second_true_" + std::to_string(label_id);
-                    std::string complete    = "AND_complete_" + std::to_string(label_id);
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "bgt.d " : "bgt ";
-                    current_function->instructions.push_back("\t" + comparison + "r8 r7 " + first_true + "\n\n");
-                    current_function->instructions.push_back("\tmov r8 $0\t; False\n\n");
-                    current_function->instructions.push_back("\tjmp " + complete + "\n\n");
-                    current_function->instructions.push_back(first_true + ":\n\n");
-                    current_function->instructions.push_back("\t" + comparison + "r9 r7 " + second_true + "\n\n");
-                    current_function->instructions.push_back("\tmov r8 $0\t; False\n\n");
-                    current_function->instructions.push_back("\tjmp " + complete + "\n\n");
-                    current_function->instructions.push_back(second_true + ":\n\n");
-                    current_function->instructions.push_back("\tmov r8 $1\n\n");
-                    current_function->instructions.push_back(complete + ":\n\n");
-                    current_function->instructions.push_back("\n\tpushw ls r8 \t ; Put result into ls\n");
-                    label_id++;
-                    break;
-                }
-                case CODEGEN::TYPES::InstructionSet::NEGATE:     
-                {
-                    current_function->instructions.push_back("\n\t; <<< NEGATE >>> \n");
-                    current_function->instructions.push_back(remove_single_word_for_calc);
-                    current_function->instructions.push_back("\n\tmov r7 $0\t; Comparison\n\n");
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "bgt.d " : "bgt ";
-                    std::string set_zero = "NEGATE_set_zero_" + std::to_string(label_id);
-                    std::string set_comp = "NEGATE_complete_" + std::to_string(label_id);
-                    current_function->instructions.push_back("\t" + comparison + " r8 r7 " + set_zero + "\n\n");
-                    current_function->instructions.push_back("\n\tmov r8 $1\n\tjmp " + set_comp + "\n\n");
-                    current_function->instructions.push_back(set_zero + ":\n\t mov r8 $0\n\n" + set_comp + ":\n\n");
-                    current_function->instructions.push_back("\n\tpushw ls r8 \t ; Put result into ls\n");
-                    label_id++;
-                    break;
-                }
+                case CODEGEN::TYPES::InstructionSet::ADD:    current_function->add_block(new CODE::Addition(command.classification));        break;                                          
+                case CODEGEN::TYPES::InstructionSet::SUB:    current_function->add_block(new CODE::Subtraction(command.classification));     break;
+                case CODEGEN::TYPES::InstructionSet::DIV:    current_function->add_block(new CODE::Division(command.classification));        break;
+                case CODEGEN::TYPES::InstructionSet::MUL:    current_function->add_block(new CODE::Multiplication(command.classification));  break;
+
+                case CODEGEN::TYPES::InstructionSet::RSH:    current_function->add_block(new CODE::RightShift());   break;
+                case CODEGEN::TYPES::InstructionSet::LSH:    current_function->add_block(new CODE::LeftShift());    break;
+                case CODEGEN::TYPES::InstructionSet::BW_OR:  current_function->add_block(new CODE::BwOr());         break;
+                case CODEGEN::TYPES::InstructionSet::BW_NOT: current_function->add_block(new CODE::BwNot());        break;
+                case CODEGEN::TYPES::InstructionSet::BW_XOR: current_function->add_block(new CODE::BwXor());        break;
+                case CODEGEN::TYPES::InstructionSet::BW_AND: current_function->add_block(new CODE::BwAnd());        break;
+
+                case CODEGEN::TYPES::InstructionSet::LTE:    current_function->add_block(new CODE::Lte(label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::LT:     current_function->add_block(new CODE::Lt (label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::GTE:    current_function->add_block(new CODE::Gte(label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::GT:     current_function->add_block(new CODE::Gt (label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::EQ:     current_function->add_block(new CODE::Eq (label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::NE:     current_function->add_block(new CODE::Neq(label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::OR:     current_function->add_block(new CODE::Or(label_id++,  command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::AND:    current_function->add_block(new CODE::And(label_id++, command.classification)); break;
+
+                case CODEGEN::TYPES::InstructionSet::NEGATE: current_function->add_block(new CODE::Negate(label_id++, command.classification)); break;
+                
                 case CODEGEN::TYPES::InstructionSet::LOAD_BYTE:
                 {
                     CODEGEN::TYPES::AddressValueInstruction * avins = static_cast<CODEGEN::TYPES::AddressValueInstruction*>(ins);

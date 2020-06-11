@@ -55,7 +55,7 @@
 %define api.value.type variant
 %define parse.assert
 
-%token INT REAL CHAR DEF ARROW RETURN LTE GTE GT LT EQ NE BW_NOT 
+%token INT REAL CHAR DEF ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE SEMI NIL
 
 %type<DEL::Element*> stmt;
@@ -100,8 +100,8 @@ input
 
 expression
    : term                        { $$ = $1;  }
-   | expression '+' term         { $$ = new DEL::AST(DEL::NodeType::ADD, $1, $3);  }
-   | expression '-' term         { $$ = new DEL::AST(DEL::NodeType::SUB, $1, $3);  }
+   | expression ADD term         { $$ = new DEL::AST(DEL::NodeType::ADD, $1, $3);  }
+   | expression SUB term         { $$ = new DEL::AST(DEL::NodeType::SUB, $1, $3);  }
    | expression LTE term         { $$ = new DEL::AST(DEL::NodeType::LTE, $1, $3);  }
    | expression GTE term         { $$ = new DEL::AST(DEL::NodeType::GTE, $1, $3);  }
    | expression GT  term         { $$ = new DEL::AST(DEL::NodeType::GT , $1, $3);  }
@@ -112,10 +112,10 @@ expression
 
 term
    : factor                      { $$ = $1;  }
-   | term '*' factor             { $$ = new DEL::AST(DEL::NodeType::MUL,    $1, $3);  }
-   | term '/' factor             { $$ = new DEL::AST(DEL::NodeType::DIV,    $1, $3);  }
-   | term '^' factor             { $$ = new DEL::AST(DEL::NodeType::POW,    $1, $3);  }
-   | term '%' factor             { $$ = new DEL::AST(DEL::NodeType::MOD,    $1, $3);  }
+   | term MUL factor             { $$ = new DEL::AST(DEL::NodeType::MUL,    $1, $3);  }
+   | term DIV factor             { $$ = new DEL::AST(DEL::NodeType::DIV,    $1, $3);  }
+   | term POW factor             { $$ = new DEL::AST(DEL::NodeType::POW,    $1, $3);  }
+   | term MOD factor             { $$ = new DEL::AST(DEL::NodeType::MOD,    $1, $3);  }
    | term LSH factor             { $$ = new DEL::AST(DEL::NodeType::LSH,    $1, $3);  }
    | term RSH factor             { $$ = new DEL::AST(DEL::NodeType::RSH,    $1, $3);  }
    | term BW_XOR factor          { $$ = new DEL::AST(DEL::NodeType::BW_XOR, $1, $3);  }

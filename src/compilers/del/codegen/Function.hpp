@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "CodeBlock.hpp"
+
 namespace DEL
 {
 namespace CODEGEN
@@ -37,6 +39,13 @@ namespace CODEGEN
         std::vector<CODEGEN::TYPES::ParamInfo> params;      //! The parameter information given to the function
         std::vector<std::string> instructions;              //! Instructions within the function
         uint64_t bytes_required;                            //! How many bytes of stack space the function will take up
+    
+    
+        //! \brief Add a block of code to the function
+        //! \param block A pointer to a block of code to add
+        //! \post The code from the block will be added to function instructions, and
+        //!       The then the function will delete the block 
+        void add_block(CODE::Block * block);
     };
 }
 }
