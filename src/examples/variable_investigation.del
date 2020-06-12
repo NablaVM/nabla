@@ -1,24 +1,9 @@
 
-/*
-    As it turns out, we need to update the Intermediate layer and codegen earlier than I anticipated. 
-    We need to obscure data types at this layer to a series of bytes and words. Right now codegen is aware
-    of types at this level which is incorrect. All it needs to know is if it should use integer or real variants
-    of instructions on specific words, and should use the integer variant on bytes.
-*/
-
 
 def main() -> nil {
 
-
-    char c = "9";
+    int a = 3;
     
-    char d = "4";
-
-    char t = "8";
-
-    int g = ("4" == d);
-
-    int hex = 0xFF;
 
     return;
 }

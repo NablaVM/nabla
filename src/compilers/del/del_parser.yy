@@ -143,7 +143,6 @@ primary
     : INT_LITERAL                { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::INTEGER, $1); }
     | REAL_LITERAL               { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::REAL,    $1); }
     | HEX_LITERAL                { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::INTEGER, std::to_string(std::strtoul($1.c_str(), 0, 16))); }
-    | primary_char               { $$ = $1; }
     ;
 
 primary_char

@@ -430,27 +430,6 @@ namespace CODE
 
             code.push_back(ss.str());
         }
-
-        /*
-            Previous implementation : 
-        
-                    current_function->instructions.push_back("\n\t; <<< OR >>> \n");
-                    current_function->instructions.push_back(remove_words_for_calc);
-                    current_function->instructions.push_back("\n\tmov r7 $0\t; Comparison value");
-                    std::string true_label = "OR_is_true_"    + std::to_string(label_id);
-                    std::string complete   = "OR_is_complete_" + std::to_string(label_id);
-                    std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "bgt.d " : "bgt ";
-                    current_function->instructions.push_back("\n\n\t" + comparison + "r8 r7 " + true_label);
-                    current_function->instructions.push_back("\n\t" + comparison + "r9 r7 " + true_label);
-                    current_function->instructions.push_back("\n\n\tmov r8 $0 ; False");
-                    current_function->instructions.push_back("\n\tjmp " + complete + "\n\n");
-                    current_function->instructions.push_back(true_label + ":\n");
-                    current_function->instructions.push_back("\n\tmov r8 $1 ; True\n\n");
-                    current_function->instructions.push_back(complete + ":\n");
-                    current_function->instructions.push_back("\n\tpushw ls r8 \t ; Put result into ls\n");
-                    label_id++;
-        
-        */
     };
 
 
@@ -495,30 +474,6 @@ namespace CODE
             
             code.push_back(ss.str());
         }
-
-        /*
-            Previous implementation : 
-        
-                current_function->instructions.push_back("\n\t; <<< AND >>> \n");
-                current_function->instructions.push_back(remove_words_for_calc);
-                current_function->instructions.push_back("\n\tmov r7 $0\t; Comparison value\n\n");
-                std::string first_true  = "AND_first_true_" + std::to_string(label_id);
-                std::string second_true = "AND_second_true_" + std::to_string(label_id);
-                std::string complete    = "AND_complete_" + std::to_string(label_id);
-                std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "bgt.d " : "bgt ";
-                current_function->instructions.push_back("\t" + comparison + "r8 r7 " + first_true + "\n\n");
-                current_function->instructions.push_back("\tmov r8 $0\t; False\n\n");
-                current_function->instructions.push_back("\tjmp " + complete + "\n\n");
-                current_function->instructions.push_back(first_true + ":\n\n");
-                current_function->instructions.push_back("\t" + comparison + "r9 r7 " + second_true + "\n\n");
-                current_function->instructions.push_back("\tmov r8 $0\t; False\n\n");
-                current_function->instructions.push_back("\tjmp " + complete + "\n\n");
-                current_function->instructions.push_back(second_true + ":\n\n");
-                current_function->instructions.push_back("\tmov r8 $1\n\n");
-                current_function->instructions.push_back(complete + ":\n\n");
-                current_function->instructions.push_back("\n\tpushw ls r8 \t ; Put result into ls\n");
-                label_id++;
-        */
     };
 
     //
@@ -547,26 +502,6 @@ namespace CODE
 
             code.push_back(ss.str());
         }
-
-        /*
-            Previous Implementation:
-
-                current_function->instructions.push_back("\n\t; <<< NEGATE >>> \n");
-                current_function->instructions.push_back(remove_single_word_for_calc);
-                current_function->instructions.push_back("\n\tmov r7 $0\t; Comparison\n\n");
-
-                std::string comparison = (command.classification == CODEGEN::TYPES::DataClassification::DOUBLE) ? "bgt.d " : "bgt ";
-                std::string set_zero = "NEGATE_set_zero_" + std::to_string(label_id);
-                std::string set_comp = "NEGATE_complete_" + std::to_string(label_id);
-                current_function->instructions.push_back("\t" + comparison + " r8 r7 " + set_zero + "\n\n");
-                
-                current_function->instructions.push_back("\n\tmov r8 $1\n\tjmp " + set_comp + "\n\n");
-                current_function->instructions.push_back(set_zero + ":\n\t mov r8 $0\n\n" + set_comp + ":\n\n");
-                current_function->instructions.push_back("\n\tpushw ls r8 \t ; Put result into ls\n");
-                label_id++;
-        
-        */
-
     };
 
     //
@@ -587,35 +522,6 @@ namespace CODE
 
             code.push_back(ss.str()); 
         }
-
-        /*
-        
-        Previous Implementations : 
-
-            current_function->instructions.push_back("\n\t; <<< POW >>> \n");
-            current_function->instructions.push_back("\n\tpopw r2 ls \t ; Calculation RHS\n\tpopw r1 ls \t ; Calculation LHS\n");
-
-            std::string function_name;
-
-            generator.include_builtin_math_pow(command.classification, function_name);
-
-            current_function->instructions.push_back("\n\tcall " + function_name + " ; Call to perfom power\n\n");
-            current_function->instructions.push_back("\tpushw ls r0\t; Push value to local stack for calculation\n");
-            break;
-
-        // ----- 
-
-            current_function->instructions.push_back("\n\t; <<< MOD >>> \n");
-            current_function->instructions.push_back("\n\tpopw r2 ls \t ; Calculation RHS\n\tpopw r1 ls \t ; Calculation LHS\n");
-
-            std::string function_name;
-            generator.include_builtin_math_mod(command.classification, function_name);
-
-            current_function->instructions.push_back("\n\tcall " + function_name + " ; Call to perfom modulus\n\n");
-            current_function->instructions.push_back("\tpushw ls r0\t; Push value to local stack for calculation\n");
-            break;
-        
-        */
     };
 
     //
@@ -641,23 +547,6 @@ namespace CODE
 
             code.push_back(ss.str()); 
         }
-
-        /*
-            Previous Implementation
-
-                current_function->instructions.push_back("\n\t; <<< CALL >>> \n");
-
-                CODEGEN::TYPES::CallInstruction * cins = static_cast<CODEGEN::TYPES::CallInstruction*>(ins);
-                
-                current_function->instructions.push_back("\n\tcall " + cins->function_name + "\t ; Call function\n\n");
-
-                if(cins->expect_return_value)
-                {
-                    current_function->instructions.push_back("\t; Get result from call \n\n");
-                    current_function->instructions.push_back("\tldw r0 $" + std::to_string(SETTINGS::GS_INDEX_RETURN_SPACE) + "(gs)\n");
-                    current_function->instructions.push_back("\tpushw ls r0\t; Push return value to local stack for calculation\n");
-                }
-        */
     };
 }
 }

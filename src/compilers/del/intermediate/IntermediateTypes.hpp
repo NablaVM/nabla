@@ -17,17 +17,20 @@ namespace TYPES
         INTEGER, DOUBLE, CHAR //, STRUCT, STRING
     };
 
+    //! \brief A directive given for loading / calling
     enum class DirectiveType
     {
         ID, CALL
     };
 
+    //! \brief Memory position of a directive
     struct DirectiveAllocation
     {
         uint64_t start_pos;
         uint64_t end_pos;
     };
 
+    //! \brief A directive
     struct Directive
     {
         DirectiveType type;
@@ -35,6 +38,7 @@ namespace TYPES
         std::string data;
     };
 
+    //! \brief Parameter information for a function
     struct ParamInfo
     {
         uint64_t start_pos;
@@ -57,7 +61,6 @@ namespace TYPES
         AssignmentClassifier assignment_classifier;
         std::vector<AssignemntInstruction> instructions;
     };
-
 }
 }
 }

@@ -40,6 +40,13 @@ namespace DEL
 
     std::vector<std::string> Codegen::indicate_complete()
     {
+        // Ensure we're not building a function
+        if(building_function)
+        {
+            std::cerr << "Developer Error : Codegen asked to indicate_complete while building a function " << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
         // Lock the symbol table so if an error comes out the dev (me) knows they did something dumb
         symbol_table.lock();
 
@@ -66,8 +73,10 @@ namespace DEL
             exit(EXIT_FAILURE);
         }
 
+        // Flag function building
         building_function = true;
 
+        // Create a new function object
         current_function = new CODE::Function(name, params);
     }
 
@@ -77,14 +86,18 @@ namespace DEL
 
     void Codegen::end_function()
     {
+        // Ensure we're building a function
         if(!building_function)
         {
-            std::cerr << "Internal Error >>> Codegen asked to end function while not building function "
+            std::cerr << "Developer Error : Codegen asked to end function while not building function "
                       << "grammar should have prevented this!!!" << std::endl;
             exit(EXIT_FAILURE);
         }
 
+        // Unflag function building
         building_function = false;
+
+        // Reset label id
         label_id = 0;
 
         //  Indicate how many bytes the function will require to perform all of its operations
@@ -94,6 +107,7 @@ namespace DEL
         // resulting code
         generator.add_instructions(current_function->building_complete());
 
+        // Delete the function object
         delete current_function;
     }
 
@@ -103,6 +117,13 @@ namespace DEL
 
     void Codegen::execute_command(CODEGEN::TYPES::Command command)
     {
+        // Ensure we're building a function
+        if(!building_function)
+        {
+            std::cerr << "Developer Error : Codegen asked to execute_command while not building function " << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
         /*
             command.id                    -> The name of the thing we are assigning for comments
             command.memory_info           -> Where we need to store the thing
@@ -187,6 +208,13 @@ namespace DEL
 
     void Codegen::null_return()
     {
+        // Ensure we're building a function
+        if(!building_function)
+        {
+            std::cerr << "Developer Error : Codegen asked to make a null_return while not building function " << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
         // Tell the function to return without getting information from the stack
         current_function->build_return(false);
     }
