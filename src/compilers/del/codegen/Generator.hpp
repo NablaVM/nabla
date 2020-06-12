@@ -40,11 +40,6 @@ namespace DEL
         //! \param out_function_name The name of the function that the caller can use to access the MOD function
         void include_builtin_math_mod(CODEGEN::TYPES::DataClassification classification, std::string & out_function_name);
 
-        //! \brief Load a 64-bit integer into the resulting ASM
-        //! \param le_64 The little endian 64-bit integer
-        //! \param comment A delightful comment to place into the ASM
-        std::vector<std::string> load_64_into_r0(uint64_t le_64, std::string comment);
-
     private:
         AsmSupport asm_support;
         std::vector<std::string> built_ins_triggered;

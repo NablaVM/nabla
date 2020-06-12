@@ -62,6 +62,14 @@ using token = DEL::DEL_Parser::token;
 
 ";"         { return token::SEMI;   }
 
+"/"        { return token::DIV; }
+"+"        { return token::ADD; }
+"-"        { return token::SUB; }
+"*"        { return token::MUL; }
+"^"        { return token::POW; }
+"%"        { return token::MOD; }
+
+
 "//"[^\n]*  { driver.inc_line(); }
 
 "/*"([^*]|(\*+[^*/]))*\*+\/ { /* comment block */}

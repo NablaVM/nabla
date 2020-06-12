@@ -8,9 +8,9 @@
 #include "Intermediate.hpp"
 
 #include "CodegenTypes.hpp"
-#include "Function.hpp"
 
 #include "Generator.hpp"
+#include "CodeBlocks.hpp"
 
 namespace DEL
 {
@@ -60,11 +60,7 @@ namespace DEL
         std::vector<std::string> program_init;
         std::vector<std::string> program_instructions;
 
-        CODEGEN::Function * current_function;
-
-        void setup_integer(std::string id, std::string value);
-        void setup_double(std::string id, std::string value);
-        void setup_char(std::string id, std::string value);
+        CODE::Function * current_function;
     };
 }
 
