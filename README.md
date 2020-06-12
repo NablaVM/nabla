@@ -7,6 +7,10 @@
 
 ## Development Updates: 
 
+***11/ June/ 2020***
+
+:sparkles: After digesting a book on Flex/Bison I got to work on remaking the HLL. I decided to call it Del, kind of keeping with the theme of Nabla I guess. Things are going great now. As of this moment things are still under heavy work but I have a good foothold now. The language can handle expressions, and setting some basic types (int, real, char), as well as passing parameters to functions, and return values. There are some kinks in the aforementioned functionality, but mostly, everything is coming along nicely. 
+
 ***1/ June/ 2020***
 
 :scream: Compiler design is hard. I've been working with flex and bison to figure out a way I can get some HLL to get converted into Nabla ASM. I got _something_ working, but it isn't very nice. I don't want to create absolute garbage, so I bought a book. Once I do some research and learn the best way to go about constructing the HLL I will get going again. For now, what I have will be blocked off from the Nabla Application for compiling. The VM is still in working order, and still executes projects built with Solace. 
