@@ -50,7 +50,9 @@ namespace DEL
 
         void build_assignment_directive(CODEGEN::TYPES::Command & command, std::string directive_token, uint64_t byte_len);
 
-        CODEGEN::TYPES::Command build_assignment(std::vector<std::string> & tokens, uint64_t byte_len);
+        uint64_t decompose_primitive(INTERMEDIATE::TYPES::AssignmentClassifier & classification, std::string value);
+
+        CODEGEN::TYPES::Command build_assignment(INTERMEDIATE::TYPES::AssignmentClassifier & classification, std::vector<std::string> & tokens, uint64_t byte_len);
 
         CODEGEN::TYPES::InstructionSet get_operation(std::string token);
     };

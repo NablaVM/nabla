@@ -79,6 +79,7 @@
 %type<std::vector<DEL::Element*>> block;
 
 %token <std::string> INT_LITERAL
+%token <std::string> HEX_LITERAL
 %token <std::string> REAL_LITERAL
 %token <std::string> CHAR_LITERAL
 %token <std::string> IDENTIFIER
@@ -141,7 +142,8 @@ expr_function_call
 primary
     : INT_LITERAL                { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::INTEGER, $1); }
     | REAL_LITERAL               { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::REAL,    $1); }
-    | identifiers                { $$ = new DEL::AST(DEL::NodeType::ID,  nullptr, nullptr, DEL::ValType::STRING,  $1); }
+    | HEX_LITERAL                { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::INTEGER, std::to_string(std::strtoul($1.c_str(), 0, 16))); }
+    | primary_char               { $$ = $1; }
     ;
 
 primary_char
@@ -162,11 +164,6 @@ assignment
 
 reassignment
    : identifiers '=' expression   SEMI     { $$ = new DEL::Assignment(DEL::ValType::REQ_CHECK, $1, $3); }
-   | identifiers '=' CHAR_LITERAL SEMI     { $$ = new DEL::Assignment(
-                                             DEL::ValType::REQ_CHECK,
-                                             $1,
-                                             new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::CHAR,    $3)
-                                        ); }
    ;
 
 return_stmt

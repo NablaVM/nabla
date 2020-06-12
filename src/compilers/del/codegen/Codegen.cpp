@@ -149,13 +149,8 @@ namespace DEL
  
                 case CODEGEN::TYPES::InstructionSet::MOVE_ADDRESS: current_function->add_block(new CODE::MoveAddress(static_cast<CODEGEN::TYPES::MoveInstruction*>(ins))); break;
 
-                 
-                case CODEGEN::TYPES::InstructionSet::USE_RAW:
-                {
-                    CODEGEN::TYPES::RawValueInstruction * rvins = static_cast<CODEGEN::TYPES::RawValueInstruction*>(ins);
-                    current_function->add_block(new CODE::SetupPrimitive(command.classification, command.id, rvins->value));
-                    break;
-                }
+                case CODEGEN::TYPES::InstructionSet::USE_RAW: current_function->add_block(new CODE::SetupPrimitive(command.id, static_cast<CODEGEN::TYPES::RawValueInstruction*>(ins))); break;
+
                 case CODEGEN::TYPES::InstructionSet::POW:
                 {
                     std::string function_name;
@@ -178,8 +173,12 @@ namespace DEL
                 default:
                     error_man.report_custom("Codegen", "Developer error : Default accessed in command.", true);
                     break;
-           }
-       }
+            }
+
+            /*
+                Instruction pointers are deleted by intermediate layer once this function returns
+            */
+        }
     }
 
     // ----------------------------------------------------------

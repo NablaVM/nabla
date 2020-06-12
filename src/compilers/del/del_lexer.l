@@ -92,6 +92,12 @@ using token = DEL::DEL_Parser::token;
                yylval->build< std::string >( yytext );
                return ( token::INT_LITERAL );
             }
+
+0[xX][0-9a-fA-F]+ {
+               yylval->build< std::string >( yytext );
+               return ( token::HEX_LITERAL );
+            }
+
 \".\"  {
                yylval->build< std::string >( yytext );
                return( token::CHAR_LITERAL );

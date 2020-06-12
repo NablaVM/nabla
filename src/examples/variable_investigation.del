@@ -10,13 +10,15 @@
 def main() -> nil {
 
 
-    //char c = "9";
-    //char d = "4";
-    //int g = ("4" == d);   // This doesn't work because of the current data abstraction implementation
+    char c = "9";
+    
+    char d = "4";
 
-    //int c = 4;
-    //int d = 4;
-    //int g = (c == d);
+    char t = "8";
+
+    int g = ("4" == d);
+
+    int hex = 0xFF;
 
     return;
 }

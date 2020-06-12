@@ -171,20 +171,26 @@ namespace DEL
         // Build instructions for command
         CODEGEN::TYPES::Command command;
 
-        // We want to be particular about chars
-        if(classification == INTERMEDIATE::TYPES::AssignmentClassifier::CHAR)
-        {
-            command = build_assignment(tokens, 1);
-        }
-        else
-        {
-            command = build_assignment(tokens, memory_info.bytes_alloced);
-        }
+        command = build_assignment(classification, tokens, memory_info.bytes_alloced);
+
+        // Information regarding where to store result
+        command.memory_info = memory_info;
+
+        return command;
+    }
+    
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    CODEGEN::TYPES::Command Intermediate::build_assignment(INTERMEDIATE::TYPES::AssignmentClassifier & classification, std::vector<std::string> & tokens, uint64_t byte_len)
+    {
+        CODEGEN::TYPES::Command command;
 
         // Indicate how raw values should be interpd
         switch(classification)
         {
-        case INTERMEDIATE::TYPES::AssignmentClassifier::CHAR:    command.classification = CODEGEN::TYPES::DataClassification::CHAR;    break;
+        case INTERMEDIATE::TYPES::AssignmentClassifier::CHAR:    command.classification = CODEGEN::TYPES::DataClassification::INTEGER; break;
         case INTERMEDIATE::TYPES::AssignmentClassifier::INTEGER: command.classification = CODEGEN::TYPES::DataClassification::INTEGER; break;
         case INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE:  command.classification = CODEGEN::TYPES::DataClassification::DOUBLE;  break;
         default: std::cerr << "Devloper Error >>> Intermediate::encode_postfix_assignment_expression() classification switch reached default : " << std::endl;
@@ -192,10 +198,71 @@ namespace DEL
                  break;
         }
 
-        // Information regarding where to store result
-        command.memory_info = memory_info;
+        // Check all tokens for what they represent
+        for(auto & token : tokens)
+        {
+            // Check for a directive
+            if(token[0] == '#')
+            {
+                build_assignment_directive(command, token, byte_len);
+            }
+            // Check for char || int || double (raw values)
+            else if(token[0] == '"' || is_only_number(token) )
+            {
+                command.instructions.push_back(
+                    new CODEGEN::TYPES::RawValueInstruction(CODEGEN::TYPES::InstructionSet::USE_RAW, decompose_primitive(classification, token), byte_len)
+                );
+            }
+            else
+            {
+                // Get the operation token
+                command.instructions.push_back(
+                    new CODEGEN::TYPES::BaseInstruction(get_operation(token))
+                );
+            }
+        }
 
+        // If its a return statement, we don't want to add a store command
+        if(command.instructions.back()->instruction == CODEGEN::TYPES::InstructionSet::RETURN)
+        {
+            return command;
+        }
+
+        CODEGEN::TYPES::InstructionSet final = (byte_len < SETTINGS::SYSTEM_WORD_SIZE_BYTES) ? 
+            CODEGEN::TYPES::InstructionSet::STORE_BYTE : 
+            CODEGEN::TYPES::InstructionSet::STORE_WORD;
+
+        // End of assignment trigger storage of result
+        command.instructions.push_back(
+            new CODEGEN::TYPES::BaseInstruction(final)
+        );
         return command;
+    }
+
+    // ----------------------------------------------------------
+    // 
+    // ----------------------------------------------------------
+
+    uint64_t Intermediate::decompose_primitive(INTERMEDIATE::TYPES::AssignmentClassifier & classification, std::string value)
+    {
+        switch(classification)
+        {
+            case INTERMEDIATE::TYPES::AssignmentClassifier::CHAR:
+            {
+                return ENDIAN::conditional_to_le_64(static_cast<uint64_t>(value[1]));
+            }
+            case INTERMEDIATE::TYPES::AssignmentClassifier::INTEGER:
+            {
+                return ENDIAN::conditional_to_le_64(std::stoull(value));
+            }
+            case INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE:
+            {
+                return ENDIAN::conditional_to_le_64(UTIL::convert_double_to_uint64(std::stod(value)));
+            }
+            default: std::cerr << "Devloper Error >>> Intermediate::decompose_primitive() classification switch reached default : " << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+        }
     }
 
     // ----------------------------------------------------------
@@ -272,55 +339,6 @@ namespace DEL
                 break; 
             }
         }
-    }
-    
-    // ----------------------------------------------------------
-    //
-    // ----------------------------------------------------------
-
-    CODEGEN::TYPES::Command Intermediate::build_assignment(std::vector<std::string> & tokens, uint64_t byte_len)
-    {
-        CODEGEN::TYPES::Command command;
-
-        // Check all tokens for what they represent
-        for(auto & token : tokens)
-        {
-            // Check for a directive
-            if(token[0] == '#')
-            {
-                build_assignment_directive(command, token, byte_len);
-            }
-            // Check for char || int || double (raw values)
-            else if(token[0] == '"' || is_only_number(token) )
-            {
-                command.instructions.push_back(
-                    new CODEGEN::TYPES::RawValueInstruction(CODEGEN::TYPES::InstructionSet::USE_RAW, token)
-                );
-            }
-            else
-            {
-                // Get the operation token
-                command.instructions.push_back(
-                    new CODEGEN::TYPES::BaseInstruction(get_operation(token))
-                );
-            }
-        }
-
-        // If its a return statement, we don't want to add a store command
-        if(command.instructions.back()->instruction == CODEGEN::TYPES::InstructionSet::RETURN)
-        {
-            return command;
-        }
-
-        CODEGEN::TYPES::InstructionSet final = (byte_len < SETTINGS::SYSTEM_WORD_SIZE_BYTES) ? 
-            CODEGEN::TYPES::InstructionSet::STORE_BYTE : 
-            CODEGEN::TYPES::InstructionSet::STORE_WORD;
-
-        // End of assignment trigger storage of result
-        command.instructions.push_back(
-            new CODEGEN::TYPES::BaseInstruction(final)
-        );
-        return command;
     }
 
     // ----------------------------------------------------------

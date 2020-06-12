@@ -407,7 +407,7 @@ namespace DEL
                 // Promote to Double if any double is present
                 c = INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE;
 
-                if((et != ValType::REAL) && (et != ValType::REAL)) 
+                if((et != ValType::REAL) && (et != ValType::INTEGER)) 
                 {
                     std::string error_message = id;
 
