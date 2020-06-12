@@ -8,9 +8,8 @@
 #include "Intermediate.hpp"
 
 #include "CodegenTypes.hpp"
-
 #include "Generator.hpp"
-#include "CodeBlocks.hpp"
+#include "Function.hpp"
 
 namespace DEL
 {
@@ -22,7 +21,8 @@ namespace DEL
         //! \brief Construct a code generator
         //! \param err The error manager
         //! \param symbolTable The program symbol table
-        Codegen(Errors & err, SymbolTable & symbolTable);
+        //! \param memory The memory manager
+        Codegen(Errors & err, SymbolTable & symbolTable, Memory & memory);
 
         //! \brief Deconstrut the code generator
         ~Codegen();
@@ -51,6 +51,7 @@ namespace DEL
     private:
         Errors & error_man;         // Error manager
         SymbolTable & symbol_table; // Symbol table
+        Memory & memory_man;
         bool building_function;
 
         uint64_t label_id;

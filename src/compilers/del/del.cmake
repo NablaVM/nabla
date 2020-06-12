@@ -14,6 +14,7 @@ set(DEL_INCLUDE_DIRS
     ${DEL_COMPILER_DIR}/ast
     ${DEL_COMPILER_DIR}/codegen
     ${DEL_COMPILER_DIR}/codegen/asm
+    ${DEL_COMPILER_DIR}/codegen/codeblocks
     ${DEL_COMPILER_DIR}/intermediate
     ${DEL_COMPILER_DIR}/managers
     ${DEL_COMPILER_DIR}/semantics
@@ -26,10 +27,15 @@ set(DEL_COMPILER_HEADERS
     ${DEL_COMPILER_DIR}/ast/Types.hpp
 
     ${DEL_COMPILER_DIR}/codegen/Codegen.hpp
-    ${DEL_COMPILER_DIR}/codegen/CodeBlocks.hpp
     ${DEL_COMPILER_DIR}/codegen/Generator.hpp
     ${DEL_COMPILER_DIR}/codegen/asm/AsmMath.hpp
     ${DEL_COMPILER_DIR}/codegen/asm/AsmSupport.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/BlockAggregator.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/Codeblock.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/Function.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/LoadStore.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/Operations.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/Primitives.hpp
 
     ${DEL_COMPILER_DIR}/intermediate/Intermediate.hpp
     ${DEL_COMPILER_DIR}/intermediate/IntermediateTypes.hpp

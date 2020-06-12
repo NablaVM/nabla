@@ -1,5 +1,11 @@
 #include "Codegen.hpp"
 
+#include "Codeblock.hpp"
+#include "BlockAggregator.hpp"
+#include "LoadStore.hpp"
+#include "Operations.hpp"
+#include "Primitives.hpp"
+
 #include <iostream>
 #include <vector>
 
@@ -9,9 +15,10 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    Codegen::Codegen(Errors & err, SymbolTable & symbolTable) : 
+    Codegen::Codegen(Errors & err, SymbolTable & symbolTable, Memory & memory) : 
                                                                 error_man(err), 
                                                                 symbol_table(symbolTable),
+                                                                memory_man(memory),
                                                                 building_function(false),
                                                                 label_id(0)
     {
@@ -80,6 +87,9 @@ namespace DEL
         building_function = false;
         label_id = 0;
 
+        //  Indicate how many bytes the function will require to perform all of its operations
+        current_function->add_required_bytes(memory_man.get_currently_allocated_bytes_amnt());
+
         // Finalize the function build with building_complete() and pass the result to the generator to store the 
         // resulting code
         generator.add_instructions(current_function->building_complete());
@@ -99,10 +109,6 @@ namespace DEL
             command.classification -> How to treat the given data (int, char, real)
             command.instructions          -> What to do to the data in RPN form
         */
-
-        // Add the bytes for the function's stack frame
-        //
-        current_function->add_required_bytes(command.memory_info.bytes_alloced);
 
         // Execute the command from the caller
         //
