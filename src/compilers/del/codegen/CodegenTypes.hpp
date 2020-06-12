@@ -16,8 +16,7 @@ namespace TYPES
     enum class DataClassification
     {
         INTEGER,
-        DOUBLE,
-        CHAR
+        DOUBLE
     };
 
     //! \brief A set of instructions for the code generator to use in the processing of tokens
@@ -66,6 +65,8 @@ namespace TYPES
     {
     public:
         BaseInstruction(InstructionSet instruction) : instruction(instruction) {}
+        virtual ~BaseInstruction() = default;
+
         InstructionSet instruction;
     };
 
@@ -75,10 +76,11 @@ namespace TYPES
     class RawValueInstruction : public BaseInstruction
     {
     public:
-        RawValueInstruction(InstructionSet instruction, std::string value) : 
-            BaseInstruction(instruction), value(value){}
+        RawValueInstruction(InstructionSet instruction, uint64_t value, uint64_t byte_len) : 
+            BaseInstruction(instruction), value(value), byte_len(byte_len){}
 
-        std::string value;
+        uint64_t value;
+        uint64_t byte_len;
     };
 
     //

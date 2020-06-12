@@ -406,8 +406,7 @@ namespace DEL
             {
                 // Promote to Double if any double is present
                 c = INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE;
-
-                if((et != ValType::REAL) && (et != ValType::REAL)) 
+                if(et != ValType::REAL)
                 {
                     std::string error_message = id;
 
@@ -425,15 +424,13 @@ namespace DEL
             case ValType::INTEGER  :
             {
                 // We assume its an integer to start with so we dont set type (because we allow ints inside double exprs)
-                if(et == ValType::REAL) { error_man.report_unallowed_type(id, true); }
+                if(et != ValType::INTEGER) { error_man.report_unallowed_type(id, true); }
                 break;
             }
             case ValType::CHAR     :
             {
-                
                 c = INTERMEDIATE::TYPES::AssignmentClassifier::CHAR;
-
-                if(et == ValType::REAL)   { error_man.report_unallowed_type(id, true); } // If Assignee isn't a char, we need to die
+                if(et != ValType::CHAR)   { error_man.report_unallowed_type(id, true); } // If Assignee isn't a char, we need to die
                 break;
             }
         }

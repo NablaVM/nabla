@@ -48,28 +48,6 @@ namespace CODE
 
             code.push_back(ss.str()); 
         }
-
-        /*
-            Previous Implementation:
-
-                CODEGEN::TYPES::AddressValueInstruction * avins = static_cast<CODEGEN::TYPES::AddressValueInstruction*>(ins);
-
-                current_function->instructions.push_back("\n\t; <<< LOAD WORD >>> \n");
-                uint64_t word_address = avins->value;
-
-                // Generate a register with the address for the destination
-                std::vector<std::string> store_ins = generator.load_64_into_r0(word_address, "Address of thing in expression");
-                current_function->instructions.insert(current_function->instructions.end(), store_ins.begin(), store_ins.end());
-
-                // Add the relative address of the item to the start position of the function in memory to acquire the actual destination
-                current_function->instructions.push_back("\n\tldw r1 $0(ls)\t; Start of stack frame\n");
-                current_function->instructions.push_back("\n\tadd r0 r0 r1\t; Item location in function memory\n");
-
-                // Load GS address at r0 to r0
-                current_function->instructions.push_back("\n\tldw r0 r0(gs)\t; Load value of thing for expression\n");
-                current_function->instructions.push_back("\tpushw ls r0\t; Push value to local stack for calculation\n");
-                break;
-        */
     };
 
     //
@@ -116,32 +94,6 @@ namespace CODE
 
             code.push_back(ss.str()); 
         }
-
-        /*
-            Previous Implementation (Of word, byte just replaces popw with pop and stw with stb)
-        
-                current_function->instructions.push_back("\n\t; <<< STORE WORD >>> \n");
-
-                // Get the memory information for destination
-                uint64_t mem_start = ENDIAN::conditional_to_le_64(command.memory_info.start_pos);
-            
-                // Generate a register with the address for the destination
-                std::vector<std::string> store_ins = generator.load_64_into_r0(mem_start, ("Address for [" + command.id + "]"));
-                current_function->instructions.insert(current_function->instructions.end(), store_ins.begin(), store_ins.end());
-
-                // Add the relative address of the item to the start position of the function in memory to acquire the actual destination
-                current_function->instructions.push_back("\n\tldw r1 $0(ls)\t; Start of stack frame\n");
-                current_function->instructions.push_back("\n\tadd r0 r0 r1\t; Item location in function memory\n");
-
-                // Get the calculation result off the stack
-                current_function->instructions.push_back("\n\t; ---- Get result ----\n");
-                current_function->instructions.push_back("\tpopw r8 ls\n");
-
-                // Store the result at the memory address
-                current_function->instructions.push_back("\n\t; ---- Store result ---- \n");
-                current_function->instructions.push_back("\tstw r0(gs) r8\t ; Store in memory\n");
-                break;
-        */
     };
 
     //
@@ -172,21 +124,6 @@ namespace CODE
 
             code.push_back(ss.str()); 
         }
-
-        /*
-        
-        Previous Implementation:
-
-            current_function->instructions.push_back("\n\t; <<< MOVE ADDRESS >>> \n");
-            CODEGEN::TYPES::MoveInstruction * mins = static_cast<CODEGEN::TYPES::MoveInstruction*>(ins);
-            current_function->instructions.push_back("\n\tldw r0 $0(ls)\n");
-            std::vector<std::string> mov = generator.load_64_into_r0(ENDIAN::conditional_to_le_64(mins->source), "Local index of variable for move");
-            current_function->instructions.insert(current_function->instructions.end(), mov.begin(), mov.end());
-            current_function->instructions.push_back("\tldw r1 $0(ls) \t; Move offset\n");
-            current_function->instructions.push_back("\tadd r0 r0 r1 \t ; Get absolute address for variable \n");
-            current_function->instructions.push_back("\tstw $" + std::to_string(mins->destination) + "(gs) r0 \t ; Store address in gs destination\n");
-
-        */
     };
 
 }
