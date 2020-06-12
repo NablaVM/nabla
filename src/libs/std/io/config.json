@@ -1,8 +1,0 @@
-{
-    "author": "Josh A. Bosley",
-    "description": "Standard IO for Nabla",
-    "project_type": "lib",
-    "modules": [
-      "output"
-      ]
-  }

@@ -87,7 +87,3 @@ target_link_libraries(nabla
 add_custom_target(copy-nabla-examples ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/examples ${CMAKE_BINARY_DIR}/examples
 )
-
-add_custom_target(copy-nabla-stdlib ALL
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/libs ${CMAKE_BINARY_DIR}/libs
-)
