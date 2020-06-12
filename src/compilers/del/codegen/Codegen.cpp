@@ -2,11 +2,6 @@
 
 #include <iostream>
 #include <vector>
-#include <limits>
-#include <libnabla/util.hpp>
-#include <libnabla/endian.hpp>
-
-#include "CodeBlock.hpp"
 
 namespace DEL
 {
@@ -66,7 +61,7 @@ namespace DEL
 
         building_function = true;
 
-        current_function = new CODEGEN::Function(name, params);
+        current_function = new CODE::Function(name, params);
     }
 
     // ----------------------------------------------------------
@@ -190,7 +185,4 @@ namespace DEL
         // Tell the function to return without getting information from the stack
         current_function->build_return(false);
     }
-
-
-
 }

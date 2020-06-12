@@ -104,34 +104,4 @@ namespace DEL
             asm_support.import_math(AsmSupport::Math::MOD_I, out_function_name, built_ins_triggered);
         }
     }
-
-    // ----------------------------------------------------------
-    //
-    // ----------------------------------------------------------
-    
-    std::vector<std::string> Generator::load_64_into_r0(uint64_t le_64, std::string comment)
-    {
-        std::vector<std::string> result;
-
-        result.push_back("\n\t; " + comment + "\n\n");
-
-        // Mov instruction only handles 32-bit unsigned. So, if it starts to get bigger,
-        // we need to dice it into two parts
-        if(le_64 > 4294967290)
-        {
-            uint32_t top = (le_64 & 0xFFFFFFFF00000000) >> 32;
-            uint32_t bot = (le_64 & 0x00000000FFFFFFFF) >> 0;
-
-            result.push_back("\tmov r0 $" + std::to_string(top) + "\t ; Top\n");
-            result.push_back("\tmov r1 $" + std::to_string(bot) + "\t ; Bottom\n");
-            result.push_back("\tlsh r0 r0 $32\t ; Left shift top over\n");
-            result.push_back("\tor  r0 r0 r1 \t ; Or parts together to create address\n\n");
-        }
-        else
-        {
-            result.push_back("\tmov r0 $" + std::to_string(static_cast<uint32_t>(le_64)) + "\t ; Address \n\n");
-        }
-
-        return result;
-    }
 }

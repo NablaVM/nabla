@@ -1,4 +1,10 @@
 
+def test(int a, int b) -> nil {
+
+
+    return;
+}
+
 
 def main() -> int {
 
@@ -22,9 +28,9 @@ def main() -> int {
     // int c =  2 ^ 8;
 
     // int  a = 1;
-    real b = 3.1;
+    // real b = 3.1;
 
-    b = 3.1 + 0.9;
+  //  b = 3.1 + 0.9;
 
     // char c = "j";
 
