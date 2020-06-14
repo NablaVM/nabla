@@ -188,10 +188,8 @@ namespace DEL
     void Errors::report_no_return(std::string f, int line_no)
     {
         display_error_start(true, line_no); std::cerr  << "Expected 'return <type>' for function :  " << f << std::endl;
-
         std::string line = driver.preproc.fetch_line(line_no);
         display_line_and_error_pointer(line, line.size()/2, true, false);
-        
         exit(EXIT_FAILURE);
     }
 
@@ -211,9 +209,7 @@ namespace DEL
 
     void Errors::report_syntax_error(int line, int column, std::string error_message, std::string line_in_question)
     {
-        std::cout << "Given line : " << line << std::endl;
         display_error_start(true, line); std::cerr  << error_message << std::endl;
-
         display_line_and_error_pointer(line_in_question, column, true);
     }
 
@@ -297,9 +293,23 @@ namespace DEL
         }
         else
         {
+            // Place tilde under the line , but not until actual data starts ( skip ws in front of the line )
+            bool found_item = false;
             for(uint64_t i = 0; i < line.size(); i++)
             {
-                pointer_line += "~";
+                if(!found_item && !isspace(line[i]))
+                {
+                    found_item = true;
+                }
+
+                if(found_item)
+                {
+                    pointer_line += "~";
+                }
+                else
+                {
+                    pointer_line += " ";
+                }
             }
         }
 
