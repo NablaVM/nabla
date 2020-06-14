@@ -114,6 +114,14 @@ namespace DEL
             AST(NodeType::CALL, lhs, rhs, ValType::REQ_CHECK, name),
             name(name), params(params){}
 
+        // A call created given a line number
+        Call(std::string name, std::vector<FunctionParam> params, AST * lhs, AST * rhs, int line_no) : 
+            AST(NodeType::CALL, lhs, rhs, ValType::REQ_CHECK, name),
+            name(name), params(params)
+            {
+                this->line_no = line_no;
+            }
+
         // Let the visitor visit us
         virtual void visit(Visitor &visit) override;
 

@@ -144,7 +144,7 @@ namespace DEL
          asm_out.open(asm_output_file);
          if(!asm_out.is_open())
          {
-            error_man.report_unable_to_open_result_out(asm_output_file);
+            error_man.report_unable_to_open_result_out(asm_output_file, true);
          }
          for(auto & l : ASM)
          {
@@ -167,7 +167,7 @@ namespace DEL
          bin_out.open(bin_output_file);
          if(!bin_out.is_open())
          {
-            error_man.report_unable_to_open_result_out(bin_output_file);
+            error_man.report_unable_to_open_result_out(bin_output_file, true);
          }
          for(auto & l : binary_data)
          {

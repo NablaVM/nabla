@@ -279,7 +279,7 @@ namespace DEL
 
         // Create an assignment for the return, this will execute the return withing code gen as we set a RETURN node type that is processed by the assignment
         Assignment * return_assignment = new Assignment(current_function->return_type, variable_for_return, new DEL::AST(DEL::NodeType::RETURN, stmt.rhs, nullptr));
-
+        return_assignment->line_no = stmt.line_no;
         this->accept(*return_assignment);
 
         delete return_assignment;
@@ -297,7 +297,7 @@ namespace DEL
 
         if(callee_type != ValType::NONE)
         {
-            error_man.report_calls_return_value_unhandled(current_function->name, stmt.name, stmt.line_no);
+            error_man.report_calls_return_value_unhandled(current_function->name, stmt.name, stmt.line_no, false);
         }
 
         // We endocde it to leverage the same functionality that is required by an expression-based call
@@ -362,6 +362,7 @@ namespace DEL
                 Assignment * raw_parameter_assignment = new Assignment(p.type, param_label, 
                     new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, p.type, p.id)
                 );
+                raw_parameter_assignment->line_no = stmt.line_no;
 
                 this->accept(*raw_parameter_assignment);
 

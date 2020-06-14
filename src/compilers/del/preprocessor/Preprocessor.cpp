@@ -24,7 +24,7 @@ namespace DEL
 
     Preprocessor::~Preprocessor()
     {
-      //  std::filesystem::remove_all(std::filesystem::path(default_path));
+        std::filesystem::remove_all(std::filesystem::path(default_path));
     }
 
     // ----------------------------------------------------------
@@ -94,7 +94,7 @@ namespace DEL
         std::ifstream in_file( file );
         if( ! in_file.good() )
         {
-            error_man.report_custom("Preprocessor", " Unable to open input file for preprocessing", true);
+            error_man.report_custom("Error", " Unable to open given input file for preprocessing", true);
         }
 
         uint64_t line_no = 1;

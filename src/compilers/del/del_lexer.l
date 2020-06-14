@@ -72,8 +72,11 @@ using token = DEL::DEL_Parser::token;
 ","        { return token::COMMA;  }
 
 "("        { return token::LEFT_PAREN; }
-")"        { return token::RIGHT_PAREN; }
 "{"        { return token::LEFT_BRACKET;    }
+")"        { 
+               yylval->build< int >( yylineno );
+               return ( token::RIGHT_PAREN );    
+           }
 "}"        { 
                yylval->build< int >( yylineno );
                return ( token::RIGHT_BRACKET );    

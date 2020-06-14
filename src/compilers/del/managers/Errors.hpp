@@ -38,7 +38,7 @@ namespace DEL
         //! \param is The id that was being set to something incorrect
         //! \param line_no Line number
         //! \param is_fatal Triggers exit if true
-        void report_unallowed_type(std::string id, int line_no, bool is_fatal=true);
+        void report_unallowed_type(std::string id, int line_no, bool is_fatal);
 
         //! \brief Report that the system has attempted to allocate a stack greater than allowed by VSys
         //! \param symbol The last symbol allocated that triggered the issue
@@ -49,7 +49,7 @@ namespace DEL
         //! \brief Report unable to open a file for a result output
         //! \param name_used The name of the file
         //! \param is_fatal Triggers exit if true
-        void report_unable_to_open_result_out(std::string name_used, bool is_fatal=true);
+        void report_unable_to_open_result_out(std::string name_used, bool is_fatal);
 
         //! \brief Report that something called doesn't exist
         //! \param name_called The name of the calld method
@@ -70,7 +70,7 @@ namespace DEL
         //! \param is_fatal Triggers exit if true
         //! \note This is mainly used for a developer error, really only things that should't happen
         //!       should utilize this
-        void report_custom(std::string from, std::string error, bool is_fatal=true);
+        void report_custom(std::string from, std::string error, bool is_fatal);
 
         //! \brief Report that a function doesn't have a matching return
         //! \param function The function name / details to output
@@ -86,7 +86,7 @@ namespace DEL
         //! \param caller_function The function where the call originated
         //! \param callee The function being called
         //! \param is_fatal Triggers exist if true
-        void report_calls_return_value_unhandled(std::string caller_function, std::string callee, int line_no, bool is_fatal=false);
+        void report_calls_return_value_unhandled(std::string caller_function, std::string callee, int line_no, bool is_fatal);
 
         //! \brief Report syntax error
         //! \param line Line number
@@ -113,7 +113,7 @@ namespace DEL
         DEL_Driver & driver;
 
         void display_error_start(bool is_fatal, int line_no=0);
-        void display_line_and_error_pointer(std::string line, int column, bool is_fatal=true);
+        void display_line_and_error_pointer(std::string line, int column, bool is_fatal, bool show_arrow=true);
     };
 }
 #endif

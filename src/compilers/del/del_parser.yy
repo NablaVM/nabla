@@ -60,7 +60,7 @@
 
 %token INT REAL CHAR ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE NIL
-%token LEFT_PAREN RIGHT_PAREN LEFT_BRACKET ASSIGN DOT COMMA
+%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA
 
 %type<DEL::Element*> stmt;
 %type<DEL::Element*> assignment;
@@ -88,6 +88,7 @@
 %token <std::string> CHAR_LITERAL
 %token <std::string> IDENTIFIER
 %token <int>         RIGHT_BRACKET  // These tokens encode line numbers
+%token <int>         RIGHT_PAREN    // These tokens encode line numbers
 %token <int>         SEMI           // These tokens encode line numbers
 %token <int>         DEF            // These tokens encode line numbers
 %token               END    0     "end of file"
@@ -142,14 +143,15 @@ factor
    ;
 
 expr_function_call
-   : identifiers LEFT_PAREN RIGHT_PAREN             { $$ = new DEL::Call($1, c_params, nullptr, nullptr); }
-   | identifiers LEFT_PAREN call_params RIGHT_PAREN { $$ = new DEL::Call($1, c_params, nullptr, nullptr); c_params.clear(); }
+   : identifiers LEFT_PAREN RIGHT_PAREN             { $$ = new DEL::Call($1, c_params, nullptr, nullptr, $3); }
+   | identifiers LEFT_PAREN call_params RIGHT_PAREN { $$ = new DEL::Call($1, c_params, nullptr, nullptr, $4); c_params.clear(); }
    ;
 
 primary
     : INT_LITERAL                { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::INTEGER, $1); }
     | REAL_LITERAL               { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::REAL,    $1); }
     | HEX_LITERAL                { $$ = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::INTEGER, std::to_string(std::strtoul($1.c_str(), 0, 16))); }
+    | identifiers                { $$ = new DEL::AST(DEL::NodeType::ID,  nullptr, nullptr, DEL::ValType::STRING,  $1); }
     ;
 
 primary_char
@@ -239,9 +241,9 @@ void DEL::DEL_Parser::error( const location_type &l, const std::string &err_mess
 
    // Report the error
    error_man.report_syntax_error(
-         preproc.fetch_user_line_number(l.begin.line),   // Get the line number of the file we're parsing based on its location from preprocessor indexing
-         l.begin.column,                                 // Column where issue appeared
-         err_message,                                    // Bison error information
-         preproc.fetch_line(l.begin.line)                // The user line where issue appeared
+         l.begin.line,                     // Line where issue appeared
+         l.begin.column,                   // Column where issue appeared
+         err_message,                      // Bison error information
+         preproc.fetch_line(l.begin.line)  // The user line where issue appeared
    );
 }

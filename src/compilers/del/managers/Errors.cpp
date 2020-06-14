@@ -32,7 +32,7 @@ namespace DEL
         display_error_start(true, line_no); std::cerr  << "Symbol \"" << id << "\" already defined" << std::endl;
 
         std::string line = driver.preproc.fetch_line(line_no);
-        display_line_and_error_pointer(line, line.size()/2);
+        display_line_and_error_pointer(line, line.size()/2, true, false);
 
         exit(EXIT_FAILURE);
     }
@@ -46,7 +46,7 @@ namespace DEL
         display_error_start(is_fatal, line_no); std::cerr  << "Unknown ID \"" << id << "\"" << std::endl;
 
         std::string line = driver.preproc.fetch_line(line_no);
-        display_line_and_error_pointer(line, line.size()/2);
+        display_line_and_error_pointer(line, line.size()/2, true, false);
         if(is_fatal)
         {
             exit(EXIT_FAILURE);
@@ -95,7 +95,7 @@ namespace DEL
         if(line_no > 0)
         {
             std::string line = driver.preproc.fetch_line(line_no);
-            display_line_and_error_pointer(line, line.size()/2);
+            display_line_and_error_pointer(line, line.size()/2, is_fatal, false);
         }
         if(is_fatal)
         {
@@ -124,7 +124,7 @@ namespace DEL
     {
         display_error_start(true, line_no); std::cerr  << "Call to unknown function \"" << name_called << "\"" << std::endl;
         std::string line = driver.preproc.fetch_line(line_no);
-        display_line_and_error_pointer(line, line.size()/2);
+        display_line_and_error_pointer(line, line.size()/2, true, false);
         exit(EXIT_FAILURE);
     }
 
@@ -137,7 +137,7 @@ namespace DEL
         display_error_start(true, line_no); std::cerr  << "Function \"" << callee << "\" expects (" << callee_params 
                   << ") parameters, but call from function \"" << caller << "\" gave (" << caller_params << ")" << std::endl;
         std::string line = driver.preproc.fetch_line(line_no);
-        display_line_and_error_pointer(line, line.size()/2);
+        display_line_and_error_pointer(line, line.size()/2, true, false);
         exit(EXIT_FAILURE);
     }
 
@@ -173,7 +173,7 @@ namespace DEL
         display_error_start(is_fatal, line_no); std::cerr  << "Function call to \"" << callee << "\" in function \"" << caller_function << "\" has a return value that is not handled" << std::endl;
 
         std::string line = driver.preproc.fetch_line(line_no);
-        display_line_and_error_pointer(line, line.size()/2, false);
+        display_line_and_error_pointer(line, line.size()/2, false, false);
 
         if(is_fatal)
         {
@@ -190,7 +190,7 @@ namespace DEL
         display_error_start(true, line_no); std::cerr  << "Expected 'return <type>' for function :  " << f << std::endl;
 
         std::string line = driver.preproc.fetch_line(line_no);
-        display_line_and_error_pointer(line, line.size()/2, true);
+        display_line_and_error_pointer(line, line.size()/2, true, false);
         
         exit(EXIT_FAILURE);
     }
@@ -211,9 +211,10 @@ namespace DEL
 
     void Errors::report_syntax_error(int line, int column, std::string error_message, std::string line_in_question)
     {
-        display_error_start(true); std::cerr  << error_message << std::endl;
+        std::cout << "Given line : " << line << std::endl;
+        display_error_start(true, line); std::cerr  << error_message << std::endl;
 
-        display_line_and_error_pointer(line_in_question, column);
+        display_line_and_error_pointer(line_in_question, column, true);
     }
 
     // ----------------------------------------------------------
@@ -260,7 +261,7 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::display_line_and_error_pointer(std::string line, int column, bool is_fatal)
+    void Errors::display_line_and_error_pointer(std::string line, int column, bool is_fatal, bool show_arrow)
     {
         // Weird case
         if(line.size() == 1)
@@ -270,27 +271,38 @@ namespace DEL
             return;
         }
 
-        int start = (column < 5) ? 0 : column-5;
-        int end   = ((uint64_t)(column + 5) > line.size()) ? line.size() : column+5;
         std::string pointer_line;
-        for(uint64_t i = 0; i < line.size(); i++)
+        if(show_arrow)
         {
-            if(i == column)
+            int start = (column < 5) ? 0 : column-5;
+            int end   = ((uint64_t)(column + 5) > line.size()) ? line.size() : column+5;
+            for(uint64_t i = 0; i < line.size(); i++)
             {
-                pointer_line += "^";
-            }
-            else if(i >= start && i <= end )
-            {
-                if(i != column)
+                if(i == column)
                 {
-                    pointer_line += "~";
+                    pointer_line += "^";
+                }
+                else if(i >= start && i <= end )
+                {
+                    if(i != column)
+                    {
+                        pointer_line += "~";
+                    }
+                }
+                else
+                {
+                    pointer_line += " ";
                 }
             }
-            else
+        }
+        else
+        {
+            for(uint64_t i = 0; i < line.size(); i++)
             {
-                pointer_line += " ";
+                pointer_line += "~";
             }
         }
+
         std::cerr << termcolor::white << line << termcolor::reset << std::endl;
 
         if(is_fatal)
