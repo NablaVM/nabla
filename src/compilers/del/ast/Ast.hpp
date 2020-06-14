@@ -55,6 +55,13 @@ namespace DEL
     public:
         virtual ~Element() = default;
         virtual void visit(Visitor &visitor) = 0;
+
+        void set_line_no(int line)
+        {
+            line_no = line;
+        }
+
+        int line_no;
     };
 
     // A list of elements
@@ -107,6 +114,14 @@ namespace DEL
             AST(NodeType::CALL, lhs, rhs, ValType::REQ_CHECK, name),
             name(name), params(params){}
 
+        // A call created given a line number
+        Call(std::string name, std::vector<FunctionParam> params, AST * lhs, AST * rhs, int line_no) : 
+            AST(NodeType::CALL, lhs, rhs, ValType::REQ_CHECK, name),
+            name(name), params(params)
+            {
+                this->line_no = line_no;
+            }
+
         // Let the visitor visit us
         virtual void visit(Visitor &visit) override;
 
@@ -120,13 +135,14 @@ namespace DEL
     class Function
     {
     public:
-        Function(std::string name, std::vector<FunctionParam> params, ValType return_type, ElementList elements) :
-            name(name), params(params), return_type(return_type), elements(elements){}
+        Function(std::string name, std::vector<FunctionParam> params, ValType return_type, ElementList elements, int line) :
+            name(name), params(params), return_type(return_type), elements(elements), line_no(line){}
 
         std::string name;
         std::vector<FunctionParam> params;
         ValType return_type;
         ElementList elements;
+        int line_no;
     };
 
     //

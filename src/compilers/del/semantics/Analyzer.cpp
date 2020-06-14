@@ -47,11 +47,11 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Analyzer::ensure_unique_symbol(std::string id)
+    void Analyzer::ensure_unique_symbol(std::string id, int line_no)
     {
         if(symbol_table.does_symbol_exist(id, true))
         {
-            error_man.report_previously_declared(id);
+            error_man.report_previously_declared(id, line_no);
         }
     }
 
@@ -59,13 +59,13 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Analyzer::ensure_id_in_current_context(std::string id, std::vector<ValType> allowed)
+    void Analyzer::ensure_id_in_current_context(std::string id, int line_no, std::vector<ValType> allowed)
     {
         // Check symbol table to see if an id exists, don't display information yet
         if(!symbol_table.does_symbol_exist(id, false))
         {
             // Reports the error and true marks the program for death
-            error_man.report_unknown_id(id, true);
+            error_man.report_unknown_id(id, line_no, true);
         }
 
         // If allowed is empty, we just wanted to make sure the thing existed
@@ -87,7 +87,7 @@ namespace DEL
         // If the type isn't allowed
         if(!is_allowed)
         {
-            error_man.report_unallowed_type(id, true);
+            error_man.report_unallowed_type(id, line_no, true);
         }
     }
 
@@ -95,13 +95,13 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    ValType Analyzer::get_id_type(std::string id)
+    ValType Analyzer::get_id_type(std::string id, int line_no)
     {
         ValType t = symbol_table.get_value_type(id);
 
         if(t == ValType::NONE)
         {
-            error_man.report_unknown_id(id, true);
+            error_man.report_unknown_id(id, line_no, true);
         }
 
         return t;
@@ -117,7 +117,7 @@ namespace DEL
         if(symbol_table.does_context_exist(function->name))
         {
             // Dies if not unique
-            error_man.report_previously_declared(function->name);
+            error_man.report_previously_declared(function->name, function->line_no);
         }
 
         // Check for 'main'
@@ -180,7 +180,7 @@ namespace DEL
 
         if(!function_watcher.has_return)
         {
-            error_man.report_no_return(function->name);
+            error_man.report_no_return(function->name, function->line_no);
         }
 
         current_function = nullptr;
@@ -214,10 +214,10 @@ namespace DEL
         {
             // Check that the rhs is in context and is a type that we are allowing for assignment
             // NOTE : When functions are allowed in asssignment this will have to be updated <<<<<<<<<<<<<<<<<<
-            ensure_id_in_current_context(stmt.lhs, {ValType::INTEGER, ValType::REAL, ValType::CHAR});
+            ensure_id_in_current_context(stmt.lhs, stmt.line_no, {ValType::INTEGER, ValType::REAL, ValType::CHAR});
 
             // Now we know it exists, we set the data type to what it states in the map
-            stmt.data_type = get_id_type(stmt.lhs);
+            stmt.data_type = get_id_type(stmt.lhs, stmt.line_no);
 
             // We already checked symbol table if this exists, and symbol table is what 
             // handles allocation of memory for the target, so this is safe
@@ -228,7 +228,7 @@ namespace DEL
         else
         {
             // If this isn't a reassignment, we need to ensure that the value is unique
-            ensure_unique_symbol(stmt.lhs);
+            ensure_unique_symbol(stmt.lhs, stmt.line_no);
         }
 
         /*
@@ -238,7 +238,7 @@ namespace DEL
         */
         INTERMEDIATE::TYPES::AssignmentClassifier classification = INTERMEDIATE::TYPES::AssignmentClassifier::INTEGER; // Assume int 
         
-        std::string postfix_expression = validate_assignment_ast(stmt.rhs, classification, stmt.data_type, stmt.lhs);
+        std::string postfix_expression = validate_assignment_ast(stmt.line_no, stmt.rhs, classification, stmt.data_type, stmt.lhs);
 
         // The unique value doesn't exist yet and needs some memory allocated and 
         // needs to be added to the symbol table
@@ -279,7 +279,7 @@ namespace DEL
 
         // Create an assignment for the return, this will execute the return withing code gen as we set a RETURN node type that is processed by the assignment
         Assignment * return_assignment = new Assignment(current_function->return_type, variable_for_return, new DEL::AST(DEL::NodeType::RETURN, stmt.rhs, nullptr));
-
+        return_assignment->line_no = stmt.line_no;
         this->accept(*return_assignment);
 
         delete return_assignment;
@@ -297,7 +297,7 @@ namespace DEL
 
         if(callee_type != ValType::NONE)
         {
-            error_man.report_calls_return_value_unhandled(current_function->name, stmt.name);
+            error_man.report_calls_return_value_unhandled(current_function->name, stmt.name, stmt.line_no, false);
         }
 
         // We endocde it to leverage the same functionality that is required by an expression-based call
@@ -323,7 +323,7 @@ namespace DEL
         // Ensure that the called method exists
         if(!symbol_table.does_context_exist(stmt.name))
         {
-            error_man.report_callee_doesnt_exist(stmt.name);
+            error_man.report_callee_doesnt_exist(stmt.name, stmt.line_no);
         }
 
         // Get the callee params
@@ -332,7 +332,7 @@ namespace DEL
         // Ensure number of params match
         if(stmt.params.size() != callee_params.size())
         {
-            error_man.report_mismatched_param_length(current_function->name, stmt.name, callee_params.size(), stmt.params.size());
+            error_man.report_mismatched_param_length(current_function->name, stmt.name, callee_params.size(), stmt.params.size(), stmt.line_no);
         }
 
         // Ensure all paramters exist
@@ -345,11 +345,11 @@ namespace DEL
                 if(!symbol_table.does_symbol_exist(p.id))
                 {
                     std::cerr << "Paramter in call to \"" << stmt.name << "\" does not exist in the current context" << std::endl;
-                    error_man.report_unknown_id(p.id, true);
+                    error_man.report_unknown_id(p.id, stmt.line_no, true);
                 }
 
                 // Set the type to the type of the known variable
-                p.type = get_id_type(p.id);
+                p.type = get_id_type(p.id, stmt.line_no);
             }
 
             // If we didn't need to get the type, then it came in raw and we need to make a variable for it
@@ -362,6 +362,7 @@ namespace DEL
                 Assignment * raw_parameter_assignment = new Assignment(p.type, param_label, 
                     new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, p.type, p.id)
                 );
+                raw_parameter_assignment->line_no = stmt.line_no;
 
                 this->accept(*raw_parameter_assignment);
 
@@ -370,7 +371,7 @@ namespace DEL
                 if(!symbol_table.does_symbol_exist(param_label))
                 {
                     std::cerr << "Auto generated parameter variable in call to \"" << stmt.name << "\" did not exist after assignment" << std::endl;
-                    error_man.report_unknown_id(param_label); 
+                    error_man.report_unknown_id(param_label, stmt.line_no, true); 
                 }
 
                 // If the call works, which it should, then we update the id to the name of the varaible
@@ -385,7 +386,7 @@ namespace DEL
             if(stmt.params[i].type != callee_params[i].type)
             {
                 std::cerr << "Parameter \"" << stmt.params[i].id << "\" does not match expected type in paramter list of function \"" << stmt.name << "\"" << std::endl;
-                error_man.report_unallowed_type(stmt.params[i].id, true);
+                error_man.report_unallowed_type(stmt.params[i].id, stmt.line_no, true);
             }
         }
     }
@@ -394,7 +395,7 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Analyzer::check_value_is_valid_for_assignment(ValType type_to_check, INTERMEDIATE::TYPES::AssignmentClassifier & c, ValType & et, std::string & id)
+    void Analyzer::check_value_is_valid_for_assignment(int line_no, ValType type_to_check, INTERMEDIATE::TYPES::AssignmentClassifier & c, ValType & et, std::string & id)
     {
         switch(type_to_check)
         {
@@ -416,7 +417,7 @@ namespace DEL
                     {
                         error_message = "Function (" + current_function->name + ")";
                     } 
-                    error_man.report_unallowed_type(error_message, true); 
+                    error_man.report_unallowed_type(error_message, line_no, true); 
                 }
 
                 break;
@@ -424,13 +425,13 @@ namespace DEL
             case ValType::INTEGER  :
             {
                 // We assume its an integer to start with so we dont set type (because we allow ints inside double exprs)
-                if(et != ValType::INTEGER) { error_man.report_unallowed_type(id, true); }
+                if(et != ValType::INTEGER) { error_man.report_unallowed_type(id, line_no, true); }
                 break;
             }
             case ValType::CHAR     :
             {
                 c = INTERMEDIATE::TYPES::AssignmentClassifier::CHAR;
-                if(et != ValType::CHAR)   { error_man.report_unallowed_type(id, true); } // If Assignee isn't a char, we need to die
+                if(et != ValType::CHAR)   { error_man.report_unallowed_type(id, line_no, true); } // If Assignee isn't a char, we need to die
                 break;
             }
         }
@@ -440,20 +441,20 @@ namespace DEL
     // Assignee's expected type abbreviated to 'et' 
     // ----------------------------------------------------------
 
-    std::string Analyzer::validate_assignment_ast(AST * ast, INTERMEDIATE::TYPES::AssignmentClassifier & c, ValType & et, std::string & id)
+    std::string Analyzer::validate_assignment_ast(int line_no, AST * ast, INTERMEDIATE::TYPES::AssignmentClassifier & c, ValType & et, std::string & id)
     {
         switch(ast->node_type)
         {
             case NodeType::ID  : 
             { 
                 // Ensure the ID is within current context. Allowing any type
-                ensure_id_in_current_context(ast->value, {});
+                ensure_id_in_current_context(ast->value, line_no, {});
 
                 // Check for promotion
-                ValType id_type = get_id_type(ast->value);
+                ValType id_type = get_id_type(ast->value, line_no);
 
                 // Make sure that the known value of the identifier is one valid given the current assignemnt
-                check_value_is_valid_for_assignment(id_type, c, et, id);
+                check_value_is_valid_for_assignment(line_no, id_type, c, et, id);
 
                 // Encode the identifier information so we can handle it in the intermediate layer
                 return endecoder.encode_identifier(ast->value);
@@ -472,6 +473,7 @@ namespace DEL
                 // Our call to validate_call made sure that call->name exists as a context within symbol table
                 // so we can use that value directly
                 check_value_is_valid_for_assignment(
+                    line_no,
                     symbol_table.get_return_type_of_context(call->name)
                     , c, et, id
                 );
@@ -483,35 +485,35 @@ namespace DEL
             case NodeType::VAL : 
             { 
                 // Check that the raw value is one that is valid within the current assignment
-                check_value_is_valid_for_assignment(ast->val_type, c, et, id);
+                check_value_is_valid_for_assignment(line_no, ast->val_type, c, et, id);
                 return ast->value;
             }
             
             //  This is where we convert NodeType to the Assignment type. This should make it so we can change the actual tokens in the language
             //  without having to modify this statement
 
-            case NodeType::ADD    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " ADD    " );  
-            case NodeType::SUB    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " SUB    " );
-            case NodeType::DIV    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " DIV    " );
-            case NodeType::MUL    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " MUL    " );
-            case NodeType::MOD    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " MOD    " );
-            case NodeType::POW    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " POW    " );
-            case NodeType::LTE    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " LTE    " );
-            case NodeType::GTE    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " GTE    " );
-            case NodeType::GT     :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " GT     " );
-            case NodeType::LT     :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " LT     " );
-            case NodeType::EQ     :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " EQ     " );
-            case NodeType::NE     :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " NE     " );
-            case NodeType::LSH    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " LSH    " );
-            case NodeType::RSH    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " RSH    " );
-            case NodeType::BW_OR  :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " BW_OR  " );
-            case NodeType::BW_XOR :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " BW_XOR " );
-            case NodeType::BW_AND :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " BW_AND " );
-            case NodeType::OR     :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " OR     " );
-            case NodeType::AND    :return (validate_assignment_ast(ast->l, c, et, id) + " " + validate_assignment_ast(ast->r, c, et, id) + " AND    " );
-            case NodeType::BW_NOT :return (validate_assignment_ast(ast->l, c, et, id) + " BW_NOT ");
-            case NodeType::NEGATE :return (validate_assignment_ast(ast->l, c, et, id) + " NEGATE "  );
-            case NodeType::RETURN :return (validate_assignment_ast(ast->l, c, et, id) + " RETURN "  );
+            case NodeType::ADD    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " ADD    " );  
+            case NodeType::SUB    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " SUB    " );
+            case NodeType::DIV    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " DIV    " );
+            case NodeType::MUL    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " MUL    " );
+            case NodeType::MOD    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " MOD    " );
+            case NodeType::POW    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " POW    " );
+            case NodeType::LTE    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " LTE    " );
+            case NodeType::GTE    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " GTE    " );
+            case NodeType::GT     :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " GT     " );
+            case NodeType::LT     :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " LT     " );
+            case NodeType::EQ     :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " EQ     " );
+            case NodeType::NE     :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " NE     " );
+            case NodeType::LSH    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " LSH    " );
+            case NodeType::RSH    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " RSH    " );
+            case NodeType::BW_OR  :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " BW_OR  " );
+            case NodeType::BW_XOR :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " BW_XOR " );
+            case NodeType::BW_AND :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " BW_AND " );
+            case NodeType::OR     :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " OR     " );
+            case NodeType::AND    :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " " + validate_assignment_ast(line_no, ast->r, c, et, id) + " AND    " );
+            case NodeType::BW_NOT :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " BW_NOT ");
+            case NodeType::NEGATE :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " NEGATE "  );
+            case NodeType::RETURN :return (validate_assignment_ast(line_no, ast->l, c, et, id) + " RETURN "  );
             case NodeType::ROOT   : error_man.report_custom("Analyzer", "ROOT NODE found in arithmetic exp", true); break;
             default:
             return "Its dead, jim";

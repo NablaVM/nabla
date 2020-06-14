@@ -1,9 +1,15 @@
 
 
-def main() -> nil {
+def main() -> int {
 
     int a = 3;
+
+    real b = 4.4 + 44.6;
+
+    char g = "F";
     
 
-    return;
+    int p = a + 7 - 9;
+
+    return p + 5;
 }

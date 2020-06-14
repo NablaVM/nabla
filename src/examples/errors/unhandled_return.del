@@ -1,0 +1,12 @@
+
+def moot() -> int {
+
+    return 1;
+}
+
+def main() -> nil {
+
+    moot();
+
+    return;
+}

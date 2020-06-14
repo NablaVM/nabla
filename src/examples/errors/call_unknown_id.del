@@ -1,0 +1,12 @@
+
+
+def f(int a, int b) -> nil {
+
+    return;
+}
+
+def main() -> nil {
+
+    f(a, 3);
+    return;
+}

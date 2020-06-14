@@ -1,0 +1,15 @@
+
+
+def func() -> nil {
+    return;
+}
+
+def funcA() -> nil {
+
+    return;
+}
+
+
+def funcB() -> nil {
+    return;
+}

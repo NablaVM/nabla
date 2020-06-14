@@ -109,15 +109,18 @@ namespace DEL
             exit(EXIT_FAILURE);
         }
 
-        // Get the allocation tokens
-        std::vector<std::string> a_list = split(d_list[alloc_location], ',');
-
-        for(auto & i : a_list)
+        if(d_list.size() > alloc_location)
         {
-            result_directive.allocation.push_back(
-                decode_allocation(i)
-            );
+            std::vector<std::string> a_list = split(d_list[alloc_location], ',');
+            for(auto & i : a_list)
+            {
+                result_directive.allocation.push_back(
+                    decode_allocation(i)
+                );
+            }
         }
+
+        // Get the allocation tokens
 
         return result_directive;
     }
@@ -137,6 +140,7 @@ namespace DEL
 
     INTERMEDIATE::TYPES::DirectiveAllocation EnDecode::decode_allocation(std::string allocation)
     {
+
         std::vector<std::string> alloc_tokens = split(allocation, '|');
 
         // We but a try here because there is an edge case where the tokens aren't anything and can sometimes cause issues.

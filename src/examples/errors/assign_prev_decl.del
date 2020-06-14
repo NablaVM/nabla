@@ -1,0 +1,8 @@
+def main() -> nil {
+
+    int a = 2;
+
+    real a = 2.33;
+
+    return;
+}

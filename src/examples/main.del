@@ -10,16 +10,14 @@
 
 def some_routine() -> nil {
 
-
-
   return;
 }
 
-def do_math(int some_int) -> int {
+def do_math(int someint) -> int {
 
-  int b = 7;
+  int b = 10;
 
-  return b + some_int;
+  return 3 + b; //3 + b;
 }
 
 

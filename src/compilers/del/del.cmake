@@ -17,6 +17,7 @@ set(DEL_INCLUDE_DIRS
     ${DEL_COMPILER_DIR}/codegen/codeblocks
     ${DEL_COMPILER_DIR}/intermediate
     ${DEL_COMPILER_DIR}/managers
+    ${DEL_COMPILER_DIR}/preprocessor
     ${DEL_COMPILER_DIR}/semantics
     ${FLEX_INCLUDE_DIRS}
 )
@@ -43,7 +44,8 @@ set(DEL_COMPILER_HEADERS
     ${DEL_COMPILER_DIR}/managers/Errors.hpp
     ${DEL_COMPILER_DIR}/managers/Memory.hpp
     ${DEL_COMPILER_DIR}/managers/SymbolTable.hpp
-    ${DEL_COMPILER_DIR}/managers/Tracker.hpp
+
+    ${DEL_COMPILER_DIR}/preprocessor/Preprocessor.hpp
 
     ${DEL_COMPILER_DIR}/semantics/Analyzer.hpp
     ${DEL_COMPILER_DIR}/semantics/EnDecode.hpp
@@ -66,7 +68,8 @@ set(DEL_COMPILER_SOURCES
     ${DEL_COMPILER_DIR}/managers/Errors.cpp
     ${DEL_COMPILER_DIR}/managers/SymbolTable.cpp
     ${DEL_COMPILER_DIR}/managers/Memory.cpp
-    ${DEL_COMPILER_DIR}/managers/Tracker.cpp
+
+    ${DEL_COMPILER_DIR}/preprocessor/Preprocessor.cpp
 
     ${DEL_COMPILER_DIR}/semantics/Analyzer.cpp
     ${DEL_COMPILER_DIR}/semantics/EnDecode.cpp

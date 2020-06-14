@@ -1,0 +1,17 @@
+
+
+def f(int a) -> nil {
+
+    return;
+}
+
+def main() -> nil {
+
+    //
+    //  This is the wrong type
+    //
+    real a = 3.33;
+    f(a);
+
+    return;
+}
