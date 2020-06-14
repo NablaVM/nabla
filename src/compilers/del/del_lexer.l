@@ -23,6 +23,7 @@ using token = DEL::DEL_Parser::token;
 %option nodefault
 %option yyclass="DEL::DEL_Scanner"
 %option noyywrap
+%option yylineno
 %option c++
 
 %%
@@ -39,7 +40,6 @@ using token = DEL::DEL_Parser::token;
 "real"      { return token::REAL;   }
 "char"      { return token::CHAR;   }
 "nil"       { return token::NIL;    }
-"def"       { return token::DEF;    }
 "->"        { return token::ARROW;  }
 "return"    { return token::RETURN; }
 
@@ -60,8 +60,6 @@ using token = DEL::DEL_Parser::token;
 "and"      { return token::BW_AND; }
 "not"      { return token::BW_NOT; }
 
-";"         { return token::SEMI;   }
-
 "/"        { return token::DIV; }
 "+"        { return token::ADD; }
 "-"        { return token::SUB; }
@@ -69,13 +67,25 @@ using token = DEL::DEL_Parser::token;
 "^"        { return token::POW; }
 "%"        { return token::MOD; }
 
-"{"        { return token::LBR;    }
-"}"        { return token::RBR;    }
-"("        { return token::LPAREN; }
-")"        { return token::RPAREN; }
 "="        { return token::ASSIGN; }
 "."        { return token::DOT;    }
 ","        { return token::COMMA;  }
+
+"("        { return token::LEFT_PAREN; }
+")"        { return token::RIGHT_PAREN; }
+"{"        { return token::LEFT_BRACKET;    }
+"}"        { 
+               yylval->build< int >( yylineno );
+               return ( token::RIGHT_BRACKET );    
+           }
+"def"      {
+               yylval->build< int >( yylineno );
+               return ( token::DEF );
+           }
+";"        {
+               yylval->build< int >( yylineno );
+               return ( token::SEMI );
+           }
 
 (@file.*)  { driver.preproc_file_directive(yytext); }
 

@@ -55,6 +55,13 @@ namespace DEL
     public:
         virtual ~Element() = default;
         virtual void visit(Visitor &visitor) = 0;
+
+        void set_line_no(int line)
+        {
+            line_no = line;
+        }
+
+        int line_no;
     };
 
     // A list of elements
@@ -120,13 +127,14 @@ namespace DEL
     class Function
     {
     public:
-        Function(std::string name, std::vector<FunctionParam> params, ValType return_type, ElementList elements) :
-            name(name), params(params), return_type(return_type), elements(elements){}
+        Function(std::string name, std::vector<FunctionParam> params, ValType return_type, ElementList elements, int line) :
+            name(name), params(params), return_type(return_type), elements(elements), line_no(line){}
 
         std::string name;
         std::vector<FunctionParam> params;
         ValType return_type;
         ElementList elements;
+        int line_no;
     };
 
     //

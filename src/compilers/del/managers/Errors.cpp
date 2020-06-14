@@ -27,11 +27,12 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::report_previously_declared(std::string id)
+    void Errors::report_previously_declared(std::string id, int line_no)
     {
-        display_error_start(true); std::cerr  << "Symbol \"" << id << "\" already defined" << std::endl;
+        display_error_start(true, line_no); std::cerr  << "Symbol \"" << id << "\" already defined" << std::endl;
 
-        
+        std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2);
 
         exit(EXIT_FAILURE);
     }
@@ -40,10 +41,12 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::report_unknown_id(std::string id, bool is_fatal)
+    void Errors::report_unknown_id(std::string id, int line_no, bool is_fatal)
     {
-        display_error_start(is_fatal); std::cerr  << "Unknown ID \"" << id << "\"" << std::endl;
+        display_error_start(is_fatal, line_no); std::cerr  << "Unknown ID \"" << id << "\"" << std::endl;
 
+        std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2);
         if(is_fatal)
         {
             exit(EXIT_FAILURE);
@@ -82,13 +85,18 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::report_unallowed_type(std::string id, bool is_fatal)
+    void Errors::report_unallowed_type(std::string id, int line_no, bool is_fatal)
     {
-        display_error_start(is_fatal); std::cerr  << "Type of \"" 
+        display_error_start(is_fatal, line_no); std::cerr  << "Type of \"" 
                   << id 
                   << "\" Forbids current operation"
                   << std::endl;
-        
+
+        if(line_no > 0)
+        {
+            std::string line = driver.preproc.fetch_line(line_no);
+            display_line_and_error_pointer(line, line.size()/2);
+        }
         if(is_fatal)
         {
             exit(EXIT_FAILURE);
@@ -112,9 +120,11 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::report_callee_doesnt_exist(std::string name_called)
+    void Errors::report_callee_doesnt_exist(std::string name_called, int line_no)
     {
-        display_error_start(true); std::cerr  << "Unknown function call to \"" << name_called << "\"" << std::endl;
+        display_error_start(true, line_no); std::cerr  << "Call to unknown function \"" << name_called << "\"" << std::endl;
+        std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2);
         exit(EXIT_FAILURE);
     }
 
@@ -122,10 +132,12 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::report_mismatched_param_length(std::string caller, std::string callee, uint64_t caller_params, uint64_t callee_params)
+    void Errors::report_mismatched_param_length(std::string caller, std::string callee, uint64_t caller_params, uint64_t callee_params, int line_no)
     {
-        display_error_start(true); std::cerr  << "Function \"" << callee << "\" expects (" << callee_params 
+        display_error_start(true, line_no); std::cerr  << "Function \"" << callee << "\" expects (" << callee_params 
                   << ") parameters, but call from function \"" << caller << "\" gave (" << caller_params << ")" << std::endl;
+        std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2);
         exit(EXIT_FAILURE);
     }
 
@@ -133,23 +145,35 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::display_error_start(bool is_fatal)
+    void Errors::display_error_start(bool is_fatal, int line_no)
     {
         std::cerr << "[" << termcolor::red << "Error" << termcolor::reset << "] <";
 
         if(is_fatal){ std::cerr << termcolor::red    << "FATAL"   << termcolor::reset ;} 
         else        { std::cerr << termcolor::yellow << "WARNING" << termcolor::reset ;} 
 
-        std::cerr << "> (" << termcolor::green  << driver.current_file_from_directive << termcolor::reset << ") : ";
+        if(line_no == 0)
+        {
+            std::cerr << "> (" << termcolor::green  << driver.current_file_from_directive << termcolor::reset << ") : ";
+        }
+        else
+        {
+            std::cerr << "> (" << termcolor::green   << driver.current_file_from_directive             << termcolor::reset << "@"
+                               << termcolor::magenta << driver.preproc.fetch_user_line_number(line_no) << termcolor::reset 
+                               << ") : ";
+        }
     }
 
     // ----------------------------------------------------------
     //
     // ----------------------------------------------------------
 
-    void Errors::report_calls_return_value_unhandled(std::string caller_function, std::string callee, bool is_fatal)
+    void Errors::report_calls_return_value_unhandled(std::string caller_function, std::string callee, int line_no, bool is_fatal)
     {
-        display_error_start(is_fatal); std::cerr  << "Function call to \"" << callee << "\" in function \"" << caller_function << "\" has a return value that is not handled" << std::endl;
+        display_error_start(is_fatal, line_no); std::cerr  << "Function call to \"" << callee << "\" in function \"" << caller_function << "\" has a return value that is not handled" << std::endl;
+
+        std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2, false);
 
         if(is_fatal)
         {
@@ -161,9 +185,13 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::report_no_return(std::string f )
+    void Errors::report_no_return(std::string f, int line_no)
     {
-        display_error_start(true); std::cerr  << "Expected 'return <type>' for function :  " << f << std::endl;
+        display_error_start(true, line_no); std::cerr  << "Expected 'return <type>' for function :  " << f << std::endl;
+
+        std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2, true);
+        
         exit(EXIT_FAILURE);
     }
 
@@ -232,7 +260,7 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Errors::display_line_and_error_pointer(std::string line, int column)
+    void Errors::display_line_and_error_pointer(std::string line, int column, bool is_fatal)
     {
         // Weird case
         if(line.size() == 1)
@@ -264,6 +292,14 @@ namespace DEL
             }
         }
         std::cerr << termcolor::white << line << termcolor::reset << std::endl;
-        std::cerr << termcolor::red << pointer_line << termcolor::reset << std::endl;
+
+        if(is_fatal)
+        {
+            std::cerr << termcolor::red << pointer_line << termcolor::reset << std::endl;
+        }
+        else 
+        {
+            std::cerr << termcolor::yellow << pointer_line << termcolor::reset << std::endl;
+        }
     }
 }

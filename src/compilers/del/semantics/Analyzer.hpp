@@ -40,19 +40,19 @@ namespace DEL
 
     private:
 
-        void ensure_unique_symbol(std::string id);
+        void ensure_unique_symbol(std::string id, int line_no);
 
-        void ensure_id_in_current_context(std::string id, std::vector<ValType> allowed);
+        void ensure_id_in_current_context(std::string id, int line_no, std::vector<ValType> allowed);
 
-        ValType get_id_type(std::string id);
+        ValType get_id_type(std::string id, int line_no);
 
         void validate_call(Call & stmt);
 
         // Check that a given value is valid within the scope of an assignment 
-        void check_value_is_valid_for_assignment(ValType type_to_check, INTERMEDIATE::TYPES::AssignmentClassifier & classifier, ValType & assignee_type, std::string & id);
+        void check_value_is_valid_for_assignment(int line_no, ValType type_to_check, INTERMEDIATE::TYPES::AssignmentClassifier & classifier, ValType & assignee_type, std::string & id);
 
         // Validate an assignment ast
-        std::string validate_assignment_ast(AST * ast, INTERMEDIATE::TYPES::AssignmentClassifier & classifier, ValType & assignee_type, std::string & id);
+        std::string validate_assignment_ast(int line_no, AST * ast, INTERMEDIATE::TYPES::AssignmentClassifier & classifier, ValType & assignee_type, std::string & id);
 
         Errors & error_man;             // Error manager
         SymbolTable & symbol_table;     // Symbol table

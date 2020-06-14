@@ -24,18 +24,21 @@ namespace DEL
 
         //! \brief Report that something has already been declared
         //! \param id The thing that has already been declared
+        //! \param line_no Line number
         //! \post This method call triggers exit failure
-        void report_previously_declared(std::string id);
+        void report_previously_declared(std::string id, int line_no);
 
         //! \brief Report an unknown identifier
-        //! \param id The id that was discovered and unknoen
+        //! \param id The id that was discovered and unknown
+        //! \param line_no Line number
         //! \param is_fatal Triggers exit if true
-        void report_unknown_id(std::string id, bool is_fatal=true);
+        void report_unknown_id(std::string id, int line_no, bool is_fatal);
 
         //! \brief Report an unallowed type
         //! \param is The id that was being set to something incorrect
+        //! \param line_no Line number
         //! \param is_fatal Triggers exit if true
-        void report_unallowed_type(std::string id, bool is_fatal=true);
+        void report_unallowed_type(std::string id, int line_no, bool is_fatal=true);
 
         //! \brief Report that the system has attempted to allocate a stack greater than allowed by VSys
         //! \param symbol The last symbol allocated that triggered the issue
@@ -50,14 +53,16 @@ namespace DEL
 
         //! \brief Report that something called doesn't exist
         //! \param name_called The name of the calld method
-        void report_callee_doesnt_exist(std::string name_called);
+        //! \param line_no Line number
+        void report_callee_doesnt_exist(std::string name_called, int line_no);
 
         //! \brief Report parameter length mismatch
         //! \param caller The name of the caller
         //! \param callee The name of the callee
         //! \param caller_params The number of parameters the caller is attempting to send
         //! \param callee_params The number of parameters the callee is expecting
-        void report_mismatched_param_length(std::string caller, std::string callee, uint64_t caller_params, uint64_t callee_params);
+        //! \param line_no Line number
+        void report_mismatched_param_length(std::string caller, std::string callee, uint64_t caller_params, uint64_t callee_params, int line_no);
 
         //! \brief Report a custom error
         //! \param from Where the error originates
@@ -69,8 +74,9 @@ namespace DEL
 
         //! \brief Report that a function doesn't have a matching return
         //! \param function The function name / details to output
+        //! \param line_no Line number
         //! \post This method is a default fatal that will trigger exit
-        void report_no_return(std::string function);
+        void report_no_return(std::string function, int line_no);
 
         //! \brief Report that a 'main' function was not found
         //! \post This method is a default fatal that will trigger exit
@@ -80,7 +86,7 @@ namespace DEL
         //! \param caller_function The function where the call originated
         //! \param callee The function being called
         //! \param is_fatal Triggers exist if true
-        void report_calls_return_value_unhandled(std::string caller_function, std::string callee, bool is_fatal=false);
+        void report_calls_return_value_unhandled(std::string caller_function, std::string callee, int line_no, bool is_fatal=false);
 
         //! \brief Report syntax error
         //! \param line Line number
@@ -106,8 +112,8 @@ namespace DEL
     private:
         DEL_Driver & driver;
 
-        void display_error_start(bool is_fatal);
-        void display_line_and_error_pointer(std::string line, int column);
+        void display_error_start(bool is_fatal, int line_no=0);
+        void display_line_and_error_pointer(std::string line, int column, bool is_fatal=true);
     };
 }
 #endif

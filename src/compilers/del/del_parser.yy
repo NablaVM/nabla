@@ -58,9 +58,9 @@
 %define api.value.type variant
 %define parse.assert
 
-%token INT REAL CHAR DEF ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
-%token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE SEMI NIL
-%token LPAREN RPAREN LBR RBR ASSIGN DOT COMMA
+%token INT REAL CHAR ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
+%token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE NIL
+%token LEFT_PAREN RIGHT_PAREN LEFT_BRACKET ASSIGN DOT COMMA
 
 %type<DEL::Element*> stmt;
 %type<DEL::Element*> assignment;
@@ -87,6 +87,9 @@
 %token <std::string> REAL_LITERAL
 %token <std::string> CHAR_LITERAL
 %token <std::string> IDENTIFIER
+%token <int>         RIGHT_BRACKET  // These tokens encode line numbers
+%token <int>         SEMI           // These tokens encode line numbers
+%token <int>         DEF            // These tokens encode line numbers
 %token               END    0     "end of file"
 %locations
 %start start
@@ -133,14 +136,14 @@ term
 factor
    : primary                     { $$ = $1; }
    | expr_function_call          { $$ = $1; }
-   | LPAREN expression RPAREN    { $$ = $2; }
+   | LEFT_PAREN expression RIGHT_PAREN    { $$ = $2; }
    | BW_NOT factor               { $$ = new DEL::AST(DEL::NodeType::BW_NOT, $2, nullptr);}
    | NEGATE factor               { $$ = new DEL::AST(DEL::NodeType::NEGATE, $2, nullptr);}
    ;
 
 expr_function_call
-   : identifiers LPAREN RPAREN             { $$ = new DEL::Call($1, c_params, nullptr, nullptr); }
-   | identifiers LPAREN call_params RPAREN { $$ = new DEL::Call($1, c_params, nullptr, nullptr); c_params.clear(); }
+   : identifiers LEFT_PAREN RIGHT_PAREN             { $$ = new DEL::Call($1, c_params, nullptr, nullptr); }
+   | identifiers LEFT_PAREN call_params RIGHT_PAREN { $$ = new DEL::Call($1, c_params, nullptr, nullptr); c_params.clear(); }
    ;
 
 primary
@@ -160,18 +163,18 @@ identifiers
    ;
 
 assignment
-   : INT  identifiers ASSIGN expression   SEMI { $$ = new DEL::Assignment(DEL::ValType::INTEGER, $2, $4); }
-   | REAL identifiers ASSIGN expression   SEMI { $$ = new DEL::Assignment(DEL::ValType::REAL,    $2, $4); }
-   | CHAR identifiers ASSIGN primary_char SEMI { $$ = new DEL::Assignment(DEL::ValType::CHAR,    $2, $4); }
+   : INT  identifiers ASSIGN expression   SEMI { $$ = new DEL::Assignment(DEL::ValType::INTEGER, $2, $4); $$->set_line_no($5); }
+   | REAL identifiers ASSIGN expression   SEMI { $$ = new DEL::Assignment(DEL::ValType::REAL,    $2, $4); $$->set_line_no($5); }
+   | CHAR identifiers ASSIGN primary_char SEMI { $$ = new DEL::Assignment(DEL::ValType::CHAR,    $2, $4); $$->set_line_no($5); }
    ;
 
 reassignment
-   : identifiers ASSIGN expression   SEMI     { $$ = new DEL::Assignment(DEL::ValType::REQ_CHECK, $1, $3); }
+   : identifiers ASSIGN expression   SEMI     { $$ = new DEL::Assignment(DEL::ValType::REQ_CHECK, $1, $3); $$->set_line_no($4); }
    ;
 
 return_stmt
-   : RETURN expression SEMI { $$ = new DEL::ReturnStmt($2); }
-   | RETURN SEMI            { $$ = new DEL::ReturnStmt();   }
+   : RETURN expression SEMI { $$ = new DEL::ReturnStmt($2); $$->set_line_no($3); }
+   | RETURN SEMI            { $$ = new DEL::ReturnStmt();   $$->set_line_no($2); }
    ;
 
 stmt
@@ -187,8 +190,8 @@ multiple_statements
    ;
 
 block 
-   : LBR multiple_statements RBR { $$ = $2; }
-   | LBR RBR                     { $$ = std::vector<DEL::Element*>(); }
+   : LEFT_BRACKET multiple_statements RIGHT_BRACKET { $$ = $2; }
+   | LEFT_BRACKET RIGHT_BRACKET                     { $$ = std::vector<DEL::Element*>(); }
    ;
 
 recv_params
@@ -216,13 +219,13 @@ value_types
    ;
 
 function_stmt
-   : DEF identifiers LPAREN RPAREN ARROW value_types block             { $$ = new DEL::Function($2, r_params, static_cast<DEL::ValType>($6), $7); }
-   | DEF identifiers LPAREN recv_params RPAREN ARROW value_types block { $$ = new DEL::Function($2, r_params, static_cast<DEL::ValType>($7), $8); r_params.clear(); }
+   : DEF identifiers LEFT_PAREN RIGHT_PAREN ARROW value_types block             { $$ = new DEL::Function($2, r_params, static_cast<DEL::ValType>($6), $7, $1); }
+   | DEF identifiers LEFT_PAREN recv_params RIGHT_PAREN ARROW value_types block { $$ = new DEL::Function($2, r_params, static_cast<DEL::ValType>($7), $8, $1); r_params.clear(); }
    ;
 
 direct_function_call
-   : identifiers LPAREN RPAREN SEMI             { $$ = new DEL::Call($1, c_params); }
-   | identifiers LPAREN call_params RPAREN SEMI { $$ = new DEL::Call($1, c_params); c_params.clear(); }
+   : identifiers LEFT_PAREN RIGHT_PAREN SEMI             { $$ = new DEL::Call($1, c_params); $$->set_line_no($4); }
+   | identifiers LEFT_PAREN call_params RIGHT_PAREN SEMI { $$ = new DEL::Call($1, c_params); $$->set_line_no($5); c_params.clear(); }
    ;
 
 

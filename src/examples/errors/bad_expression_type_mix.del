@@ -2,7 +2,7 @@
 
 def main() -> int {
 
-    nt a = 6+6-2*2
+    int a = 6+6-2*2;
 
     return;
 }
