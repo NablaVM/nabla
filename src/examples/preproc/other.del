@@ -1,0 +1,16 @@
+
+
+def func() -> nil {
+    return;
+}
+
+def funcA() -> nil {
+
+    //int g = 3.4;
+    return;
+}
+
+
+def funcB() -> nil {
+    return;
+}

@@ -1,0 +1,13 @@
+use("other.del")
+
+def moot() -> nil {
+
+    return;
+}
+
+def main() -> int {
+
+
+    return "D";
+}
+

@@ -8,8 +8,8 @@
 
 namespace DEL
 {
-   DEL_Driver::DEL_Driver() : 
-                              error_man(tracker), 
+   DEL_Driver::DEL_Driver() : error_man(*this), 
+                              preproc(error_man),
                               symbol_table(error_man, memory_man),
                               code_gen(error_man, symbol_table, memory_man),
                               analyzer(error_man, symbol_table, code_gen, memory_man)
@@ -36,9 +36,16 @@ namespace DEL
    void DEL_Driver::parse( const char * const filename )
    {
       assert( filename != nullptr );
-      std::ifstream in_file( filename );
+
+      // If this fails, things die
+      preproc.process(filename);
+
+      std::string preproc_file = preproc.get_preprocessed_filename();
+
+      std::ifstream in_file(preproc_file);
       if( ! in_file.good() )
       {
+         std::cerr << "Developer Error: Preprocessed file : " << preproc_file << " unable to be opened" << std::endl;
          exit( EXIT_FAILURE );
       }
       parse_helper( in_file );
@@ -81,7 +88,7 @@ namespace DEL
       try
       {
          parser = new DEL::DEL_Parser( (*scanner) /* scanner */, 
-                                       (*this) /* driver */ );
+                                       (*this)    /* driver  */);
       }
       catch( std::bad_alloc &ba )
       {
@@ -109,11 +116,6 @@ namespace DEL
    // ----------------------------------------------------------
    //
    // ----------------------------------------------------------
-
-   void DEL_Driver::inc_line()
-   {
-      tracker.inc_lines_tracked();
-   }
 
    void DEL_Driver::indicate_complete()
    {
@@ -190,4 +192,32 @@ namespace DEL
       // Trigger the analyzer with a function
       analyzer.build_function(function);
    }
+
+   // ----------------------------------------------------------
+   //
+   // ----------------------------------------------------------
+
+   void DEL_Driver::preproc_file_directive(std::string directive)
+   {
+      current_file_from_directive = (directive.substr(6, directive.size()));
+   }
+
+   // ----------------------------------------------------------
+   //
+   // ----------------------------------------------------------
+
+   DEL::Errors & DEL_Driver::get_error_man_ref()
+   {
+      return error_man;
+   }
+
+   // ----------------------------------------------------------
+   //
+   // ----------------------------------------------------------
+
+   DEL::Preprocessor & DEL_Driver::get_preproc_ref()
+   {
+      return preproc;
+   }
+
 }

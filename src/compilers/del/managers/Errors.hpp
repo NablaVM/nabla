@@ -3,10 +3,11 @@
 
 #include <string>
 #include <stdint.h>
-#include "Tracker.hpp"
 
 namespace DEL
 {
+    class DEL_Driver;
+
     //! \class Errors
     //! \brief This is the primary error handler for the compiler. It has a handful of specific error messages
     //!        that we can tell use to trigger fatals. I would like to extend this for different output levels.
@@ -15,8 +16,7 @@ namespace DEL
     public:
 
         //! \brief Create the error object
-        //! \param tracker The tracker object
-        Errors(Tracker & tracker);
+        Errors(DEL_Driver & driver);
 
         //! \brief Deconstruct the error object
         ~Errors();
@@ -81,11 +81,32 @@ namespace DEL
         //! \param is_fatal Triggers exist if true
         void report_calls_return_value_unhandled(std::string caller_function, std::string callee, bool is_fatal=false);
 
-    private:
-        Tracker &tracker;
+        //! \brief Report syntax error
+        //! \param line Line number
+        //! \param column Column number
+        //! \param error_message Message
+        //! \param line_in_question The line that caused the error
+        void report_syntax_error(int line, int column, std::string error_message, std::string line_in_question);
 
-        std::string get_error_start(bool is_fatal);
-        std::string get_line_no();
+        //! \brief Report that preprocessor couldn't read in a file
+        //! \param include_crumbs The file path list that lead to the file
+        //! \param file_in_question The file that couldn't be read
+        void report_preproc_file_read_fail(std::vector<std::string> include_crumbs, std::string file_in_question);
+
+        //! \brief Report include path not a directory
+        //! \param path The path that isn't a directory on the system
+        void report_preproc_include_path_not_dir(std::string path);
+
+        //! \brief Report file not found
+        //! \param info Info about why we were looking for it
+        //! \param file The file name
+        void report_preproc_file_not_found(std::string info, std::string file, std::string from);
+
+    private:
+        DEL_Driver & driver;
+
+        void display_error_start(bool is_fatal);
+        void display_line_and_error_pointer(std::string line, int column);
     };
 }
 #endif

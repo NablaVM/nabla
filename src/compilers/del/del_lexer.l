@@ -69,26 +69,33 @@ using token = DEL::DEL_Parser::token;
 "^"        { return token::POW; }
 "%"        { return token::MOD; }
 
+"{"        { return token::LBR;    }
+"}"        { return token::RBR;    }
+"("        { return token::LPAREN; }
+")"        { return token::RPAREN; }
+"="        { return token::ASSIGN; }
+"."        { return token::DOT;    }
+","        { return token::COMMA;  }
 
-"//"[^\n]*  { driver.inc_line(); }
+(@file.*)  { driver.preproc_file_directive(yytext); }
 
-"/*"([^*]|(\*+[^*/]))*\*+\/ { /* comment block */}
+\/\/.*     { /* ignore comments */ }
 
 [ \t]+      { /* Eat WS */  }
 
-[\n]+       { loc->lines(); driver.inc_line(); }
+[\n]+       { loc->lines(); }
 
 [a-zA-Z_]+  { 
                yylval->build< std::string >( yytext );
                return( token::IDENTIFIER ); 
             }
 
--?[0-9]+\.[0-9]+ {
+[0-9]+\.[0-9]+ {
                yylval->build< std::string >( yytext );
                return ( token::REAL_LITERAL );
             }
 
-[+-]?[0-9]+      {
+[0-9]+      {
                yylval->build< std::string >( yytext );
                return ( token::INT_LITERAL );
             }
