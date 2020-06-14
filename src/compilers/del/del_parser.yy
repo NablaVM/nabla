@@ -99,7 +99,7 @@ start
    ; 
 
 input
-   : function_stmt         { driver.build_function($1);  std::cout << yylineno << std::endl; }
+   : function_stmt         { driver.build_function($1); }
    | input function_stmt   { driver.build_function($2); }
    ;
 

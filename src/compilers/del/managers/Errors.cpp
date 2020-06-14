@@ -1,7 +1,6 @@
 #include "Errors.hpp"
 #include "del_driver.hpp"
 
-#include "location.hh"
 #include <libnabla/termcolor.hpp>
 
 namespace DEL

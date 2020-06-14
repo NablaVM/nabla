@@ -8,6 +8,6 @@ def moot() -> nil {
 def main() -> int {
 
 
-    return "D";
+    return 0;
 }
 

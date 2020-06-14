@@ -6,7 +6,6 @@ def func() -> nil {
 
 def funcA() -> nil {
 
-    //int g = 3.4;
     return;
 }
 
