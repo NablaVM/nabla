@@ -201,7 +201,7 @@ namespace DEL
         }
 
         if(line_number > 0)  { line_number = line_number-1; }
-        if(line_number > pre_processed_pair.size() || line_number < 0)
+        if((uint64_t)line_number > pre_processed_pair.size() || line_number < 0)
         {
             // This is a developer error
             error_man.report_custom("Preprocessor", " fetch_line requested line out of range", true);
@@ -223,7 +223,7 @@ namespace DEL
         }
 
         if(line_number > 0)  { line_number = line_number-1; }
-        if(line_number > pre_processed_pair.size() || line_number < 0)
+        if((uint64_t)line_number > pre_processed_pair.size() || line_number < 0)
         {
             // This is a developer error
             error_man.report_custom("Preprocessor", " fetch_user_line_number requested line out of range", true);

@@ -243,9 +243,9 @@ namespace DEL
         }
 
         int start = (column < 5) ? 0 : column-5;
-        int end   = (column + 5 > line.size()) ? line.size() : column+5;
+        int end   = ((uint64_t)(column + 5) > line.size()) ? line.size() : column+5;
         std::string pointer_line;
-        for(int i = 0; i < line.size(); i++)
+        for(uint64_t i = 0; i < line.size(); i++)
         {
             if(i == column)
             {
