@@ -66,6 +66,13 @@ namespace DEL
         */
     };
 
+    enum class IfType
+    {
+        IF     = 0x00,
+        ELIF   = 0x01,
+        ELSE   = 0x02
+    };
+
     // This maybe should move to another location 
     struct FunctionParam
     {

@@ -37,10 +37,11 @@ namespace TYPES
         MOD,
 
         // Load / Store
-        LOAD_BYTE,
-        STORE_BYTE,
-        LOAD_WORD,
-        STORE_WORD,
+        LOAD,
+        STORE,
+
+        // Data storage allocate
+        DS_ALLOC,
 
         CALL, // Call a function
         MOVE_ADDRESS, // Move data 
@@ -97,15 +98,16 @@ namespace TYPES
     };
 
     //
-    //  An instruction with a value that represents an address
+    //  An instruction with a value that represents an address, and a var that represents how many bytes are in that address
     //
     class AddressValueInstruction: public BaseInstruction
     {
     public:
-        AddressValueInstruction(InstructionSet instruction, uint64_t value) : 
-            BaseInstruction(instruction), value(value){}
+        AddressValueInstruction(InstructionSet instruction, uint64_t value, uint64_t bytes) : 
+            BaseInstruction(instruction), value(value), bytes(bytes){}
 
         uint64_t value;
+        uint64_t bytes;
     };
 
     //
@@ -120,6 +122,18 @@ namespace TYPES
         uint64_t destination;       // Location to
         uint64_t source;            // Location from
         uint8_t  bytes;             // Size of the thing to move   
+    };
+
+    //
+    //  An instruction that instructs allocation of data
+    //
+    class DSAllocInstruction : public BaseInstruction
+    {
+    public:
+        DSAllocInstruction(InstructionSet instruction, uint64_t bytes_to_alloc) : 
+                BaseInstruction(instruction), bytes_to_alloc(bytes_to_alloc) {}
+
+        uint64_t bytes_to_alloc;
     };
 
     //

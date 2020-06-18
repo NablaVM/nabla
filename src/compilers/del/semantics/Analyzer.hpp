@@ -36,6 +36,7 @@ namespace DEL
         void accept(Assignment &stmt) override;
         void accept(ReturnStmt &stmt) override;
         void accept(Call       &stmt) override;
+        void accept(If         &stmt) override;
 
 
     private:

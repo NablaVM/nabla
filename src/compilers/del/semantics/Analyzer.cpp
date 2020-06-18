@@ -209,11 +209,11 @@ namespace DEL
 
         Memory::MemAlloc memory_info;
 
+        bool requires_ds_allocation = true;
         bool requires_allocation_in_symbol_table = true;
         if(stmt.data_type == ValType::REQ_CHECK)
         {
             // Check that the rhs is in context and is a type that we are allowing for assignment
-            // NOTE : When functions are allowed in asssignment this will have to be updated <<<<<<<<<<<<<<<<<<
             ensure_id_in_current_context(stmt.lhs, stmt.line_no, {ValType::INTEGER, ValType::REAL, ValType::CHAR});
 
             // Now we know it exists, we set the data type to what it states in the map
@@ -224,6 +224,7 @@ namespace DEL
             memory_info = memory_man.get_mem_info(stmt.lhs);
 
             requires_allocation_in_symbol_table = false;
+            requires_ds_allocation = false;
         }
         else
         {
@@ -256,7 +257,7 @@ namespace DEL
             memory_info = memory_man.get_mem_info(stmt.lhs);
         }
 
-        intermediate_layer.issue_assignment(stmt.lhs, memory_info, classification, postfix_expression);
+        intermediate_layer.issue_assignment(stmt.lhs, requires_ds_allocation, memory_info, classification, postfix_expression);
     }
 
     // ----------------------------------------------------------
@@ -304,6 +305,78 @@ namespace DEL
         intermediate_layer.issue_direct_call(
             endecoder.encode_call(&stmt)
         );
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(If & stmt)
+    {
+        std::cout << "IF stmt line : " << stmt.line_no << std::endl;
+        switch(stmt.type)
+        {
+            case IfType::IF:
+            {
+                std::cout << "If statement : IF" << std::endl;
+
+                // Open context in codegen
+
+                // Make a var for the condition
+                // Use assignment to assign it
+
+                for(auto & el : stmt.element_list)
+                {
+
+                 //   el->visit(*this);
+                }
+
+                // Close context
+
+                // If theres a trailing elif or else
+                if(stmt.trail != nullptr)
+                {
+                    // Recurse on this accept for if statemnt
+                    stmt.trail->visit(*this);
+                }
+                break;
+            }
+            case IfType::ELIF:
+            {
+                std::cout << "If statement : ELIF" << std::endl;
+                
+                if(stmt.trail != nullptr)
+                {
+                    // Recurse on this accept for if statemnt
+                    stmt.trail->visit(*this);
+                }
+                break;
+            }
+            case IfType::ELSE:
+            {
+                std::cout << "If statement : ELSE" << std::endl;
+                break;
+            }
+            default:
+                std::cout << "If statement : DEFAULT : " << (int)stmt.type << std::endl;
+                break;
+        }
+
+        /*
+            Indicate to codgen via the intermediate that the next things on its way are part of an if statement given the expression
+                - Need to make something in intermediate to take the expression (if there is one) and then setup an eq true for the condition
+
+                The start flag here is like when we enter a function (note)
+
+            Create a context for the if statement 
+
+            visit each element of the element list
+
+            Remove the current context
+
+            check if trail is null or not. If it isn't, recurse by "accepting" that function, and this will
+            execute again!
+        */
     }
 
     // -----------------------------------------------------------------------------------------

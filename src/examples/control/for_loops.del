@@ -1,0 +1,21 @@
+
+
+def main() -> int {
+
+
+    loop() {
+
+    }
+
+
+    loop 'named () {
+
+    }
+
+    for(x) in(0, 10) step(1) {
+
+
+    }
+
+    return 0;
+}

@@ -58,7 +58,7 @@ namespace DEL
     private:
 
         // Allocate some memory. Only the symbol table accesses this
-        bool alloc_mem(std::string id, uint64_t minimum_size);
+        bool alloc_mem(std::string id, uint64_t required_size);
 
         uint64_t currently_allocated_bytes;
         std::map<std::string, MemAlloc> memory_map;

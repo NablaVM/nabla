@@ -1,6 +1,7 @@
 #include "Codegen.hpp"
 
 #include "Codeblock.hpp"
+#include "Alloc.hpp"
 #include "BlockAggregator.hpp"
 #include "LoadStore.hpp"
 #include "Operations.hpp"
@@ -78,6 +79,8 @@ namespace DEL
 
         // Create a new function object
         current_function = new CODE::Function(name, params);
+
+        current_aggregator = current_function;
     }
 
     // ----------------------------------------------------------
@@ -115,6 +118,58 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
+    void Codegen::begin_conditional()
+    {
+        conditional_contexts.push(new CODE::ConditionalContext());
+
+        // Switch the current aggregator to the conditional context
+        current_aggregator = conditional_contexts.top();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Codegen::end_conditional()
+    {
+        if(conditional_contexts.empty())
+        {
+            std::cerr << "Developer Error : Codegen asked to end a conditional, but no conditional detected" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // Get the context off of the stack
+        CODE::ConditionalContext * conditional = conditional_contexts.top();
+
+        // Pop
+        conditional_contexts.pop();
+
+        // Export the conditional as a block
+        CODE::Block * exported_block = conditional->export_as_block();
+
+        // If the stack is empty redirect the aggregator to be the current function
+        if(conditional_contexts.empty())
+        {
+            current_aggregator = current_function;
+        }
+        else
+        {
+            // Otherwise, we want the next context in the stack
+            current_aggregator = conditional_contexts.top();
+        }
+
+        // Add contents to aggregator - might be the function, might be another context
+        current_aggregator->add_block(exported_block);
+
+        // Delete the block and conditional
+        delete exported_block;
+        delete conditional;
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     void Codegen::execute_command(CODEGEN::TYPES::Command command)
     {
         // Ensure we're building a function
@@ -137,58 +192,61 @@ namespace DEL
         {
             switch(ins->instruction)
             {
-                case CODEGEN::TYPES::InstructionSet::ADD:    current_function->add_block(new CODE::Addition(command.classification));        break;                                          
-                case CODEGEN::TYPES::InstructionSet::SUB:    current_function->add_block(new CODE::Subtraction(command.classification));     break;
-                case CODEGEN::TYPES::InstructionSet::DIV:    current_function->add_block(new CODE::Division(command.classification));        break;
-                case CODEGEN::TYPES::InstructionSet::MUL:    current_function->add_block(new CODE::Multiplication(command.classification));  break;
+                case CODEGEN::TYPES::InstructionSet::ADD:    current_aggregator->add_block(new CODE::Addition(command.classification));        break;                                          
+                case CODEGEN::TYPES::InstructionSet::SUB:    current_aggregator->add_block(new CODE::Subtraction(command.classification));     break;
+                case CODEGEN::TYPES::InstructionSet::DIV:    current_aggregator->add_block(new CODE::Division(command.classification));        break;
+                case CODEGEN::TYPES::InstructionSet::MUL:    current_aggregator->add_block(new CODE::Multiplication(command.classification));  break;
 
-                case CODEGEN::TYPES::InstructionSet::RSH:    current_function->add_block(new CODE::RightShift());   break;
-                case CODEGEN::TYPES::InstructionSet::LSH:    current_function->add_block(new CODE::LeftShift());    break;
-                case CODEGEN::TYPES::InstructionSet::BW_OR:  current_function->add_block(new CODE::BwOr());         break;
-                case CODEGEN::TYPES::InstructionSet::BW_NOT: current_function->add_block(new CODE::BwNot());        break;
-                case CODEGEN::TYPES::InstructionSet::BW_XOR: current_function->add_block(new CODE::BwXor());        break;
-                case CODEGEN::TYPES::InstructionSet::BW_AND: current_function->add_block(new CODE::BwAnd());        break;
+                case CODEGEN::TYPES::InstructionSet::RSH:    current_aggregator->add_block(new CODE::RightShift());   break;
+                case CODEGEN::TYPES::InstructionSet::LSH:    current_aggregator->add_block(new CODE::LeftShift());    break;
+                case CODEGEN::TYPES::InstructionSet::BW_OR:  current_aggregator->add_block(new CODE::BwOr());         break;
+                case CODEGEN::TYPES::InstructionSet::BW_NOT: current_aggregator->add_block(new CODE::BwNot());        break;
+                case CODEGEN::TYPES::InstructionSet::BW_XOR: current_aggregator->add_block(new CODE::BwXor());        break;
+                case CODEGEN::TYPES::InstructionSet::BW_AND: current_aggregator->add_block(new CODE::BwAnd());        break;
 
-                case CODEGEN::TYPES::InstructionSet::LTE:    current_function->add_block(new CODE::Lte(label_id++, command.classification)); break;
-                case CODEGEN::TYPES::InstructionSet::LT:     current_function->add_block(new CODE::Lt (label_id++, command.classification)); break;
-                case CODEGEN::TYPES::InstructionSet::GTE:    current_function->add_block(new CODE::Gte(label_id++, command.classification)); break;
-                case CODEGEN::TYPES::InstructionSet::GT:     current_function->add_block(new CODE::Gt (label_id++, command.classification)); break;
-                case CODEGEN::TYPES::InstructionSet::EQ:     current_function->add_block(new CODE::Eq (label_id++, command.classification)); break;
-                case CODEGEN::TYPES::InstructionSet::NE:     current_function->add_block(new CODE::Neq(label_id++, command.classification)); break;
-                case CODEGEN::TYPES::InstructionSet::OR:     current_function->add_block(new CODE::Or (label_id++, command.classification)); break;
-                case CODEGEN::TYPES::InstructionSet::AND:    current_function->add_block(new CODE::And(label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::LTE:    current_aggregator->add_block(new CODE::Lte(label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::LT:     current_aggregator->add_block(new CODE::Lt (label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::GTE:    current_aggregator->add_block(new CODE::Gte(label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::GT:     current_aggregator->add_block(new CODE::Gt (label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::EQ:     current_aggregator->add_block(new CODE::Eq (label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::NE:     current_aggregator->add_block(new CODE::Neq(label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::OR:     current_aggregator->add_block(new CODE::Or (label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::AND:    current_aggregator->add_block(new CODE::And(label_id++, command.classification)); break;
 
-                case CODEGEN::TYPES::InstructionSet::NEGATE: current_function->add_block(new CODE::Negate(label_id++, command.classification)); break;
+                case CODEGEN::TYPES::InstructionSet::NEGATE: current_aggregator->add_block(new CODE::Negate(label_id++, command.classification)); break;
 
-                case CODEGEN::TYPES::InstructionSet::CALL:   current_function->add_block(new CODE::Call(static_cast<CODEGEN::TYPES::CallInstruction*>(ins))); break;
+                case CODEGEN::TYPES::InstructionSet::CALL:   current_aggregator->add_block(new CODE::Call(static_cast<CODEGEN::TYPES::CallInstruction*>(ins))); break;
 
-                case CODEGEN::TYPES::InstructionSet::LOAD_BYTE:  current_function->add_block(new CODE::Load(CODE::SizeClassification::BYTE, static_cast<CODEGEN::TYPES::AddressValueInstruction*>(ins))); break;
-                case CODEGEN::TYPES::InstructionSet::LOAD_WORD:  current_function->add_block(new CODE::Load(CODE::SizeClassification::WORD, static_cast<CODEGEN::TYPES::AddressValueInstruction*>(ins))); break;
+                case CODEGEN::TYPES::InstructionSet::LOAD:  current_aggregator->add_block(new CODE::Load(static_cast<CODEGEN::TYPES::AddressValueInstruction*>(ins))); break;
 
-                case CODEGEN::TYPES::InstructionSet::STORE_BYTE: current_function->add_block(new CODE::Store(CODE::SizeClassification::BYTE, command.memory_info.start_pos, command.id)); break;
-                case CODEGEN::TYPES::InstructionSet::STORE_WORD: current_function->add_block(new CODE::Store(CODE::SizeClassification::WORD, command.memory_info.start_pos, command.id)); break;
+                case CODEGEN::TYPES::InstructionSet::STORE: current_aggregator->add_block(new CODE::Store(command.memory_info.start_pos, command.memory_info.bytes_requested, command.id)); break;
  
-                case CODEGEN::TYPES::InstructionSet::MOVE_ADDRESS: current_function->add_block(new CODE::MoveAddress(static_cast<CODEGEN::TYPES::MoveInstruction*>(ins))); break;
+                case CODEGEN::TYPES::InstructionSet::MOVE_ADDRESS: current_aggregator->add_block(new CODE::MoveAddress(static_cast<CODEGEN::TYPES::MoveInstruction*>(ins))); break;
 
-                case CODEGEN::TYPES::InstructionSet::USE_RAW: current_function->add_block(new CODE::SetupPrimitive(command.id, static_cast<CODEGEN::TYPES::RawValueInstruction*>(ins))); break;
+                case CODEGEN::TYPES::InstructionSet::USE_RAW: current_aggregator->add_block(new CODE::SetupPrimitive(command.id, static_cast<CODEGEN::TYPES::RawValueInstruction*>(ins))); break;
 
                 case CODEGEN::TYPES::InstructionSet::POW:
                 {
                     std::string function_name;
                     generator.include_builtin_math_pow(command.classification, function_name);
-                    current_function->add_block(new CODE::BuiltIn("POW", function_name));
+                    current_aggregator->add_block(new CODE::BuiltIn("POW", function_name));
                     break;
                 }
                 case CODEGEN::TYPES::InstructionSet::MOD:
                 {
                     std::string function_name;
                     generator.include_builtin_math_mod(command.classification, function_name);
-                    current_function->add_block(new CODE::BuiltIn("MOD", function_name));
+                    current_aggregator->add_block(new CODE::BuiltIn("MOD", function_name));
                     break;
                 }
                 case CODEGEN::TYPES::InstructionSet::RETURN:
                 {
                     current_function->build_return();
+                    break;
+                }
+                case CODEGEN::TYPES::InstructionSet::DS_ALLOC:
+                {
+                    current_aggregator->add_block(new CODE::DSAllocate(static_cast<CODEGEN::TYPES::DSAllocInstruction*>(ins), command.memory_info.start_pos)); break;
                     break;
                 }
                 default:

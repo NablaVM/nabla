@@ -28,7 +28,7 @@ namespace CODE
 
             std::stringstream ss;
 
-            code.push_back(std::string(NLT) + "; <<< SETUP PRIMITIVE VARIABLE >>> " + std::string(NL));
+            code.push_back(std::string(NL) + std::string(NLT) + "; <<< SETUP PRIMITIVE VARIABLE >>> " + std::string(NL));
 
             // Build the value into r0
             std::vector<std::string> store_ins = load_64_into_r0(ins->value, id);

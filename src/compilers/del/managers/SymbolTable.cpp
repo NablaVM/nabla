@@ -198,9 +198,9 @@ namespace DEL
         uint64_t mem_request = 0;
         switch(type)
         {
-        case ValType::INTEGER:       mem_request = (memory == 0) ? 8 : memory; break; // Primitives always get a WORD by default
-        case ValType::REAL:          mem_request = (memory == 0) ? 8 : memory; break; // Primitives always get a WORD by default
-        case ValType::CHAR:          mem_request = (memory == 0) ? 8 : memory; break; // Primitives always get a WORD by default
+        case ValType::INTEGER:       mem_request = (memory == 0) ? SETTINGS::SYSTEM_WORD_SIZE_BYTES : memory; break; // Primitives always get a WORD by default
+        case ValType::REAL:          mem_request = (memory == 0) ? SETTINGS::SYSTEM_WORD_SIZE_BYTES : memory; break; // Primitives always get a WORD by default
+        case ValType::CHAR:          mem_request = (memory == 0) ? SETTINGS::SYSTEM_WORD_SIZE_BYTES : memory; break; // Primitives always get a WORD by default
         case ValType::FUNCTION:      error_man.report_custom("SymbolTable", " FUNCTION given to symbol table", true);
         case ValType::REQ_CHECK:     error_man.report_custom("SymbolTable", " REQ CHECK given to symbol table", true);
         case ValType::NONE:          return;

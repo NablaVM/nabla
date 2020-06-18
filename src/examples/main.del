@@ -1,33 +1,22 @@
 
 
-//def some_routine() -> nil {
-//
-//  return;
-//}
-
-// Parameters are passed given an address and loaded when needed.
-// This also means that an operation done on a parameter will be reflected elsewhere
-
 def some_routine() -> nil {
 
   return;
 }
 
+
 def do_math(int someint) -> int {
 
-  int b = 10;
-
-  return 3 + b; //3 + b;
+  return 3 + someint; 
 }
 
 
 def main() -> int {
 
-  int a = 3;
+  int a = 2 + 5;    // 7
 
-  int b = 3 + do_math(a);
-
-  some_routine();
+  int b = 3 + do_math(a) + 7 - 10; // 3 + do_math(7)
 
   return 0;
 }

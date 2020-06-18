@@ -10,6 +10,9 @@
 #include "CodegenTypes.hpp"
 #include "Generator.hpp"
 #include "Function.hpp"
+#include "ConditionalContext.hpp"
+
+#include <stack>
 
 namespace DEL
 {
@@ -41,6 +44,10 @@ namespace DEL
         //! \post The code generator will be ready to begin another function
         void end_function();
 
+        void begin_conditional();
+
+        void end_conditional();
+
         //! \brief Generate something based on a command
         //! \param command The instructions used to generate code
         void execute_command(CODEGEN::TYPES::Command command);
@@ -61,7 +68,16 @@ namespace DEL
         std::vector<std::string> program_init;
         std::vector<std::string> program_instructions;
 
+        // A function being generated (an aggregator)
         CODE::Function * current_function;
+
+        // Directs block generation to destination for aggregation
+        CODE::BlockAggregator * current_aggregator;
+
+        // As conditional statements come in they are pushed into this stack
+        // so we can have nested conditionals handled as they need to be.
+        // ConditionalContext objects are BlockAggregators
+        std::stack<CODE::ConditionalContext*> conditional_contexts;
     };
 }
 

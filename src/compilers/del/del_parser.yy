@@ -60,12 +60,15 @@
 
 %token INT REAL CHAR ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE NIL
-%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA
+%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA IF ELIF
 
 %type<DEL::Element*> stmt;
 %type<DEL::Element*> assignment;
 %type<DEL::Element*> reassignment;
 %type<DEL::Element*> return_stmt;
+%type<DEL::Element*> if_stmt;
+%type<DEL::Element*> elif_stmt;
+%type<DEL::Element*> else_stmt;
 %type<DEL::Element*> direct_function_call;
 %type<DEL::Function*> function_stmt;
 %type<std::string> identifiers;
@@ -91,6 +94,7 @@
 %token <int>         RIGHT_PAREN    // These tokens encode line numbers
 %token <int>         SEMI           // These tokens encode line numbers
 %token <int>         DEF            // These tokens encode line numbers
+%token <int>         ELSE           // These tokens encode line numbers
 %token               END    0     "end of file"
 %locations
 %start start
@@ -179,11 +183,28 @@ return_stmt
    | RETURN SEMI            { $$ = new DEL::ReturnStmt();   $$->set_line_no($2); }
    ;
 
+if_stmt
+   : IF LEFT_PAREN expression RIGHT_PAREN block elif_stmt { $$ = new DEL::If(DEL::IfType::IF, $3, $5, $6, $4);      }
+   | IF LEFT_PAREN expression RIGHT_PAREN block else_stmt { $$ = new DEL::If(DEL::IfType::IF, $3, $5, $6, $4);      }
+   | IF LEFT_PAREN expression RIGHT_PAREN block           { $$ = new DEL::If(DEL::IfType::IF, $3, $5, nullptr, $4); }
+   ;
+
+elif_stmt
+   : ELIF LEFT_PAREN expression RIGHT_PAREN block elif_stmt  { $$ = new DEL::If(DEL::IfType::ELIF, $3, $5, $6, $4);      }
+   | ELIF LEFT_PAREN expression RIGHT_PAREN block else_stmt  { $$ = new DEL::If(DEL::IfType::ELIF, $3, $5, $6, $4);      }
+   | ELIF LEFT_PAREN expression RIGHT_PAREN block            { $$ = new DEL::If(DEL::IfType::ELIF, $3, $5, nullptr, $4); }
+   ;
+
+else_stmt
+   : ELSE block   { $$ = new DEL::If(DEL::IfType::ELSE, nullptr, $2, nullptr, $1); }
+   ;
+
 stmt
    : assignment    { $$ = $1; }
    | reassignment  { $$ = $1; }
    | return_stmt   { $$ = $1; }
    | direct_function_call { $$ = $1;}
+   | if_stmt { $$ = $1; }
    ;
 
 multiple_statements

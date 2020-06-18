@@ -1,0 +1,18 @@
+
+
+object MyObject {
+
+
+}
+
+pub MyObject::create() {
+
+}
+
+pub MyObject::destroy() {
+
+}
+
+priv MyObject::do_something() {
+
+}

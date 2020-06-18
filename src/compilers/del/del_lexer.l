@@ -42,7 +42,12 @@ using token = DEL::DEL_Parser::token;
 "nil"       { return token::NIL;    }
 "->"        { return token::ARROW;  }
 "return"    { return token::RETURN; }
-
+"if"        { return token::IF;     }
+"elif"      { return token::ELIF;   }
+"else"      { 
+               yylval->build< int >( yylineno );
+               return ( token::ELSE );    
+            }
 
 "<="       { return token::LTE;    }
 "<"        { return token::LT;     }

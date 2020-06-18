@@ -84,6 +84,25 @@ namespace DEL
     };
 
     //
+    //  If statement
+    //
+    class If : public Element
+    {
+    public:
+        If(IfType type, AST * expr, ElementList elements, Element * trail, int line) : type(type), expr(expr), element_list(elements), trail(trail)
+        {
+            line_no = line;
+        }
+
+        virtual void visit(Visitor &visit) override;
+
+        IfType type;
+        AST * expr;
+        ElementList element_list;
+        Element * trail;
+    };
+
+    //
     //  A return statement
     //
     class ReturnStmt : public Element
@@ -154,9 +173,8 @@ namespace DEL
         virtual void accept(Assignment &stmt) = 0;
         virtual void accept(ReturnStmt &stmt) = 0;
         virtual void accept(Call       &stmt) = 0;
+        virtual void accept(If         &stmt) = 0;
     };
-
-
 }
 
 #endif
