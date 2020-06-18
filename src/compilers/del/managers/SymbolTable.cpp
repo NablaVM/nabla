@@ -34,17 +34,7 @@ namespace DEL
 
         if(remove_previous)
         {
-            std::cout << "Contexts size : " << contexts.size() << std::endl;
-            
-            // Don't allow the removal of the global context
-            if(contexts.size() > 1)
-            {
-                std::cout << "If you're seeing this, its the first time you've attempted to delete a context" << std::endl;
-
-                Context * ciq = contexts.back();
-                delete ciq;
-                contexts.pop_back();
-            }
+            remove_current_context();
         }
 
         contexts.push_back(new Context(name));
@@ -144,6 +134,28 @@ namespace DEL
             }
         }
         error_man.report_custom("SymbolTable", "Developer error: Asked to clear existing context, but that context did not exist", true);
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void SymbolTable::remove_current_context()
+    {
+        // Don't allow the removal of the global context
+        if(contexts.size() > 1)
+        {
+            Context * ciq = contexts.back();
+
+            // Remove symbols from map for reuse
+            for(auto & el : ciq->symbol_map)
+            {
+                memory_man.remove_item(el.first);
+            }
+
+            delete ciq;
+            contexts.pop_back();
+        }
     }
 
     // ----------------------------------------------------------
@@ -339,6 +351,32 @@ namespace DEL
     std::string SymbolTable::generate_unique_variable_symbol()
     {
         return generate_unique("__artifical__variable__");
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    std::string SymbolTable::generate_unique_context()
+    {
+        std::string start = "__artificial__context__";
+        std::string context_name = start + std::to_string(unique_counter);
+
+        uint64_t stop_count = 0;
+        while(does_context_exist(context_name))
+        {
+            unique_counter++;
+            context_name = start + std::to_string(unique_counter);
+
+            stop_count++;
+            if(stop_count == 2048)
+            {
+                error_man.report_custom("SymbolTable", "2048 Attempts were made to generate a unique context. If you're seeing this, you're doing something silly. Stop it.", true);
+            }
+        }
+        unique_counter++;
+
+        return context_name;
     }
 
     // ----------------------------------------------------------

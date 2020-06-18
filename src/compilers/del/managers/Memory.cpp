@@ -74,6 +74,18 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
+    void Memory::remove_item(std::string id)
+    {
+        if(is_id_mapped(id))
+        {
+            memory_map.erase(memory_map.find(id));
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     bool Memory::alloc_mem(std::string id, uint64_t required_size)
     {
         if((currently_allocated_bytes + required_size) > MAX_GLOBAL_MEMORY )

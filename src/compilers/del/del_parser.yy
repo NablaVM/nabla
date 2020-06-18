@@ -196,7 +196,14 @@ elif_stmt
    ;
 
 else_stmt
-   : ELSE block   { $$ = new DEL::If(DEL::IfType::ELSE, nullptr, $2, nullptr, $1); }
+   : ELSE block   { $$ = new DEL::If(DEL::IfType::ELSE, 
+                                     new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::INTEGER, "1"), 
+                                     $2, 
+                                     nullptr, 
+                                     $1); 
+                     // We create an "always true" statement so we can leverage elseif code, while still
+                     // treating this as an "else"
+                  }
    ;
 
 stmt

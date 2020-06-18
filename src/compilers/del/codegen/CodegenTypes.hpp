@@ -147,6 +147,17 @@ namespace TYPES
         DataClassification classification;
         std::vector<BaseInstruction*> instructions;
     };
+
+    //
+    //  Information for starting a conditional
+    //
+    class ConditionalInitiation
+    {
+    public:
+        ConditionalInitiation(Memory::MemAlloc memory_info) : mem_info(memory_info){}
+
+        Memory::MemAlloc mem_info;
+    };
 }
 }
 }

@@ -36,6 +36,17 @@ namespace DEL
         //! \brief Mark a null return
         void issue_null_return();
 
+        //! \brief Issue a conditional context
+        //! \param memory_info The memory info for the condition that determines our entry into the conditional
+        void issue_start_conditional_context(Memory::MemAlloc memory_info);
+
+        //! \brief Issue a trailing elif conditional
+        //! \param memory_info The memory info for the condition that determines our entry into the conditional
+        void issue_trailed_context(Memory::MemAlloc memory_info);
+
+        //! \brief Issue an end to the conditional context
+        void issue_end_conditional_context();
+
         //! \brief Issue a call outside of an expression 
         //! \param encoded_call A call instruction encoded by EnDecode
         void issue_direct_call(std::string encoded_call);

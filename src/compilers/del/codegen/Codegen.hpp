@@ -44,8 +44,15 @@ namespace DEL
         //! \post The code generator will be ready to begin another function
         void end_function();
 
-        void begin_conditional();
+        //! \brief Mark the start of a conditional  (if)
+        //! \param conditional_init The information for the initiation of a conditional
+        void begin_conditional(CODEGEN::TYPES::ConditionalInitiation conditional_init);
 
+        //! \brief Extend the current conditional with a chained statement (elseif/else)
+        //! \param coniditional_init The information for the next initiiation of a conditional
+        void extend_conditional(CODEGEN::TYPES::ConditionalInitiation conditional_init);
+
+        //! \brief End a conditional
         void end_conditional();
 
         //! \brief Generate something based on a command

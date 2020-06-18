@@ -118,6 +118,33 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
+    void Intermediate::issue_start_conditional_context(Memory::MemAlloc memory_info )
+    {
+        code_gen.begin_conditional(CODEGEN::TYPES::ConditionalInitiation(memory_info));
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Intermediate::issue_trailed_context(Memory::MemAlloc memory_info)
+    {
+        code_gen.extend_conditional(CODEGEN::TYPES::ConditionalInitiation(memory_info));
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Intermediate::issue_end_conditional_context()
+    {
+        code_gen.end_conditional();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     void Intermediate::issue_direct_call(std::string encoded_call)
     {
         // Create the command

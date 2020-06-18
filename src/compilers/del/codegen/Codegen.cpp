@@ -118,12 +118,23 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Codegen::begin_conditional()
+    void Codegen::begin_conditional(CODEGEN::TYPES::ConditionalInitiation conditional_init)
     {
-        conditional_contexts.push(new CODE::ConditionalContext());
+        conditional_contexts.push(new CODE::ConditionalContext(conditional_init));
 
         // Switch the current aggregator to the conditional context
         current_aggregator = conditional_contexts.top();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Codegen::extend_conditional(CODEGEN::TYPES::ConditionalInitiation conditional_init)
+    {
+        // Extend the current conditional context with the information given
+        // Aggregator should not change here
+        conditional_contexts.top()->extend_context(conditional_init);
     }
 
     // ----------------------------------------------------------
@@ -144,7 +155,7 @@ namespace DEL
         // Pop
         conditional_contexts.pop();
 
-        // Export the conditional as a block
+        // Export the conditional as a block - It will be consumed (and deleted by) current_aggregator
         CODE::Block * exported_block = conditional->export_as_block();
 
         // If the stack is empty redirect the aggregator to be the current function
@@ -161,8 +172,7 @@ namespace DEL
         // Add contents to aggregator - might be the function, might be another context
         current_aggregator->add_block(exported_block);
 
-        // Delete the block and conditional
-        delete exported_block;
+        // Delete the conditional
         delete conditional;
     }
 

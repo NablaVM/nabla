@@ -48,6 +48,11 @@ namespace DEL
         //! \returns Bytes allocated for function
         uint64_t get_currently_allocated_bytes_amnt() const;
 
+        //! \brief Remove a particular id
+        //! \param Removes symbol from table if it exists while keeping its impact on the 
+        //!        number of bytes allocated to ensure no errors in writing memory locations
+        void remove_item(std::string id);
+
         //! \brief Clear the memory map of all contents and reset the position counter
         //! \note This is called by the Analyzer as soon as a function is done generating
         void reset();

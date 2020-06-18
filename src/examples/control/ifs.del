@@ -3,28 +3,19 @@
 
 def main() -> nil {
 
-
     int a = 0;
-    int b = 1;
-    int c = 0;
-    int d = 0;
+    int b = 0;
 
-
-    if (1) 
+    if(a)
     {
-        
-    } 
-    elif (b) 
+    }
+    elif(!b)
     {
-
-    } 
-    elif (c) 
+        int c = 4;
+    }
+    else
     {
-
-    } 
-    else 
-    {
-        
+        int c = 9;
     }
 
     return;

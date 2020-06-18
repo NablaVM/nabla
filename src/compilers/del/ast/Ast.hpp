@@ -96,10 +96,16 @@ namespace DEL
 
         virtual void visit(Visitor &visit) override;
 
+        void set_var_name(std::string var)
+        {
+            var_name = var;
+        }
+
         IfType type;
         AST * expr;
         ElementList element_list;
         Element * trail;
+        std::string var_name;
     };
 
     //

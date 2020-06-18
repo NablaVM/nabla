@@ -120,6 +120,8 @@ namespace DEL
             error_man.report_previously_declared(function->name, function->line_no);
         }
 
+        symbol_table.new_context(function->name);
+
         // Check for 'main'
         if(function->name == "main")
         {
@@ -136,7 +138,6 @@ namespace DEL
 
         // Create function context
         // Don't remove previous context.. we clear the variables out later
-        symbol_table.new_context(function->name, false );
 
         // Place function parameters into context
         for(auto & p : function->params)
@@ -205,7 +206,6 @@ namespace DEL
             If this is active, we need to ensure it exists in reach and ensure that the type 
             allows us to do assignments. 
         */
-
 
         Memory::MemAlloc memory_info;
 
@@ -313,79 +313,122 @@ namespace DEL
 
     void Analyzer::accept(If & stmt)
     {
-        std::cout << "IF stmt line : " << stmt.line_no << std::endl;
+        If * if_ptr = & stmt;
+
+        std::string artificial_context = symbol_table.generate_unique_context();
+        symbol_table.new_context(artificial_context, false );
+
+        // Setup variables for conditions
+        while(if_ptr != nullptr)
+        {
+            std::string if_condition_variable = symbol_table.generate_unique_variable_symbol();
+
+            // Attempt to determine the type of the expression
+            ValType condition_type = determine_expression_type(if_ptr->expr, if_ptr->expr, true, if_ptr->line_no);
+
+            std::string value = (condition_type == ValType::REAL) ? "0.0" : "0";
+            DEL::AST * artificial_value = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, condition_type, value);
+            DEL::AST * artificial_check = new DEL::AST(DEL::NodeType::GT , if_ptr->expr, artificial_value);
+
+            // Create an assignment for the conditional 
+            Assignment * c_assign = new Assignment(condition_type, if_condition_variable, artificial_check);
+
+            c_assign->line_no = if_ptr->line_no;
+            c_assign->visit(*this);
+
+            delete artificial_value;
+            delete artificial_check;
+            delete c_assign;
+
+            if_ptr->set_var_name(if_condition_variable);
+
+            // Inc the if_ptr to its trail. Check for nullptr so we dont attempt to stati cast nothing
+            if_ptr = (if_ptr->trail == nullptr) ? nullptr : static_cast<If*>(if_ptr->trail);
+        }
+
+        // Now that the conditionals are set, we can build the if statements
+        build_if_stmt(stmt);
+
+        // Remove the current context from the symbol table
+        // This will remove all elements allocated by id from the memory manager as well
+        // while preserving their id incs. 
+        symbol_table.remove_current_context();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::build_if_stmt(If & stmt)
+    {
         switch(stmt.type)
         {
             case IfType::IF:
             {
-                std::string if_condition_variable = symbol_table.generate_unique_variable_symbol();
+                std::string artificial_context = symbol_table.generate_unique_context();
 
-                // Attempt to determine the type of the expression
-                ValType condition_type = determine_expression_type(stmt.expr, stmt.expr, true, stmt.line_no);
+                // Create an artificial context in symbol table for the current if statement
+                symbol_table.new_context(artificial_context, false );
 
-                std::cout << "Determined type to be : " << ValType_to_string(condition_type) << std::endl;
+                // Initiate the start of the conditional - memory should have been assigned to the variable by the assignment above
+                intermediate_layer.issue_start_conditional_context(memory_man.get_mem_info(stmt.var_name));
 
-                error_man.report_custom("IF STATEMENT STOP ANALYZER", " >>>>> WE ARE STOPPING NOW THANKS ", true);
-
-                std::cout << "If statement : IF" << std::endl;
-
-                // Open context in codegen
-
-                // Make a var for the condition
-                // Use assignment to assign it
-
+                // Visit all statements in the conditional
                 for(auto & el : stmt.element_list)
                 {
-
-                 //   el->visit(*this);
+                    el->visit(*this);
                 }
 
-                // Close context
+                // Remove the current context from the symbol table
+                // This will remove all elements allocated by id from the memory manager as well
+                // while preserving their id incs. 
+                symbol_table.remove_current_context();
 
                 // If theres a trailing elif or else
                 if(stmt.trail != nullptr)
                 {
-                    // Recurse on this accept for if statemnt
-                    stmt.trail->visit(*this);
+                    If * ifp = static_cast<If*>(stmt.trail);
+                    build_if_stmt(*ifp);
                 }
                 break;
             }
             case IfType::ELIF:
-            {
-                std::cout << "If statement : ELIF" << std::endl;
-                
-                if(stmt.trail != nullptr)
-                {
-                    // Recurse on this accept for if statemnt
-                    stmt.trail->visit(*this);
-                }
-                break;
-            }
             case IfType::ELSE:
             {
-                std::cout << "If statement : ELSE" << std::endl;
-                break;
+                std::string artificial_context = symbol_table.generate_unique_context();
+
+                // Create an artificial context in symbol table for the current if statement
+                symbol_table.new_context(artificial_context, false );
+
+                // Initiate the start of the conditional - memory should have been assigned to the variable by the assignment above
+                intermediate_layer.issue_trailed_context(memory_man.get_mem_info(stmt.var_name));
+
+                // Visit all statements in the conditional
+                for(auto & el : stmt.element_list)
+                {
+                    el->visit(*this);
+                }
+
+                // Remove the current context from the symbol table
+                // This will remove all elements allocated by id from the memory manager as well
+                // while preserving their id incs. 
+                symbol_table.remove_current_context();
+
+                if(stmt.trail != nullptr)
+                {
+                    If * ifp = static_cast<If*>(stmt.trail);
+                    build_if_stmt(*ifp);
+                }
+                return;
             }
             default:
                 std::cout << "If statement : DEFAULT : " << (int)stmt.type << std::endl;
-                break;
+                return;
         }
 
-        /*
-            Indicate to codgen via the intermediate that the next things on its way are part of an if statement given the expression
-                - Need to make something in intermediate to take the expression (if there is one) and then setup an eq true for the condition
-
-                The start flag here is like when we enter a function (note)
-
-            Create a context for the if statement 
-
-            visit each element of the element list
-
-            Remove the current context
-
-            check if trail is null or not. If it isn't, recurse by "accepting" that function, and this will
-            execute again!
-        */
+        // Mark that we are done with the if/elif/else chains. For this to work, we have to BREAK from base IF, and RETURN
+        // from the trailing elif / else checks (I think)
+        intermediate_layer.issue_end_conditional_context();
     }
 
     // -----------------------------------------------------------------------------------------
@@ -571,7 +614,7 @@ namespace DEL
         switch(ast->node_type)
         {
             case NodeType::ID  : 
-            { 
+            {
                 // Ensure the ID is within current context. Allowing any type
                 ensure_id_in_current_context(ast->value, line_no, {});
 

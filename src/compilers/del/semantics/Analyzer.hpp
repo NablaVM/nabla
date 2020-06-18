@@ -49,6 +49,8 @@ namespace DEL
 
         void validate_call(Call & stmt);
 
+        void build_if_stmt(If & stmt);
+
         // Given an expression attempt to determine the type that should result from its execution
         ValType determine_expression_type(AST * ast, AST * traverse, bool left_traversal, int line_no);
 
