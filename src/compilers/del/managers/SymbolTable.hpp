@@ -93,6 +93,10 @@ namespace DEL
         //! \returns Unique symbol to use as a call parameter in a call
         std::string generate_unique_call_param_symbol();
 
+        //! \brief Generate a unique symbol for an artificial variable
+        //! \returns Unique symbol to use as a variable name
+        std::string generate_unique_variable_symbol();
+
         friend Codegen;
 
     private:

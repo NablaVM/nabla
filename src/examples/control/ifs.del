@@ -10,13 +10,20 @@ def main() -> nil {
     int d = 0;
 
 
-    if(a) {
+    if (1) 
+    {
         
-    } elif (b) {
+    } 
+    elif (b) 
+    {
 
-    } elif (c) {
+    } 
+    elif (c) 
+    {
 
-    } else {
+    } 
+    else 
+    {
         
     }
 

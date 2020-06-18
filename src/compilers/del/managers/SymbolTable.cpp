@@ -336,6 +336,15 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
+    std::string SymbolTable::generate_unique_variable_symbol()
+    {
+        return generate_unique("__artifical__variable__");
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     std::string SymbolTable::generate_unique(std::string start)
     {
         std::string unique_label = start + std::to_string(unique_counter);

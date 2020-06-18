@@ -318,6 +318,15 @@ namespace DEL
         {
             case IfType::IF:
             {
+                std::string if_condition_variable = symbol_table.generate_unique_variable_symbol();
+
+                // Attempt to determine the type of the expression
+                ValType condition_type = determine_expression_type(stmt.expr, stmt.expr, true, stmt.line_no);
+
+                std::cout << "Determined type to be : " << ValType_to_string(condition_type) << std::endl;
+
+                error_man.report_custom("IF STATEMENT STOP ANALYZER", " >>>>> WE ARE STOPPING NOW THANKS ", true);
+
                 std::cout << "If statement : IF" << std::endl;
 
                 // Open context in codegen
@@ -461,6 +470,49 @@ namespace DEL
                 std::cerr << "Parameter \"" << stmt.params[i].id << "\" does not match expected type in paramter list of function \"" << stmt.name << "\"" << std::endl;
                 error_man.report_unallowed_type(stmt.params[i].id, stmt.line_no, true);
             }
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    ValType Analyzer::determine_expression_type(AST * ast, AST * traverse, bool left, int line_no)
+    {
+        if(ast->node_type == NodeType::VAL)
+        {
+            return ast->val_type;
+        }
+        else if (ast->node_type == NodeType::ID)
+        {
+            return get_id_type(ast->value, line_no);
+        }
+        else if (ast->node_type == NodeType::CALL)
+        {
+            Call * call = static_cast<Call*>(ast);
+            return call->val_type;
+        }
+
+        if(left)
+        {
+            // This should never happen, but we handle it just in case
+            if(ast->l == nullptr)
+            {
+                return determine_expression_type(traverse, traverse, false, line_no);
+            }
+
+            // Go down left side - we only need to traverse one side
+            return determine_expression_type(ast->l, traverse, true, line_no);
+        }
+        else
+        {
+            // This REALLY should't happen.
+            if(ast->r == nullptr)
+            {
+                error_man.report_custom("Analyzer::determine_expression_type()", " Developer error : Failed to determine expression type", true);
+            }
+
+            return determine_expression_type(ast->r, traverse, false, line_no);
         }
     }
 

@@ -49,6 +49,9 @@ namespace DEL
 
         void validate_call(Call & stmt);
 
+        // Given an expression attempt to determine the type that should result from its execution
+        ValType determine_expression_type(AST * ast, AST * traverse, bool left_traversal, int line_no);
+
         // Check that a given value is valid within the scope of an assignment 
         void check_value_is_valid_for_assignment(int line_no, ValType type_to_check, INTERMEDIATE::TYPES::AssignmentClassifier & classifier, ValType & assignee_type, std::string & id);
 
