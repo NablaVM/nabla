@@ -49,6 +49,9 @@ namespace DEL
         // Add the start-up function
         asm_support.import_init_func(o);
 
+        // Add the store / load functions
+        asm_support.import_sl_funcs(o);
+
         // Add any built-in code that was triggerd to be added
         o.insert(o.end(), built_ins_triggered.begin(), built_ins_triggered.end());
 

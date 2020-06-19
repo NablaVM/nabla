@@ -30,6 +30,7 @@ set(DEL_COMPILER_HEADERS
     ${DEL_COMPILER_DIR}/codegen/Codegen.hpp
     ${DEL_COMPILER_DIR}/codegen/Generator.hpp
     ${DEL_COMPILER_DIR}/codegen/asm/AsmMath.hpp
+    ${DEL_COMPILER_DIR}/codegen/asm/AsmStoreLoad.hpp
     ${DEL_COMPILER_DIR}/codegen/asm/AsmSupport.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/Alloc.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/BlockAggregator.hpp

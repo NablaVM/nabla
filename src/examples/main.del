@@ -1,22 +1,10 @@
 
-
-def some_routine() -> nil {
-
-  return;
-}
-
-
-def do_math(int someint) -> int {
-
-  return 3 + someint; 
-}
-
-
 def main() -> int {
 
-  int a = 2 + 5;    // 7
+  int a = 2 + 5;    
 
-  int b = 3 + do_math(a) + 7 - 10; // 3 + do_math(7)
+  int b = a + 3;
 
+  int c = b + 20;
   return 0;
 }

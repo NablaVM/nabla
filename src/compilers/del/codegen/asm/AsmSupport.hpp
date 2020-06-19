@@ -36,6 +36,10 @@ namespace DEL
         //! \param destination [out] The vector to place the code
         void import_init_func(std::vector<std::string> & destination);
 
+        //! \brief Import the ASM code for store/load operations
+        //! \param destination [out] The vector to place the code
+        void import_sl_funcs(std::vector<std::string> & destination);
+        
         //! \brief Import a math module
         //! \param math_import The module to import
         //! \param function_name_out [out] The name of the function the caller can use to access the imported function
@@ -56,6 +60,7 @@ namespace DEL
         {
             bool start;
             bool func;
+            bool store_load;
         };
         InitImport init_import;
 

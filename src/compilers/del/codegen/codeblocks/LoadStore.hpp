@@ -7,6 +7,11 @@ namespace DEL
 {
 namespace CODE
 {
+namespace
+{
+    static uint64_t SUCCESS_LABEL_COUNTER = 0;
+}
+
     //
     //  Load
     //
@@ -25,44 +30,42 @@ namespace CODE
 
             std::stringstream ss;
 
-           ss << NL << NLT
-              << "; Get GS size and store for use. Generate space in GS for load" << NLT 
-              << "size r5 gs"  << NLT 
-              << "pushw ls r5" << NLT
-              << "mov r9 $0"   << NL;
-
-            for(int i = 0; i < ins->bytes / SETTINGS::SYSTEM_WORD_SIZE_BYTES; i++)
-            {
-                ss << NLT
-                   << "pushw gs r9";
-            }
-
-            ss << NLT
-               << "; Get new gs size" << NLT
-               << "size r5 gs"        << NLT
-               << "pushw ls r5"       << NL << NLT 
+            ss << NL << NLT
                << "ldw" << WS << "r" << REG_ADDR_SP << WS << "$0(ls)" << TAB << "; Load SP into local stack" << NLT 
                << "add" << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_SP << TAB << "; Item location in function mem" << NL << NLT
                << "ldw r3 r" << REG_ADDR_RO << "(gs)" << TAB << "; Load the DS Address" << NLT
-               << "mov r11 r3"  << TAB << "; Move address to target register r11" << NLT
-               << "popw r3 ls " << TAB << "; End idx" << NLT 
-               << "popw r4 ls " << TAB << "; Start idx" << NLT
-               << "lsh r4 r4 $32 ; Shift start index prepping for OR" << NLT
-               << "or r12 r3 r4" << NLT
-               << "lsh r0 $13 $56 ; Move DS id into position" << NLT 
-               << "lsh r1 $20 $48" << NLT
-               << "or r10 r0 r1" << NL;
+               << "pushw ls r3" << NL;
 
-            ss << NLT << "; Get data from gs and store in ls" << NL;
+            code.push_back(ss.str()); 
+
+            store_ins.clear();
+            store_ins = load_64_into_r0(ins->bytes / SETTINGS::SYSTEM_WORD_SIZE_BYTES, "Bytes to load");
+            code.insert(code.end(), store_ins.begin(), store_ins.end());
+
+            std::stringstream ss1;
+
+            ss1 << NL << NLT
+                << "mov r1 r0" << TAB << "; Move the words to load to r1 for call" << NLT 
+                << "popw r0 ls"<< TAB << "; Pop the DS Address into r0 for call" << NL << NLT 
+                << "call __del__ds__load" << NL << NLT;
+
+            std::string load_label = "load_success_label_" + std::to_string(SUCCESS_LABEL_COUNTER++);
+
+            ss1 << "mov r1 $0" << TAB << "; Move 0 into r1 to check for success" << NLT
+                << "beq r0 r1" << WS  << load_label << NLT 
+                << "; Failure to load causes an EXIT" << NLT 
+                << "exit" << NL << NL
+                << load_label << ":" << NL << NLT
+                << "; Move loaded words off of the GS and into LS" << NL;
 
             for(int i = 0; i < ins->bytes / SETTINGS::SYSTEM_WORD_SIZE_BYTES; i++)
             {
-                ss << NLT
-                   << "popw r0 gs" << NLT
-                   << "pushw ls r0" << NL;
+                ss1 << NLT
+                    << "popw r0 gs" << NLT
+                    << "pushw ls r0" << NL;
             }
 
-            code.push_back(ss.str()); 
+            code.push_back(ss1.str()); 
         }
     };
 
@@ -87,8 +90,8 @@ namespace CODE
             ss << NLT 
                << "ldw"  << WS << "r" << REG_ADDR_SP << WS << "$0(ls)" << TAB << "; Load SP into local stack" << NLT 
                << "add"  << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_SP << TAB << "; Item location in function mem" << NL << NLT
-               << "ldw r3 r" << REG_ADDR_RO << "(gs)" << TAB << "; Load the DS Address from memory for [" << id << "]" << NLT
-               << "size r4 gs" << TAB << "; Get current size of GS" << NL << NLT
+               << "ldw r0 r" << REG_ADDR_RO << "(gs)" << TAB << "; Load the DS Address from memory for [" << id << "] into r0 for call" << NLT
+               << "size r1 gs" << TAB << "; Get current size of GS into r1 for call" << NL << NLT
                << "; Get words from local stack an put on gs for transit" << NL;
 
             for(int i = 0; i < byte_len / SETTINGS::SYSTEM_WORD_SIZE_BYTES; i++)
@@ -98,26 +101,19 @@ namespace CODE
                    << "pushw gs r5" << TAB << "; Push to GS";
             }
 
-            // r3 Has address for DS
-            // r4 Has size of GS before pushs
-            // Data is in GS from r4 -> current size gs
+            std::string store_label = "store_success_label_" + std::to_string(SUCCESS_LABEL_COUNTER++);
 
-            ss << NLT 
-               << "mov r11 r3    " << TAB << "; Move DS address of [" << id << "] into target register r11" << NLT
-               << "size r3 gs    " << TAB << "; Get the new size of GS after pushing data to it" << NLT 
-               << "lsh r0 r4 $32 " << TAB << "; Left shift start address " << NLT
-               << "or r12 r0 r3  " << TAB << "; Or start and end GS locations for command into target register r12"  << NLT
-               << "lsh r0 $13 $56" << TAB << "; Load DS ID " << NLT 
-               << "lsh r1 $10 $48" << TAB << "; Mark sub-id for 'store' command" << NLT 
-               << "or r10 r1 r0  " << TAB << "; Or command into trigger register" << NL << NLT
-               << "; Clean up the GS" << NL;
+            ss << NL << NLT 
+               << "size r2 gs" << TAB << "; Get new size of GS into r2 for call" << NL << NLT
+               << "call __del__ds__store" << NL << NLT
+               << "mov r1 $0" << TAB << "; Move 0 into r1 to check for success" << NLT
+               << "beq r0 r1" << WS  << store_label << NLT 
+               << "; Failure to store causes an EXIT" << NLT 
+               << "exit" << NL << NL
+               << store_label << ":" << NL;
 
-            for(int i = 0; i < byte_len / SETTINGS::SYSTEM_WORD_SIZE_BYTES; i++)
-            {
-                ss << NLT
-                   << "popw r5 gs" << NLT;
-            }
             code.push_back(ss.str()); 
+
         }
     };
 

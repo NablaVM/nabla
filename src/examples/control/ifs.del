@@ -9,7 +9,7 @@ def main() -> nil {
     if(a)
     {
     }
-    elif(!b)
+    elif(b)
     {
         int c = 4;
     }

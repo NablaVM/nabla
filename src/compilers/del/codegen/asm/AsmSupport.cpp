@@ -2,6 +2,8 @@
 
 #include "AsmInit.hpp"
 #include "AsmMath.hpp"
+#include "AsmStoreLoad.hpp"
+
 #include <iostream>
 namespace DEL
 {
@@ -51,6 +53,21 @@ namespace DEL
         destination.push_back(BUILT_IN::ASM_INIT_FUNCTION);
 
         init_import.func = true;
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void AsmSupport::import_sl_funcs(std::vector<std::string> & destination)
+    {
+        if(init_import.store_load){ return; }
+
+        destination.push_back(BUILT_IN::ASM_ALLOC);
+        destination.push_back(BUILT_IN::ASM_LOAD);
+        destination.push_back(BUILT_IN::ASM_STORE);
+
+        init_import.store_load = true;
     }
 
     // ----------------------------------------------------------

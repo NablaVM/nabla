@@ -24,10 +24,10 @@ namespace CODE
             std::stringstream ss;
 
             ss << NLT
-               << "lsh r0  r0  $16 \t; Move allocation request into place" << NLT 
-               << "lsh r1  $13 $56 \t; Move DS Device ID into place"       << NLT
-               << "or  r10 r0  r1  \t; Or together to create command"      << NLT
-               << "pushw ls r12    \t; Store resulting address on ls"      << NL;
+               << "call __del__ds__alloc"
+               << NLT
+               << "pushw ls r0"
+               << NL;
 
             code.push_back(ss.str());
 
