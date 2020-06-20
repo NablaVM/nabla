@@ -437,7 +437,23 @@ namespace DEL
 
     void Analyzer::accept(ForLoop & stmt)
     {
+        // Ensure that the range isn't bonked
         validate_range(stmt.range);
+
+        // Validate step
+        validate_step(stmt.line_no, stmt.range->type, stmt.step);
+
+        // Create a context for the loop
+
+        // Indicate to codegen that we are about to start sending elements in a loop,
+        // give the range and step
+
+        // Iterate over elements and visit, sending them to the codegen
+
+        // Indicate to codegen that we are complete
+
+        // Remove the context for the loop
+
         error_man.report_custom("Analyzer", "  ForLoop not yet complete", true);
     }
 
@@ -447,17 +463,75 @@ namespace DEL
     //
     // -----------------------------------------------------------------------------------------
 
+    void Analyzer::validate_step(int line, ValType type, std::string step)
+    {
+        if(ValType::INTEGER == type)
+        {
+            uint64_t s = std::stoull(step);
+
+            if(s == 0)
+            {
+                error_man.report_invalid_step(line);
+            }
+        }
+        else if(ValType::REAL == type)
+        {
+            double s = std::stod(step);
+
+            if(s == 0.0)
+            {
+                error_man.report_invalid_step(line);
+            }
+        }
+        else
+        {
+            error_man.report_custom("Analyser", 
+                " Developer Error: A step to be validated came in with an unhandled type, grammar should've stopped this",
+                true);
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     void Analyzer::validate_range(Range * range)
     {
         if(ValType::INTEGER == range->type)
         {
-            uint64_t start = std::strtoull(range->from.c_str(), nullptr, 10);
-            uint64_t end   = std::strtoull(range->to.c_str()  , nullptr, 10);
+            uint64_t start = std::stoull(range->from);
+            uint64_t end   = std::stoull(range->to);
 
             if(start > end)
             {
                 error_man.report_range_invalid_start_gt_end(range->line_no, range->from, range->to);
             }
+
+            if(start == end)
+            {
+                error_man.report_range_ineffective(range->line_no, range->from, range->to);
+            }
+        }
+        else if(ValType::REAL == range->type)
+        {
+            double start = std::stod(range->from);
+            double end   = std::stod(range->to);
+
+            if(start > end)
+            {
+                error_man.report_range_invalid_start_gt_end(range->line_no, range->from, range->to);
+            }
+
+            if(start == end)
+            {
+                error_man.report_range_ineffective(range->line_no, range->from, range->to);
+            }
+        }
+        else
+        {
+            error_man.report_custom("Analyser", 
+                " Developer Error: A range to be validated came in with an unhandled type, grammar should've stopped this",
+                true);
         }
     }
 

@@ -5,9 +5,9 @@ def main() -> int {
 
     // Range ints and reals must be pos
     
-//   for x in range:real(0.0, 10.0) step 1.5 {}
+   for x in range:real(10.0, 10.1) step 0.0001 {}
 
-    for x in range:int(1, 10) {}
+//    for x in range:int(1, 10) {}
 
 
     return 0;

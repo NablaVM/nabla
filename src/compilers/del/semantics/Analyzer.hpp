@@ -48,6 +48,8 @@ namespace DEL
 
         ValType get_id_type(std::string id, int line_no);
 
+        void validate_step(int line, ValType type, std::string step);
+
         void validate_range(Range * range);
 
         void validate_call(Call & stmt);
