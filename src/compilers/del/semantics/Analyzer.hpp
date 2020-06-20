@@ -37,6 +37,7 @@ namespace DEL
         void accept(ReturnStmt &stmt) override;
         void accept(Call       &stmt) override;
         void accept(If         &stmt) override;
+        void accept(ForLoop    &stmt) override;
 
 
     private:
@@ -46,6 +47,8 @@ namespace DEL
         void ensure_id_in_current_context(std::string id, int line_no, std::vector<ValType> allowed);
 
         ValType get_id_type(std::string id, int line_no);
+
+        void validate_range(Range * range);
 
         void validate_call(Call & stmt);
 

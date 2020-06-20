@@ -431,11 +431,39 @@ namespace DEL
         intermediate_layer.issue_end_conditional_context();
     }
 
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(ForLoop & stmt)
+    {
+        validate_range(stmt.range);
+        error_man.report_custom("Analyzer", "  ForLoop not yet complete", true);
+    }
+
     // -----------------------------------------------------------------------------------------
     // 
     //                              Validation Methods
     //
     // -----------------------------------------------------------------------------------------
+
+    void Analyzer::validate_range(Range * range)
+    {
+        if(ValType::INTEGER == range->type)
+        {
+            uint64_t start = std::strtoull(range->from.c_str(), nullptr, 10);
+            uint64_t end   = std::strtoull(range->to.c_str()  , nullptr, 10);
+
+            if(start > end)
+            {
+                error_man.report_range_invalid_start_gt_end(range->line_no, range->from, range->to);
+            }
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
 
     void Analyzer::validate_call(Call & stmt)
     {

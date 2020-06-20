@@ -20,6 +20,7 @@
       class AST;
       class Element;
       class Function;
+      class Range;
       struct FunctionParam;
    }
 
@@ -60,7 +61,7 @@
 
 %token INT REAL CHAR ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE NIL
-%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA IF ELIF
+%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA IF ELIF FOR IN COL RANGE STEP
 
 %type<DEL::Element*> stmt;
 %type<DEL::Element*> assignment;
@@ -69,8 +70,11 @@
 %type<DEL::Element*> if_stmt;
 %type<DEL::Element*> elif_stmt;
 %type<DEL::Element*> else_stmt;
+%type<DEL::Element*> for_stmt;
 %type<DEL::Element*> direct_function_call;
 %type<DEL::Function*> function_stmt;
+%type<DEL::Range*> range_decl_int;
+%type<DEL::Range*> range_decl_real;
 %type<std::string> identifiers;
 %type<DEL::FunctionParam*> call_item;
 
@@ -206,12 +210,39 @@ else_stmt
                   }
    ;
 
+
+//
+//    NEED TO ADD 'STEP' HERE and then work for_stmt into the stmt list, 
+//    Then update analyzer, then ensure that the statements here have no issues in F/B
+//
+for_stmt 
+   : FOR IDENTIFIER IN range_decl_int block 
+      { $$ = new DEL::ForLoop($2, $4, "1", $5); }
+   | FOR IDENTIFIER IN range_decl_int STEP INT_LITERAL block 
+      { $$ = new DEL::ForLoop($2, $4, $6, $7); }
+   | FOR IDENTIFIER IN range_decl_real block 
+      { $$ = new DEL::ForLoop($2, $4, "1.0", $5); }
+   | FOR IDENTIFIER IN range_decl_real STEP REAL_LITERAL block 
+      { $$ = new DEL::ForLoop($2, $4, $6, $7); }
+   ;
+
+
+range_decl_int
+   : RANGE COL INT LEFT_PAREN INT_LITERAL COMMA INT_LITERAL RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::INTEGER, $5, $7, $8); }
+   ;
+
+range_decl_real
+   : RANGE COL REAL LEFT_PAREN REAL_LITERAL COMMA REAL_LITERAL RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REAL, $5, $7, $8); }
+   ;
 stmt
    : assignment    { $$ = $1; }
    | reassignment  { $$ = $1; }
    | return_stmt   { $$ = $1; }
+   | if_stmt       { $$ = $1; }
+   | for_stmt      { $$ = $1; }
    | direct_function_call { $$ = $1;}
-   | if_stmt { $$ = $1; }
    ;
 
 multiple_statements

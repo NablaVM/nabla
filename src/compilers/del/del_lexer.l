@@ -49,6 +49,12 @@ using token = DEL::DEL_Parser::token;
                return ( token::ELSE );    
             }
 
+"for"      { return token::FOR;    }
+"in"       { return token::IN;     }
+"range"    { return token::RANGE;  }
+":"        { return token::COL;    }
+"step"     { return token::STEP;   }
+
 "<="       { return token::LTE;    }
 "<"        { return token::LT;     }
 ">="       { return token::GTE;    }

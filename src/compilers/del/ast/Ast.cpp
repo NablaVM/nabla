@@ -21,4 +21,9 @@ namespace DEL
     {
         visitor.accept(*this);
     }
+
+    void ForLoop::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
 }

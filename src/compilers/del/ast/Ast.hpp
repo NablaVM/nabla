@@ -43,6 +43,22 @@ namespace DEL
     };
 
     //
+    //  A range of values
+    //
+    class Range
+    {
+    public: 
+        // Create a range
+        Range(ValType type, std::string from, std::string to, int line) : 
+            type(type), from(from), to(to), line_no(line){}
+
+        ValType type;
+        std::string from;
+        std::string to;
+        int line_no;
+    };
+    
+    //
     // Fwd for a visitor
     //
     class Visitor;
@@ -124,6 +140,23 @@ namespace DEL
     };
 
     //
+    //  A for loop
+    //
+    class ForLoop : public Element
+    {
+    public: 
+        ForLoop(std::string id, Range * range, std::string step, ElementList elements) : 
+            id(id), range(range), step(step), elements(elements){}
+
+        virtual void visit(Visitor &visit) override;
+        
+        std::string id;
+        Range * range;
+        std::string step;
+        ElementList elements;
+    };
+
+    //
     //  A call 
     //
     class Call : public Element, public AST
@@ -154,6 +187,7 @@ namespace DEL
         std::vector<FunctionParam> params;
     };
 
+
     //
     //  A function
     //
@@ -180,6 +214,7 @@ namespace DEL
         virtual void accept(ReturnStmt &stmt) = 0;
         virtual void accept(Call       &stmt) = 0;
         virtual void accept(If         &stmt) = 0;
+        virtual void accept(ForLoop    &stmt) = 0;
     };
 }
 
