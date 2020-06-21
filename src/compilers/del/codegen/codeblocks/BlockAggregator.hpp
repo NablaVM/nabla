@@ -24,8 +24,16 @@ namespace CODE
             delete block;
         }
 
+        // Add memory allocation so aggregator can clean 
+        //
+        void add_memory_alloc(Memory::MemAlloc mem_info)
+        {
+            allocs.push(mem_info);
+        }
+
     protected:
         std::vector<std::string> instructions; 
+        std::stack<Memory::MemAlloc > allocs;
     };
 }
 }

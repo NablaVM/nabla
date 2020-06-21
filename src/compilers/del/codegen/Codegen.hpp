@@ -91,8 +91,6 @@ namespace DEL
         // so we can have nested conditionals handled as they need to be.
         // ConditionalContext objects are BlockAggregators
         std::stack<CODE::BlockAggregator*> aggregators;
-
-        std::stack<Memory::MemAlloc> ephimeral_allocs;
     };
 }
 

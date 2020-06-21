@@ -9,6 +9,7 @@ def moot() -> int {
 
 def main() -> int {
 
+
   for x in range:int(1, 100) 
   {
       for y in range:int(1, 10)

@@ -35,7 +35,7 @@ namespace
 
         //! \brief Export the aggregated instructions as a block
         //!        so it can be stored into another aggregator
-        Block * export_as_block(std::stack<Memory::MemAlloc> * ephimeral_allocs)
+        Block * export_as_block()
         {
             // Load end var
             {
@@ -124,10 +124,11 @@ namespace
 
             instructions.push_back(std::string(NLT) + "; Dealloc items alloced in loop" + std::string(NL));
 
+
             // Dealloc any new items in the loop
-            while(!ephimeral_allocs->empty())
+            while(!allocs.empty())
             {
-                std::vector<std::string> addr_ins = load_64_into_r0(ephimeral_allocs->top().start_pos, 
+                std::vector<std::string> addr_ins = load_64_into_r0(allocs.top().start_pos, 
                                                                     "Item start");
                 instructions.insert(instructions.end(), addr_ins.begin(), addr_ins.end());
 
@@ -139,7 +140,7 @@ namespace
                 << "call __del__ds__free" << NL;
 
                 instructions.push_back(ss.str());
-                ephimeral_allocs->pop();
+                allocs.pop();
             }
 
             // Compare and conditionally jump
@@ -152,7 +153,6 @@ namespace
 
                 instructions.push_back(ss.str());
             }
-
 
             return new Export(instructions);
         }

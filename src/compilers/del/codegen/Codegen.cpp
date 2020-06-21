@@ -112,9 +112,6 @@ namespace DEL
         // resulting code
         generator.add_instructions(current_function->building_complete());
 
-        // Clean any allocs that weren't consumed by a deallocator
-        while(!ephimeral_allocs.empty()) { ephimeral_allocs.pop(); }
-
         // Delete the function object
         delete current_function;
     }
@@ -127,8 +124,7 @@ namespace DEL
     {
         aggregators.push(new CODE::ConditionalContext(conditional_init));
 
-        // Add mem info to ephimeral in case a conditional finds itself inside a loop
-        ephimeral_allocs.push(conditional_init.mem_info);
+        current_aggregator->add_memory_alloc(conditional_init.mem_info);
         
         // Switch the current aggregator to the conditional context
         current_aggregator = aggregators.top();
@@ -145,9 +141,8 @@ namespace DEL
 
         CODE::ConditionalContext * cc = static_cast<CODE::ConditionalContext*>(aggregators.top());
 
-        // Add mem info to ephimeral in case a conditional finds itself inside a loop
-        ephimeral_allocs.push(conditional_init.mem_info);
-
+        current_aggregator->add_memory_alloc(conditional_init.mem_info);
+        
         cc->extend_context(conditional_init);
     }
 
@@ -222,7 +217,7 @@ namespace DEL
 
         // Export the loop as a block - It will be consumed (and deleted by) current_aggregator
         // Pass in the allocations so it can generate code to clean each loop pass
-        CODE::Block * exported_block = loop->export_as_block(&ephimeral_allocs);
+        CODE::Block * exported_block = loop->export_as_block();
 
         // If the stack is empty redirect the aggregator to be the current function
         if(aggregators.empty())
@@ -324,8 +319,7 @@ namespace DEL
                 {
                     current_aggregator->add_block(new CODE::DSAllocate(static_cast<CODEGEN::TYPES::DSAllocInstruction*>(ins), command.memory_info.start_pos));
 
-                    // Store alloc information in case dealloc needs to occur 
-                    ephimeral_allocs.push(command.memory_info);
+                    current_aggregator->add_memory_alloc(command.memory_info);
                     break;
                 }
                 default:
