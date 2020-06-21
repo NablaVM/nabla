@@ -123,8 +123,6 @@ namespace DEL
     void Codegen::begin_conditional(CODEGEN::TYPES::ConditionalInitiation conditional_init)
     {
         aggregators.push(new CODE::ConditionalContext(conditional_init));
-
-        current_aggregator->add_memory_alloc(conditional_init.mem_info);
         
         // Switch the current aggregator to the conditional context
         current_aggregator = aggregators.top();
@@ -140,8 +138,6 @@ namespace DEL
         // Aggregator should not change here
 
         CODE::ConditionalContext * cc = static_cast<CODE::ConditionalContext*>(aggregators.top());
-
-        current_aggregator->add_memory_alloc(conditional_init.mem_info);
         
         cc->extend_context(conditional_init);
     }

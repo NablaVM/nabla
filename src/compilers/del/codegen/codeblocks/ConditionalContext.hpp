@@ -50,6 +50,11 @@ namespace
             ss << NL     << NLT << "; Jump to skip next segment if current is accessed " << NL << NLT 
                << "jmp " << bottom_label << NL;
 
+            // Free currently allocated stuff
+            free_context_variables();
+            instructions.insert(instructions.end(), frees.begin(), frees.end());
+            frees.clear();
+
             instructions.push_back(ss.str());
 
             load_item_and_labels(init);
@@ -65,6 +70,11 @@ namespace
                << "jmp " << bottom_label << NL;
 
             branches.push_back(ss.str());
+            
+            // Free currently allocated stuff
+            free_context_variables();
+            instructions.insert(instructions.end(), frees.begin(), frees.end());
+            frees.clear();
 
             // Add bottom label
             std::stringstream ss1;
@@ -84,6 +94,7 @@ namespace
 
     private:
 
+        std::vector<std::string> frees;
         std::vector<std::string> branches;
         std::string bottom_label;
 
@@ -129,6 +140,37 @@ namespace
           
             // Add the label 
             instructions.push_back(std::string(NL) + label + ":" + std::string(NL));
+        }
+
+        //  Free variables created within the current context
+        //
+        void free_context_variables()
+        {
+            frees.push_back(std::string(NLT) + "; Dealloc items alloced in loop" + std::string(NL));
+
+            std::stringstream ss1;
+            ss1 << NLT << "; <<< CONTEXTUAL FREE >>>" << NLT 
+                << ";--------------------------------------" << NL;
+
+            frees.push_back(ss1.str());
+        
+            // Dealloc any new items in the loop
+            while(!allocs.empty())
+            {
+                std::vector<std::string> addr_ins = load_64_into_r0(allocs.top().start_pos, 
+                                                                    "Item start");
+                frees.insert(frees.end(), addr_ins.begin(), addr_ins.end());
+
+                std::stringstream ss;
+                ss << NLT 
+                << "ldw"  << WS << "r" << REG_ADDR_SP << WS << "$0(ls)" << TAB << "; Load SP into local stack" << NLT 
+                << "add"  << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_SP << TAB << "; Item location in function mem" << NL << NLT
+                << "ldw r0 r" << REG_ADDR_RO << "(gs)" << TAB << "; Load the DS Address from memory for dealloc" << NLT
+                << "call __del__ds__free" << NL;
+
+                frees.push_back(ss.str());
+                allocs.pop();
+            }
         }
 
         // Class to export the context as a block
