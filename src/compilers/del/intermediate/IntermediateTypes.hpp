@@ -86,17 +86,15 @@ namespace TYPES
         ForLoop(AssignmentClassifier classification, 
                                 Memory::MemAlloc loop_var, 
                                 Memory::MemAlloc end,
-                                std::string step) : LoopIf(LoopTypes::FOR),
+                                Memory::MemAlloc step) : LoopIf(LoopTypes::FOR),
                 classification(classification), var(loop_var), end(end), step(step)
         {}
 
         AssignmentClassifier classification;
         Memory::MemAlloc var;
         Memory::MemAlloc end;
-        std::string step;
+        Memory::MemAlloc step;
     };
-
-
 }
 }
 }

@@ -21,6 +21,7 @@
       class Element;
       class Function;
       class Range;
+      class Step;
       struct FunctionParam;
    }
 
@@ -75,6 +76,7 @@
 %type<DEL::Function*> function_stmt;
 %type<DEL::Range*> range_decl_int;
 %type<DEL::Range*> range_decl_real;
+%type<DEL::Step*>  step_inc;
 %type<std::string> identifiers;
 %type<DEL::FunctionParam*> call_item;
 
@@ -217,23 +219,50 @@ else_stmt
 //
 for_stmt 
    : FOR IDENTIFIER IN range_decl_int block 
-      { $$ = new DEL::ForLoop($2, $4, "1", $5); }
-   | FOR IDENTIFIER IN range_decl_int STEP INT_LITERAL block 
-      { $$ = new DEL::ForLoop($2, $4, $6, $7); }
+      { $$ = new DEL::ForLoop(ValType::INTEGER, $2, $4, new DEL::Step(DEL::ValType::INTEGER, "1"), $5); }
+
+   | FOR IDENTIFIER IN range_decl_int step_inc block 
+      { $$ = new DEL::ForLoop(ValType::INTEGER, $2, $4, $5, $6); }
+
    | FOR IDENTIFIER IN range_decl_real block 
-      { $$ = new DEL::ForLoop($2, $4, "1.0", $5); }
-   | FOR IDENTIFIER IN range_decl_real STEP REAL_LITERAL block 
-      { $$ = new DEL::ForLoop($2, $4, $6, $7); }
+      { $$ = new DEL::ForLoop(ValType::REAL, $2, $4, new DEL::Step(DEL::ValType::REAL, "1.0"), $5); }
+
+   | FOR IDENTIFIER IN range_decl_real step_inc block 
+      { $$ = new DEL::ForLoop(ValType::REAL, $2, $4, $5, $6); }
    ;
 
 range_decl_int
    : RANGE COL INT LEFT_PAREN INT_LITERAL COMMA INT_LITERAL RIGHT_PAREN 
       { $$ = new DEL::Range(ValType::INTEGER, $5, $7, $8); }
+
+   | RANGE COL INT LEFT_PAREN identifiers COMMA INT_LITERAL RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+
+   | RANGE COL INT LEFT_PAREN identifiers COMMA identifiers RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+
+   | RANGE COL INT LEFT_PAREN INT_LITERAL COMMA identifiers RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
    ;
 
 range_decl_real
    : RANGE COL REAL LEFT_PAREN REAL_LITERAL COMMA REAL_LITERAL RIGHT_PAREN 
       { $$ = new DEL::Range(ValType::REAL, $5, $7, $8); }
+
+   | RANGE COL REAL LEFT_PAREN identifiers COMMA REAL_LITERAL RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+
+   | RANGE COL REAL LEFT_PAREN identifiers COMMA identifiers RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+
+   | RANGE COL REAL LEFT_PAREN REAL_LITERAL COMMA identifiers RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+   ;
+
+step_inc
+   : STEP INT_LITERAL  { $$ = new DEL::Step(DEL::ValType::INTEGER,   $2); }
+   | STEP REAL_LITERAL { $$ = new DEL::Step(DEL::ValType::REAL,      $2); }
+   | STEP identifiers  { $$ = new DEL::Step(DEL::ValType::REQ_CHECK, $2); }
    ;
 
 stmt

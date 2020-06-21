@@ -6,8 +6,27 @@
 
 #include "SystemSettings.hpp"
 
+#define N_UNUSED(x) (void)x;
+
 namespace DEL
 {
+namespace
+{
+    bool is_only_number(std::string v)
+    {
+        try
+        {
+            double value = std::stod(v);
+            N_UNUSED(value)
+            return true;
+        }
+        catch(std::exception& e)
+        {
+            // Its not a number
+        }
+        return false;
+    }
+}
     // ----------------------------------------------------------
     //
     // ----------------------------------------------------------
@@ -377,6 +396,7 @@ namespace DEL
                 for(auto & el : stmt.element_list)
                 {
                     el->visit(*this);
+                    delete el;
                 }
 
                 // Remove the current context from the symbol table
@@ -407,6 +427,7 @@ namespace DEL
                 for(auto & el : stmt.element_list)
                 {
                     el->visit(*this);
+                    delete el;
                 }
 
                 // Remove the current context from the symbol table
@@ -438,32 +459,96 @@ namespace DEL
     void Analyzer::accept(ForLoop & stmt)
     {
         // Ensure that the range isn't bonked
-        validate_range(stmt.range);
+        validate_range(stmt.range, stmt.type);
 
         // Validate step
-        validate_step(stmt.line_no, stmt.range->type, stmt.step);
+        validate_step(stmt.line_no, stmt.step, stmt.type);
 
         // Create a context for the loop
         std::string artificial_context = symbol_table.generate_unique_context();
         symbol_table.new_context(artificial_context, false );
 
+
         // Create a name for the end variable
-        std::string end_var       = symbol_table.generate_unique_variable_symbol();
+        std::string end_var;
 
-        // Create the loop variable, and assign it to the initial position (from)
-        Assignment * assign_loop_var = new Assignment(stmt.range->type, stmt.id, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.range->type, stmt.range->from));
-        assign_loop_var->line_no = stmt.line_no;
-        this->accept(*assign_loop_var);
-        delete assign_loop_var;
+        if(stmt.range->type == ValType::REQ_CHECK)
+        {
+            if(is_only_number(stmt.range->to))
+            {
+                end_var = symbol_table.generate_unique_variable_symbol();
 
-        // Create the end variable, and assign it to the final position (to)
-        Assignment * assign_end_var = new Assignment(stmt.range->type, end_var, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.range->type, stmt.range->to));
-        assign_end_var->line_no = stmt.line_no;
-        this->accept(*assign_end_var);
-        delete assign_end_var;
+                // Create the end variable, and assign it to the final position (to)
+                Assignment * assign_end_var = new Assignment(stmt.type, end_var, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.range->to));
+                assign_end_var->line_no = stmt.line_no;
+                this->accept(*assign_end_var);
+                delete assign_end_var;
+            }
+            else
+            {
+                // Here we will use the raw var
+                end_var = stmt.range->to;
+            }
+
+            if(is_only_number(stmt.range->from))
+            {
+                // Create the loop variable, and assign it to the initial position (from) represented by a raw value
+                Assignment * assign_loop_var = new Assignment(stmt.type, stmt.id, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.range->from));
+                assign_loop_var->line_no = stmt.line_no;
+                this->accept(*assign_loop_var);
+                delete assign_loop_var;
+            }
+            else
+            {
+                // Create the loop variable, and assign it to the initial position (from) represented by a variable value
+                Assignment * assign_loop_var = new Assignment(stmt.type, stmt.id, new DEL::AST(DEL::NodeType::ID, nullptr, nullptr, stmt.type, stmt.range->from));
+                assign_loop_var->line_no = stmt.line_no;
+                this->accept(*assign_loop_var);
+                delete assign_loop_var;
+            }
+        }
+        else
+        {
+            end_var = symbol_table.generate_unique_variable_symbol();
+
+            // Create the end variable, and assign it to the final position (to)
+            Assignment * assign_end_var = new Assignment(stmt.type, end_var, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.range->to));
+            assign_end_var->line_no = stmt.line_no;
+            this->accept(*assign_end_var);
+            delete assign_end_var;
+
+            // Create the loop variable, and assign it to the initial position (from) represented by a raw value
+            Assignment * assign_loop_var = new Assignment(stmt.type, stmt.id, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.range->from));
+            assign_loop_var->line_no = stmt.line_no;
+            this->accept(*assign_loop_var);
+            delete assign_loop_var;
+        }
+
+
+
+        // Setup 'step'
+        std::string step_var_name;
+
+        // If step is just a raw value, create a variable for it
+        if(stmt.step->type != ValType::REQ_CHECK)
+        {
+            step_var_name = symbol_table.generate_unique_variable_symbol();
+
+            // Create the step variable, and assign it to the final position (to)
+            Assignment * assign_end_var = new Assignment(stmt.type, step_var_name, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.step->val));
+            assign_end_var->line_no = stmt.line_no;
+            this->accept(*assign_end_var);
+            delete assign_end_var;
+        }
+
+        // Otherwise, use the value given to us
+        else
+        {
+            step_var_name = stmt.step->val;
+        }
 
         // Translate data type
-        INTERMEDIATE::TYPES::AssignmentClassifier classifier = (stmt.range->type == ValType::REAL) ? 
+        INTERMEDIATE::TYPES::AssignmentClassifier classifier = (stmt.type == ValType::REAL) ? 
                 INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE : 
                 INTERMEDIATE::TYPES::AssignmentClassifier::INTEGER;
 
@@ -471,7 +556,7 @@ namespace DEL
         INTERMEDIATE::TYPES::ForLoop * ifl = new INTERMEDIATE::TYPES::ForLoop(classifier,
                                                                               memory_man.get_mem_info(stmt.id),
                                                                               memory_man.get_mem_info(end_var),
-                                                                              stmt.step);
+                                                                              memory_man.get_mem_info(step_var_name));
         // Start off the for loop
         intermediate_layer.issue_start_loop(ifl);
  
@@ -479,6 +564,7 @@ namespace DEL
         for(auto & el : stmt.elements)
         {
             el->visit(*this);
+            delete el;
         }
 
         // End the loop
@@ -486,6 +572,9 @@ namespace DEL
 
         // Remove the context for the loop
         symbol_table.remove_current_context();
+
+        delete stmt.step;
+        delete stmt.range;
     }
 
     // -----------------------------------------------------------------------------------------
@@ -494,20 +583,34 @@ namespace DEL
     //
     // -----------------------------------------------------------------------------------------
 
-    void Analyzer::validate_step(int line, ValType type, std::string step)
+    void Analyzer::validate_step(int line, Step * step, ValType loop_type)
     {
-        if(ValType::INTEGER == type)
+        if(step->type == ValType::REQ_CHECK)
         {
-            uint64_t s = std::stoull(step);
+            // If the step is a variable all we can do is ensure that the step variable
+            // exists and matches the type of the loop
+            ensure_id_in_current_context(step->val, line, {loop_type});
+            return;
+        }
+
+        // Ensure that the step type matches the loop type
+        if(step->type != loop_type)
+        {
+            error_man.report_unallowed_type("step", line, true);
+        }
+
+        if(ValType::INTEGER == step->type)
+        {
+            uint64_t s = std::stoull(step->val);
 
             if(s == 0)
             {
                 error_man.report_invalid_step(line);
             }
         }
-        else if(ValType::REAL == type)
+        else if(ValType::REAL == step->type)
         {
-            double s = std::stod(step);
+            double s = std::stod(step->val);
 
             if(s == 0.0)
             {
@@ -526,8 +629,9 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Analyzer::validate_range(Range * range)
+    void Analyzer::validate_range(Range * range, ValType loop_type)
     {
+        // Integers
         if(ValType::INTEGER == range->type)
         {
             uint64_t start = std::stoull(range->from);
@@ -542,8 +646,11 @@ namespace DEL
             {
                 error_man.report_range_ineffective(range->line_no, range->from, range->to);
             }
+            return;
         }
-        else if(ValType::REAL == range->type)
+
+        // Reals
+        if(ValType::REAL == range->type)
         {
             double start = std::stod(range->from);
             double end   = std::stod(range->to);
@@ -557,13 +664,31 @@ namespace DEL
             {
                 error_man.report_range_ineffective(range->line_no, range->from, range->to);
             }
+            return;
         }
-        else
+
+        // Something.. more complicated
+        if (ValType::REQ_CHECK == range->type)
         {
-            error_man.report_custom("Analyser", 
-                " Developer Error: A range to be validated came in with an unhandled type, grammar should've stopped this",
-                true);
+            // Check from and to, if they aren't a number then they are a variable.
+            // If they are a variable we need to ensure the variable exists and is the same type as the range statement
+            if(!is_only_number(range->from))
+            {
+                ensure_id_in_current_context(range->from, range->line_no, {loop_type});
+            }
+
+            if(!is_only_number(range->to))
+            {
+                ensure_id_in_current_context(range->to, range->line_no, {loop_type});
+            }
+            return;
         }
+
+
+        // If we come here, an unhandled type cropped up
+        error_man.report_custom("Analyser", 
+            " Developer Error: A range to be validated came in with an unhandled type, grammar should've stopped this",
+            true);
     }
 
     // ----------------------------------------------------------

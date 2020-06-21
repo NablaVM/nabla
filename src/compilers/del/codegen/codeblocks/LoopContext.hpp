@@ -75,19 +75,24 @@ namespace
                 instructions.insert(instructions.end(), li.begin(), li.end());
             }
 
-            std::vector<std::string> step_load;
-
-            // Load step into r0
-            if(loop_info.classification == CODEGEN::TYPES::DataClassification::INTEGER)
+            // Load ste[] var
             {
-                step_load = load_64_into_r0(std::stoull(loop_info.step), "Step value - int");
-            }
-            else
-            {
-                step_load = load_64_into_r0(UTIL::convert_double_to_uint64(std::stod(loop_info.step)), "Step value - real");
-            }
+                // Generate the code for loading the variable
+                CODEGEN::TYPES::AddressValueInstruction * loader = new CODEGEN::TYPES::AddressValueInstruction(CODEGEN::TYPES::InstructionSet::LOAD, 
+                    loop_info.step.start_pos,
+                    loop_info.step.bytes_requested
+                    );
 
-            instructions.insert(instructions.end(), step_load.begin(), step_load.end());
+                CODE::Load * load_ins = new CODE::Load(loader);
+
+                // Get the generated code
+                std::vector<std::string> li = load_ins->get_code();
+                delete load_ins;
+                delete loader;
+
+                // Add load code
+                instructions.insert(instructions.end(), li.begin(), li.end());
+            }
 
             // Calculate and store new loop variable
             {
@@ -96,6 +101,7 @@ namespace
                 if(loop_info.classification == CODEGEN::TYPES::DataClassification::INTEGER)
                 {
                     ss << NLT 
+                    << "popw  r0 ls"    << TAB << "; Load step variable into r0"           << NLT 
                     << "popw  r1 ls"    << TAB << "; Load loop variable into r1"           << NLT 
                     << "add   r0 r0 r1" << TAB << "; Add step to loop variable into r0"    << NLT
                     << "pushw ls r0"    << TAB << "; Put the new loop var in ls"           << NLT
@@ -104,6 +110,7 @@ namespace
                 else
                 {
                     ss << NLT 
+                    << "popw  r0 ls"    << TAB << "; Load step variable into r0"           << NLT 
                     << "popw  r1 ls"    << TAB << "; Load loop variable into r1"           << NLT 
                     << "add.d r0 r0 r1" << TAB << "; Add step to loop variable into r0"    << NLT
                     << "pushw ls r0"    << TAB << "; Put the new loop var in ls"           << NLT

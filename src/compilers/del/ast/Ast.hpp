@@ -57,6 +57,18 @@ namespace DEL
         std::string to;
         int line_no;
     };
+
+    //
+    //  A 'step'
+    //
+    class Step
+    {
+    public:
+        Step(ValType type, std::string val) : type(type), val(val){}
+
+        ValType type;
+        std::string val;
+    };
     
     //
     // Fwd for a visitor
@@ -145,14 +157,15 @@ namespace DEL
     class ForLoop : public Element
     {
     public: 
-        ForLoop(std::string id, Range * range, std::string step, ElementList elements) : 
-            id(id), range(range), step(step), elements(elements){}
+        ForLoop(ValType type, std::string id, Range * range, Step * step, ElementList elements) : 
+            type(type), id(id), range(range), step(step), elements(elements){}
 
         virtual void visit(Visitor &visit) override;
         
+        ValType type;
         std::string id;
         Range * range;
-        std::string step;
+        Step * step;
         ElementList elements;
     };
 

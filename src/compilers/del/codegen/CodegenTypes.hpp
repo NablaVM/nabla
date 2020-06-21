@@ -168,13 +168,13 @@ namespace TYPES
         LoopInitiation(DataClassification classification, 
                        Memory::MemAlloc loop_var,
                        Memory::MemAlloc end_var, 
-                       std::string step) : 
+                       Memory::MemAlloc step) : 
         classification(classification), loop_var(loop_var), end_var(end_var), step(step) {}
 
         DataClassification classification; 
         Memory::MemAlloc loop_var;
         Memory::MemAlloc end_var;
-        std::string step;
+        Memory::MemAlloc step;
     };
 }
 }
