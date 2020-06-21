@@ -64,6 +64,7 @@ namespace DEL
         if(init_import.store_load){ return; }
 
         destination.push_back(BUILT_IN::ASM_ALLOC);
+        destination.push_back(BUILT_IN::ASM_FREE);
         destination.push_back(BUILT_IN::ASM_LOAD);
         destination.push_back(BUILT_IN::ASM_STORE);
 

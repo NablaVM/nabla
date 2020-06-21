@@ -444,17 +444,48 @@ namespace DEL
         validate_step(stmt.line_no, stmt.range->type, stmt.step);
 
         // Create a context for the loop
+        std::string artificial_context = symbol_table.generate_unique_context();
+        symbol_table.new_context(artificial_context, false );
 
-        // Indicate to codegen that we are about to start sending elements in a loop,
-        // give the range and step
+        // Create a name for the end variable
+        std::string end_var       = symbol_table.generate_unique_variable_symbol();
 
-        // Iterate over elements and visit, sending them to the codegen
+        // Create the loop variable, and assign it to the initial position (from)
+        Assignment * assign_loop_var = new Assignment(stmt.range->type, stmt.id, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.range->type, stmt.range->from));
+        assign_loop_var->line_no = stmt.line_no;
+        this->accept(*assign_loop_var);
+        delete assign_loop_var;
 
-        // Indicate to codegen that we are complete
+        // Create the end variable, and assign it to the final position (to)
+        Assignment * assign_end_var = new Assignment(stmt.range->type, end_var, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.range->type, stmt.range->to));
+        assign_end_var->line_no = stmt.line_no;
+        this->accept(*assign_end_var);
+        delete assign_end_var;
+
+        // Translate data type
+        INTERMEDIATE::TYPES::AssignmentClassifier classifier = (stmt.range->type == ValType::REAL) ? 
+                INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE : 
+                INTERMEDIATE::TYPES::AssignmentClassifier::INTEGER;
+
+        // Create intermediate representation for the loop
+        INTERMEDIATE::TYPES::ForLoop * ifl = new INTERMEDIATE::TYPES::ForLoop(classifier,
+                                                                              memory_man.get_mem_info(stmt.id),
+                                                                              memory_man.get_mem_info(end_var),
+                                                                              stmt.step);
+        // Start off the for loop
+        intermediate_layer.issue_start_loop(ifl);
+ 
+        // Compile the statements in the for loop
+        for(auto & el : stmt.elements)
+        {
+            el->visit(*this);
+        }
+
+        // End the loop
+        intermediate_layer.issue_end_loop();
 
         // Remove the context for the loop
-
-        error_man.report_custom("Analyzer", "  ForLoop not yet complete", true);
+        symbol_table.remove_current_context();
     }
 
     // -----------------------------------------------------------------------------------------

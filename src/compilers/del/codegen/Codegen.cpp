@@ -6,6 +6,8 @@
 #include "LoadStore.hpp"
 #include "Operations.hpp"
 #include "Primitives.hpp"
+#include "ConditionalContext.hpp"
+#include "LoopContext.hpp"
 
 #include <iostream>
 #include <vector>
@@ -110,6 +112,9 @@ namespace DEL
         // resulting code
         generator.add_instructions(current_function->building_complete());
 
+        // Clean any allocs that weren't consumed by a deallocator
+        while(!ephimeral_allocs.empty()) { ephimeral_allocs.pop(); }
+
         // Delete the function object
         delete current_function;
     }
@@ -120,10 +125,13 @@ namespace DEL
 
     void Codegen::begin_conditional(CODEGEN::TYPES::ConditionalInitiation conditional_init)
     {
-        conditional_contexts.push(new CODE::ConditionalContext(conditional_init));
+        aggregators.push(new CODE::ConditionalContext(conditional_init));
 
+        // Add mem info to ephimeral in case a conditional finds itself inside a loop
+        ephimeral_allocs.push(conditional_init.mem_info);
+        
         // Switch the current aggregator to the conditional context
-        current_aggregator = conditional_contexts.top();
+        current_aggregator = aggregators.top();
     }
 
     // ----------------------------------------------------------
@@ -134,7 +142,13 @@ namespace DEL
     {
         // Extend the current conditional context with the information given
         // Aggregator should not change here
-        conditional_contexts.top()->extend_context(conditional_init);
+
+        CODE::ConditionalContext * cc = static_cast<CODE::ConditionalContext*>(aggregators.top());
+
+        // Add mem info to ephimeral in case a conditional finds itself inside a loop
+        ephimeral_allocs.push(conditional_init.mem_info);
+
+        cc->extend_context(conditional_init);
     }
 
     // ----------------------------------------------------------
@@ -143,30 +157,30 @@ namespace DEL
 
     void Codegen::end_conditional()
     {
-        if(conditional_contexts.empty())
+        if(aggregators.empty())
         {
             std::cerr << "Developer Error : Codegen asked to end a conditional, but no conditional detected" << std::endl;
             exit(EXIT_FAILURE);
         }
 
         // Get the context off of the stack
-        CODE::ConditionalContext * conditional = conditional_contexts.top();
+        CODE::ConditionalContext * conditional = static_cast<CODE::ConditionalContext*>(aggregators.top());
 
         // Pop
-        conditional_contexts.pop();
+        aggregators.pop();
 
         // Export the conditional as a block - It will be consumed (and deleted by) current_aggregator
         CODE::Block * exported_block = conditional->export_as_block();
 
         // If the stack is empty redirect the aggregator to be the current function
-        if(conditional_contexts.empty())
+        if(aggregators.empty())
         {
             current_aggregator = current_function;
         }
         else
         {
             // Otherwise, we want the next context in the stack
-            current_aggregator = conditional_contexts.top();
+            current_aggregator = aggregators.top();
         }
 
         // Add contents to aggregator - might be the function, might be another context
@@ -176,6 +190,58 @@ namespace DEL
         delete conditional;
     }
 
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Codegen::begin_loop(CODEGEN::TYPES::LoopInitiation loop_init)
+    {
+        aggregators.push(new CODE::LoopContext(loop_init));
+
+        // Switch the current aggregator to the conditional context
+        current_aggregator = aggregators.top();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Codegen::end_loop()
+    {
+        if(aggregators.empty())
+        {
+            std::cerr << "Developer Error : Codegen asked to end a loop, but no loop detected" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // Get the context off of the stack
+        CODE::LoopContext * loop = static_cast<CODE::LoopContext*>(aggregators.top());
+
+        // Pop
+        aggregators.pop();
+
+        // Export the loop as a block - It will be consumed (and deleted by) current_aggregator
+        // Pass in the allocations so it can generate code to clean each loop pass
+        CODE::Block * exported_block = loop->export_as_block(&ephimeral_allocs);
+
+        // If the stack is empty redirect the aggregator to be the current function
+        if(aggregators.empty())
+        {
+            current_aggregator = current_function;
+        }
+        else
+        {
+            // Otherwise, we want the next context in the stack
+            current_aggregator = aggregators.top();
+        }
+
+        // Add contents to aggregator - might be the function, might be another context
+        current_aggregator->add_block(exported_block);
+
+        // Delete the conditional
+        delete loop;
+    }
+    
     // ----------------------------------------------------------
     //
     // ----------------------------------------------------------
@@ -256,7 +322,10 @@ namespace DEL
                 }
                 case CODEGEN::TYPES::InstructionSet::DS_ALLOC:
                 {
-                    current_aggregator->add_block(new CODE::DSAllocate(static_cast<CODEGEN::TYPES::DSAllocInstruction*>(ins), command.memory_info.start_pos)); break;
+                    current_aggregator->add_block(new CODE::DSAllocate(static_cast<CODEGEN::TYPES::DSAllocInstruction*>(ins), command.memory_info.start_pos));
+
+                    // Store alloc information in case dealloc needs to occur 
+                    ephimeral_allocs.push(command.memory_info);
                     break;
                 }
                 default:

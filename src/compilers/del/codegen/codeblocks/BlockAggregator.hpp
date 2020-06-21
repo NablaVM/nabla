@@ -2,7 +2,8 @@
 #define DEL_BLOCK_AGGREGATOR_HPP
 
 #include "Codeblock.hpp"
-
+#include "Memory.hpp"
+#include <stack>
 namespace DEL
 {
 namespace CODE

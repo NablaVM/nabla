@@ -168,6 +168,59 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
+    void Intermediate::issue_start_loop(INTERMEDIATE::TYPES::LoopIf * loop)
+    {
+        switch(loop->type)
+        {
+            case INTERMEDIATE::TYPES::LoopTypes::FOR:
+            {
+                // Cast to the loop type
+                INTERMEDIATE::TYPES::ForLoop * fl = static_cast<INTERMEDIATE::TYPES::ForLoop*>(loop);
+
+                // Convert type to one codegen understands
+                CODEGEN::TYPES::DataClassification dc = (fl->classification == INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE ) ? 
+                                    CODEGEN::TYPES::DataClassification::DOUBLE :
+                                    CODEGEN::TYPES::DataClassification::INTEGER;
+
+                // Create codegen loopinit
+                CODEGEN::TYPES::LoopInitiation loop_init(dc, fl->var, fl->end, fl->step);
+
+                // Begin the loop
+                code_gen.begin_loop(loop_init);
+                break;
+            }
+            case INTERMEDIATE::TYPES::LoopTypes::NAMED:
+            {
+                std::cerr << "UNHANDLED LOOP TYPE : 'NAMED' IN INTERMEDIATE >> DEVELOPER ERROR" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+            }
+            case INTERMEDIATE::TYPES::LoopTypes::WHILE:
+            {
+                std::cerr << "UNHANDLED LOOP TYPE : 'WHILE' IN INTERMEDIATE >> DEVELOPER ERROR" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+            }
+            default:
+                std::cerr << "DEFAULT accessed in determining loop type in Intermediate::issue_start_loop()" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Intermediate::issue_end_loop()
+    {
+        code_gen.end_loop();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     void Intermediate::issue_assignment(std::string id, bool requires_ds_allocation, Memory::MemAlloc memory_info, INTERMEDIATE::TYPES::AssignmentClassifier classification, std::string postfix_expression)
     {
         // Build the instruction set

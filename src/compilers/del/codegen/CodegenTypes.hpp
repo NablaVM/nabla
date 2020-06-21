@@ -158,6 +158,24 @@ namespace TYPES
 
         Memory::MemAlloc mem_info;
     };
+
+    //
+    //  Information for starting a loop
+    //
+    class LoopInitiation
+    {
+    public:
+        LoopInitiation(DataClassification classification, 
+                       Memory::MemAlloc loop_var,
+                       Memory::MemAlloc end_var, 
+                       std::string step) : 
+        classification(classification), loop_var(loop_var), end_var(end_var), step(step) {}
+
+        DataClassification classification; 
+        Memory::MemAlloc loop_var;
+        Memory::MemAlloc end_var;
+        std::string step;
+    };
 }
 }
 }

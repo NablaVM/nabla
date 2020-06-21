@@ -50,6 +50,13 @@ namespace DEL
         //! \brief Issue a call outside of an expression 
         //! \param encoded_call A call instruction encoded by EnDecode
         void issue_direct_call(std::string encoded_call);
+        
+        //! \brief Issue a loop
+        //! \param loop The loop interface
+        void issue_start_loop(INTERMEDIATE::TYPES::LoopIf * loop);
+
+        //! \brief End of loop
+        void issue_end_loop();
 
         //! \brief Issue an assignment command to the code generator
         //! \param id The id being assigned

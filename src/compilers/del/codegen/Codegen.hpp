@@ -10,7 +10,6 @@
 #include "CodegenTypes.hpp"
 #include "Generator.hpp"
 #include "Function.hpp"
-#include "ConditionalContext.hpp"
 
 #include <stack>
 
@@ -55,6 +54,13 @@ namespace DEL
         //! \brief End a conditional
         void end_conditional();
 
+        //! \brief Begin a loop 
+        //! \param loop_init The loop information
+        void begin_loop(CODEGEN::TYPES::LoopInitiation loop_init);
+
+        //! \brief End a loop
+        void end_loop();
+
         //! \brief Generate something based on a command
         //! \param command The instructions used to generate code
         void execute_command(CODEGEN::TYPES::Command command);
@@ -84,7 +90,9 @@ namespace DEL
         // As conditional statements come in they are pushed into this stack
         // so we can have nested conditionals handled as they need to be.
         // ConditionalContext objects are BlockAggregators
-        std::stack<CODE::ConditionalContext*> conditional_contexts;
+        std::stack<CODE::BlockAggregator*> aggregators;
+
+        std::stack<Memory::MemAlloc> ephimeral_allocs;
     };
 }
 

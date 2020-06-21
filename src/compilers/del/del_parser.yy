@@ -226,7 +226,6 @@ for_stmt
       { $$ = new DEL::ForLoop($2, $4, $6, $7); }
    ;
 
-
 range_decl_int
    : RANGE COL INT LEFT_PAREN INT_LITERAL COMMA INT_LITERAL RIGHT_PAREN 
       { $$ = new DEL::Range(ValType::INTEGER, $5, $7, $8); }
@@ -236,6 +235,7 @@ range_decl_real
    : RANGE COL REAL LEFT_PAREN REAL_LITERAL COMMA REAL_LITERAL RIGHT_PAREN 
       { $$ = new DEL::Range(ValType::REAL, $5, $7, $8); }
    ;
+
 stmt
    : assignment    { $$ = $1; }
    | reassignment  { $$ = $1; }

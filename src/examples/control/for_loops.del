@@ -5,10 +5,20 @@ def main() -> int {
 
     // Range ints and reals must be pos
     
-   for x in range:real(10.0, 10.1) step 0.0001 {}
+    // 100 000 - Works!
+   // for x in range:real(10.0, 11.0) step 0.00001 {}
 
-//    for x in range:int(1, 10) {}
+    // Address reuse works. After 100000 using 4 internal variables, only 5 spaces were used (4 internal + x)
 
+
+    for x in range:int(1, 100000) 
+    {
+        // This works! 
+        if( x % 3 == 0)
+        {
+            return 0;
+        }
+    }
 
     return 0;
 }

@@ -28,6 +28,26 @@ static const std::string ASM_ALLOC = R"asm(
 
 )asm";
 
+static const std::string ASM_FREE = R"asm(
+;
+;	FREE
+;   Input : r0 - DS Address to free
+;   Output: r0 - 0 if no errors returned, 1 if error loading
+;
+<__del__ds__free:
+
+	mov r11 r0          ; Move address into r11
+	lsh r14 $13 $56     ; Move DS id into position
+	lsh r15 $1  $48     ; Move sub-id for 'free' into position
+	or r10 r14 r15		; Or together to create command into r10
+
+	; Move result to r0 so the user can handle issues
+	mov r0 r11
+    ret
+>
+
+)asm";
+
 static const std::string ASM_LOAD = R"asm(
 ;
 ;	LOAD

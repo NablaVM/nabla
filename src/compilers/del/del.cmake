@@ -38,6 +38,7 @@ set(DEL_COMPILER_HEADERS
     ${DEL_COMPILER_DIR}/codegen/codeblocks/ConditionalContext.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/Function.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/LoadStore.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/LoopContext.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/Operations.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/Primitives.hpp
 
