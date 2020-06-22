@@ -55,7 +55,12 @@ using token = DEL::DEL_Parser::token;
 ":"        { return token::COL;    }
 "step"     { return token::STEP;   }
 "while"    { return token::WHILE;  }
-
+"loop"     { return token::LOOP;   }
+"'"        { 
+               yylval->build< int >( yylineno );
+               return ( token::KEY );    
+           }
+"annul"    { return token::ANNUL;  }
 "<="       { return token::LTE;    }
 "<"        { return token::LT;     }
 ">="       { return token::GTE;    }

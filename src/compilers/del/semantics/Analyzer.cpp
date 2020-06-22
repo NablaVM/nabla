@@ -651,6 +651,75 @@ namespace
         delete while_loop;
     }
 
+    // ----------------------------------------------------------
+    // Named loops are just while loops under the hood
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(NamedLoop & stmt)
+    {
+        std::string artificial_context = symbol_table.generate_unique_context();
+        symbol_table.new_context(artificial_context, false );
+
+        // Ensure the symbol for the loop name is unique
+        ensure_unique_symbol(stmt.name, stmt.line_no);
+
+        // Create a variable for the named loop
+        DEL::AST * loop_variable = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, ValType::INTEGER, "1");
+        Assignment * c_assign = new Assignment(ValType::INTEGER, stmt.name, loop_variable); 
+        c_assign->line_no = stmt.line_no;
+        c_assign->visit(*this);
+
+        delete loop_variable;
+        delete c_assign;
+
+        // Make an expression that is the loop name 
+        DEL::AST * expr = new DEL::AST(DEL::NodeType::ID,  nullptr, nullptr, DEL::ValType::STRING,  stmt.name);
+
+        // Create a while loop with that expression and the loop's elements  ==>  while(loop_name){ loop.eleemnts; }
+        //
+        DEL::WhileLoop * wl = new DEL::WhileLoop(expr, stmt.elements);
+
+        wl->visit(*this);
+
+        // Wl will be deleted by the function that it accepts to
+
+        // Remove the context for the loop
+        symbol_table.remove_current_context();
+    }
+
+    // ----------------------------------------------------------
+    // Annulments set an int or double to their representation of 0
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(AnnulStmt & stmt)
+    {
+        // Ensure variable exists
+        ensure_id_in_current_context(stmt.var, stmt.line_no, {ValType::INTEGER, ValType::REAL});
+
+        DEL::AST * annul_val;
+
+        // Create the correct annulment
+        if(symbol_table.is_existing_symbol_of_type(stmt.var, ValType::REAL))
+        {
+            annul_val = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, ValType::REAL, "0.0");
+        }
+        else
+        {
+            annul_val = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, ValType::INTEGER, "0");
+        }
+
+        // Assignment to annul the variable
+        DEL::Assignment * annulment = new DEL::Assignment(DEL::ValType::REQ_CHECK, stmt.var, annul_val); 
+        annulment->set_line_no(stmt.line_no);
+
+        // Execute assignment
+        annulment->visit(*this);
+
+        // Cleanup
+        delete annul_val;
+        delete annulment;
+    }
+
     // -----------------------------------------------------------------------------------------
     // 
     //                              Validation Methods

@@ -39,6 +39,8 @@ namespace DEL
         void accept(If         &stmt) override;
         void accept(ForLoop    &stmt) override;
         void accept(WhileLoop  &stmt) override;
+        void accept(NamedLoop  &stmt) override;
+        void accept(AnnulStmt  &stmt) override;
 
     private:
 
@@ -72,6 +74,8 @@ namespace DEL
         Intermediate intermediate_layer;
 
         Function * current_function;
+
+        std::vector<std::string> loop_names;
 
         struct FunctionWatch
         {

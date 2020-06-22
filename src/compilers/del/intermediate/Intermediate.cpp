@@ -204,12 +204,6 @@ namespace DEL
                 code_gen.begin_loop(new CODEGEN::TYPES::WhileInitiation(dc, wl->condition));
                 break;
             }
-            case INTERMEDIATE::TYPES::LoopTypes::NAMED:
-            {
-                std::cerr << "UNHANDLED LOOP TYPE : 'NAMED' IN INTERMEDIATE >> DEVELOPER ERROR" << std::endl;
-                exit(EXIT_FAILURE);
-                break;
-            }
             default:
                 std::cerr << "DEFAULT accessed in determining loop type in Intermediate::issue_start_loop()" << std::endl;
                 exit(EXIT_FAILURE);
@@ -232,9 +226,6 @@ namespace DEL
                 break;
             case INTERMEDIATE::TYPES::LoopTypes::WHILE: 
                 cglt = CODEGEN::TYPES::LoopType::WHILE; 
-                break;
-            case INTERMEDIATE::TYPES::LoopTypes::NAMED: 
-                cglt = CODEGEN::TYPES::LoopType::NAMED; 
                 break;
             default:
                 std::cerr << "DEFAULT accessed in determining loop type in Intermediate::issue_start_loop()" << std::endl;

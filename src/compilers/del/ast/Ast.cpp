@@ -31,4 +31,14 @@ namespace DEL
     {
         visitor.accept(*this);
     }
+
+    void NamedLoop::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void AnnulStmt::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
 }

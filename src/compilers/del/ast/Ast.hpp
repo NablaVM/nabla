@@ -184,6 +184,33 @@ namespace DEL
     };
 
     //
+    //  Annulment
+    //
+    class AnnulStmt : public Element
+    {
+    public:
+    
+        virtual void visit(Visitor &visit) override;
+
+        AnnulStmt(std::string variable) : var(variable) {}
+        std::string var;
+    };
+
+    //
+    //  Named Loop
+    //
+    class NamedLoop : public Element
+    {
+    public:
+        NamedLoop(std::string name, ElementList list) : name(name), elements(list){}
+
+        virtual void visit(Visitor &visit) override;
+        
+        std::string name;
+        ElementList elements;
+    };
+
+    //
     //  A call 
     //
     class Call : public Element, public AST
@@ -243,6 +270,8 @@ namespace DEL
         virtual void accept(If         &stmt) = 0;
         virtual void accept(ForLoop    &stmt) = 0;
         virtual void accept(WhileLoop  &stmt) = 0;
+        virtual void accept(NamedLoop  &stmt) = 0;
+        virtual void accept(AnnulStmt  &stmt) = 0;
     };
 }
 

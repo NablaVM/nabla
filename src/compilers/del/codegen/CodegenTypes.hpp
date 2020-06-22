@@ -22,8 +22,7 @@ namespace TYPES
     enum class LoopType
     {
         FOR,
-        WHILE,
-        NAMED
+        WHILE
     };
 
     //! \brief A set of instructions for the code generator to use in the processing of tokens

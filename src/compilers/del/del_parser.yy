@@ -23,6 +23,7 @@
       class Range;
       class Step;
       class WhileLoop;
+      class NamedLoop;
       struct FunctionParam;
    }
 
@@ -63,7 +64,7 @@
 
 %token INT REAL CHAR ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE NIL
-%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA IF ELIF FOR IN COL RANGE STEP WHILE
+%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA IF ELIF FOR IN COL RANGE STEP WHILE LOOP ANNUL
 
 %type<DEL::Element*> stmt;
 %type<DEL::Element*> assignment;
@@ -74,11 +75,13 @@
 %type<DEL::Element*> else_stmt;
 %type<DEL::Element*> for_stmt;
 %type<DEL::Element*> direct_function_call;
+%type<DEL::Element*> annul_stmt;
 %type<DEL::Function*> function_stmt;
 %type<DEL::Range*> range_decl_int;
 %type<DEL::Range*> range_decl_real;
 %type<DEL::Step*>  step_inc;
 %type<DEL::WhileLoop*> while_stmt;
+%type<DEL::NamedLoop*> named_loop_stmt;
 %type<std::string> identifiers;
 %type<DEL::FunctionParam*> call_item;
 
@@ -100,6 +103,7 @@
 %token <std::string> IDENTIFIER
 %token <int>         RIGHT_BRACKET  // These tokens encode line numbers
 %token <int>         RIGHT_PAREN    // These tokens encode line numbers
+%token <int>         KEY            // These tokens encode line numbers
 %token <int>         SEMI           // These tokens encode line numbers
 %token <int>         DEF            // These tokens encode line numbers
 %token <int>         ELSE           // These tokens encode line numbers
@@ -271,13 +275,23 @@ while_stmt
    : WHILE LEFT_PAREN expression RIGHT_PAREN block { $$ = new DEL::WhileLoop($3, $5); $$->set_line_no($4); }
    ;
 
+named_loop_stmt
+   : LOOP KEY identifiers block { $$ = new DEL::NamedLoop($3, $4); $$->set_line_no($2); }
+   ;
+
+annul_stmt
+   : ANNUL identifiers SEMI { $$ = new DEL::AnnulStmt($2); $$->set_line_no($3); }
+   ;
+
 stmt
-   : assignment    { $$ = $1; }
-   | reassignment  { $$ = $1; }
-   | return_stmt   { $$ = $1; }
-   | if_stmt       { $$ = $1; }
-   | for_stmt      { $$ = $1; }
-   | while_stmt    { $$ = $1; }
+   : assignment      { $$ = $1; }
+   | reassignment    { $$ = $1; }
+   | return_stmt     { $$ = $1; }
+   | if_stmt         { $$ = $1; }
+   | for_stmt        { $$ = $1; }
+   | while_stmt      { $$ = $1; }
+   | named_loop_stmt { $$ = $1; }
+   | annul_stmt      { $$ = $1; }
    | direct_function_call { $$ = $1;}
    ;
 

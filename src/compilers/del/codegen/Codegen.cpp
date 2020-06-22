@@ -196,12 +196,6 @@ namespace DEL
             case CODEGEN::TYPES::LoopType::WHILE: 
                 aggregators.push(new CODE::WhileLoopContext(static_cast<CODEGEN::TYPES::WhileInitiation*>(loop_if))); 
                 break;
-            case CODEGEN::TYPES::LoopType::NAMED: 
-            {
-                std::cerr << "Codegen::begin_loop >>> Asked to start 'NAMED' loop, but that is not implemented" << std::endl;
-                exit(EXIT_FAILURE);
-                break;
-            }
             default:
             {
                 std::cerr << "Codegen::begin_loop >>> Attempting to start loop, but an invalid loop type was given" << std::endl;
@@ -257,12 +251,6 @@ namespace DEL
                 // Export the loop as a block - It will be consumed (and deleted by) current_aggregator
                 // Pass in the allocations so it can generate code to clean each loop pass
                 exported_block = loop->export_as_block();
-                break;
-            }
-            case CODEGEN::TYPES::LoopType::NAMED:
-            {
-                std::cerr << "Codegen::end_loop >>> Attempting to end NAMED loop, but that isn't implemented yet" << std::endl;
-                exit(EXIT_FAILURE);
                 break;
             }
             default:
