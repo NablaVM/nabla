@@ -7,7 +7,8 @@
 #include "Operations.hpp"
 #include "Primitives.hpp"
 #include "ConditionalContext.hpp"
-#include "LoopContext.hpp"
+#include "ForLoopContext.hpp"
+#include "WhileLoopContext.hpp"
 
 #include <iostream>
 #include <vector>
@@ -185,11 +186,31 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Codegen::begin_loop(CODEGEN::TYPES::LoopInitiation loop_init)
+    void Codegen::begin_loop(CODEGEN::TYPES::LoopIf * loop_if)
     {
-        aggregators.push(new CODE::LoopContext(loop_init));
+        switch(loop_if->type)
+        {
+            case CODEGEN::TYPES::LoopType::FOR:   
+                aggregators.push(new CODE::ForLoopContext(static_cast<CODEGEN::TYPES::ForLoopInitiation*>(loop_if))); 
+                break;
+            case CODEGEN::TYPES::LoopType::WHILE: 
+                aggregators.push(new CODE::WhileLoopContext(static_cast<CODEGEN::TYPES::WhileInitiation*>(loop_if))); 
+                break;
+            case CODEGEN::TYPES::LoopType::NAMED: 
+            {
+                std::cerr << "Codegen::begin_loop >>> Asked to start 'NAMED' loop, but that is not implemented" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+            }
+            default:
+            {
+                std::cerr << "Codegen::begin_loop >>> Attempting to start loop, but an invalid loop type was given" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+            }
+        }
 
-        // Switch the current aggregator to the conditional context
+        // Switch the current aggregator to the while loop context
         current_aggregator = aggregators.top();
     }
 
@@ -197,23 +218,60 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Codegen::end_loop()
+    void Codegen::end_loop(CODEGEN::TYPES::LoopType type)
     {
         if(aggregators.empty())
         {
-            std::cerr << "Developer Error : Codegen asked to end a loop, but no loop detected" << std::endl;
+            std::cerr << "Developer Error : Codegen asked to end a for loop, but no loop detected" << std::endl;
             exit(EXIT_FAILURE);
         }
 
-        // Get the context off of the stack
-        CODE::LoopContext * loop = static_cast<CODE::LoopContext*>(aggregators.top());
+        CODE::Block * exported_block;
+        CODE::BlockAggregator* block_agg;
 
-        // Pop
-        aggregators.pop();
+        switch(type)
+        {
+            case CODEGEN::TYPES::LoopType::FOR:
+            {
+                // Get the context off of the stack
+                CODE::ForLoopContext * loop = static_cast<CODE::ForLoopContext*>(aggregators.top());
+                block_agg = aggregators.top();
 
-        // Export the loop as a block - It will be consumed (and deleted by) current_aggregator
-        // Pass in the allocations so it can generate code to clean each loop pass
-        CODE::Block * exported_block = loop->export_as_block();
+                // Pop
+                aggregators.pop();
+
+                // Export the loop as a block - It will be consumed (and deleted by) current_aggregator
+                // Pass in the allocations so it can generate code to clean each loop pass
+                exported_block = loop->export_as_block();
+                break;
+            }
+            case CODEGEN::TYPES::LoopType::WHILE:
+            {
+                // Get the context off of the stack
+                CODE::WhileLoopContext * loop = static_cast<CODE::WhileLoopContext*>(aggregators.top());
+                block_agg = aggregators.top();
+
+                // Pop
+                aggregators.pop();
+
+                // Export the loop as a block - It will be consumed (and deleted by) current_aggregator
+                // Pass in the allocations so it can generate code to clean each loop pass
+                exported_block = loop->export_as_block();
+                break;
+            }
+            case CODEGEN::TYPES::LoopType::NAMED:
+            {
+                std::cerr << "Codegen::end_loop >>> Attempting to end NAMED loop, but that isn't implemented yet" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+            }
+            default:
+            {
+                std::cerr << "Codegen::end_loop >>> Attempting to end loop, but an invalid loop type was given" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+            }
+        }
 
         // If the stack is empty redirect the aggregator to be the current function
         if(aggregators.empty())
@@ -229,10 +287,9 @@ namespace DEL
         // Add contents to aggregator - might be the function, might be another context
         current_aggregator->add_block(exported_block);
 
-        // Delete the conditional
-        delete loop;
+        delete block_agg;
     }
-    
+
     // ----------------------------------------------------------
     //
     // ----------------------------------------------------------

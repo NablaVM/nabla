@@ -19,6 +19,13 @@ namespace TYPES
         DOUBLE
     };
 
+    enum class LoopType
+    {
+        FOR,
+        WHILE,
+        NAMED
+    };
+
     //! \brief A set of instructions for the code generator to use in the processing of tokens
     enum class InstructionSet
     {
@@ -160,21 +167,46 @@ namespace TYPES
     };
 
     //
-    //  Information for starting a loop
+    //  Interface for loops
     //
-    class LoopInitiation
+    class LoopIf
     {
     public:
-        LoopInitiation(DataClassification classification, 
+        LoopIf(LoopType type) : type(type){}
+
+        LoopType type;
+    };
+
+    //
+    //  Information for starting a for loop
+    //
+    class ForLoopInitiation : public LoopIf
+    {
+    public:
+        ForLoopInitiation(DataClassification classification, 
                        Memory::MemAlloc loop_var,
                        Memory::MemAlloc end_var, 
-                       Memory::MemAlloc step) : 
+                       Memory::MemAlloc step) : LoopIf(LoopType::FOR),
         classification(classification), loop_var(loop_var), end_var(end_var), step(step) {}
 
         DataClassification classification; 
         Memory::MemAlloc loop_var;
         Memory::MemAlloc end_var;
         Memory::MemAlloc step;
+    };
+
+    //
+    //  Information for starting a while loop
+    //
+    class WhileInitiation : public LoopIf
+    {
+    public:
+        WhileInitiation(DataClassification classification, Memory::MemAlloc condition) : LoopIf(LoopType::WHILE),
+            classification(classification), condition(condition)
+            {}
+
+        DataClassification classification;
+        Memory::MemAlloc condition;
     };
 }
 }

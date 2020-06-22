@@ -1,5 +1,5 @@
-#ifndef DEL_LOOP_CONTEXT_BLOCK_HPP
-#define DEL_LOOP_CONTEXT_BLOCK_HPP
+#ifndef DEL_FOR_LOOP_CONTEXT_BLOCK_HPP
+#define DEL_FOR_LOOP_CONTEXT_BLOCK_HPP
 
 #include "BlockAggregator.hpp"
 #include "LoadStore.hpp"
@@ -13,20 +13,20 @@ namespace
 {
     // This increases over the lifespan of the program. Hopefully people 
     // dont end up making 2^64-1 loops. 
-    static uint64_t LOOP_CONTEXT_COUNTER = 0;
+    static uint64_t FOR_LOOP_CONTEXT = 0;
 }
 
     //! \brief A loop context aggregator that builds instructions
-    class LoopContext : public BlockAggregator
+    class ForLoopContext : public BlockAggregator
     {
     public:
-        LoopContext(CODEGEN::TYPES::LoopInitiation loop_init) : loop_info(loop_init)
+        ForLoopContext(CODEGEN::TYPES::ForLoopInitiation * loop_init) : loop_info(loop_init)
         {
-            loop_label = "loop_context_" + std::to_string(LOOP_CONTEXT_COUNTER++);
+            loop_label = "loop_context_" + std::to_string(FOR_LOOP_CONTEXT++);
 
             std::stringstream ss;
             ss << NLT 
-               << "; <<< LOOP >>>" << NL << NL
+               << "; <<< FOR LOOP >>>" << NL << NL
                << loop_label << ":";
 
             instructions.push_back(ss.str());
@@ -41,8 +41,8 @@ namespace
             {
                 // Generate the code for loading the variable
                 CODEGEN::TYPES::AddressValueInstruction * loader = new CODEGEN::TYPES::AddressValueInstruction(CODEGEN::TYPES::InstructionSet::LOAD, 
-                    loop_info.end_var.start_pos,
-                    loop_info.end_var.bytes_requested
+                    loop_info->end_var.start_pos,
+                    loop_info->end_var.bytes_requested
                     );
 
                 CODE::Load * load_ins = new CODE::Load(loader);
@@ -60,8 +60,8 @@ namespace
             {
                 // Generate the code for loading the variable
                 CODEGEN::TYPES::AddressValueInstruction * loader = new CODEGEN::TYPES::AddressValueInstruction(CODEGEN::TYPES::InstructionSet::LOAD, 
-                    loop_info.loop_var.start_pos,
-                    loop_info.loop_var.bytes_requested
+                    loop_info->loop_var.start_pos,
+                    loop_info->loop_var.bytes_requested
                     );
 
                 CODE::Load * load_ins = new CODE::Load(loader);
@@ -75,12 +75,12 @@ namespace
                 instructions.insert(instructions.end(), li.begin(), li.end());
             }
 
-            // Load ste[] var
+            // Load step var
             {
                 // Generate the code for loading the variable
                 CODEGEN::TYPES::AddressValueInstruction * loader = new CODEGEN::TYPES::AddressValueInstruction(CODEGEN::TYPES::InstructionSet::LOAD, 
-                    loop_info.step.start_pos,
-                    loop_info.step.bytes_requested
+                    loop_info->step.start_pos,
+                    loop_info->step.bytes_requested
                     );
 
                 CODE::Load * load_ins = new CODE::Load(loader);
@@ -98,7 +98,7 @@ namespace
             {
                 std::stringstream ss; 
 
-                if(loop_info.classification == CODEGEN::TYPES::DataClassification::INTEGER)
+                if(loop_info->classification == CODEGEN::TYPES::DataClassification::INTEGER)
                 {
                     ss << NLT 
                     << "popw  r0 ls"    << TAB << "; Load step variable into r0"           << NLT 
@@ -118,8 +118,8 @@ namespace
                 }
                 instructions.push_back(ss.str());
 
-                CODE::Store * store_ins = new CODE::Store(loop_info.loop_var.start_pos, 
-                                                          loop_info.loop_var.bytes_requested,
+                CODE::Store * store_ins = new CODE::Store(loop_info->loop_var.start_pos, 
+                                                          loop_info->loop_var.bytes_requested,
                                                           "Loop Variable");
 
                 std::vector<std::string> si = store_ins->get_code();
@@ -130,7 +130,6 @@ namespace
             }
 
             instructions.push_back(std::string(NLT) + "; Dealloc items alloced in loop" + std::string(NL));
-
 
             // Dealloc any new items in the loop
             while(!allocs.empty())
@@ -153,21 +152,32 @@ namespace
             // Compare and conditionally jump
             {
                 std::stringstream ss;
-                ss << NLT
-                   << "popw r0 ls" << TAB << "; Get the step variable " << NLT 
-                   << "popw r1 ls" << TAB << "; Get the end variable"   << NLT 
-                   << "blt r0 r1 " << loop_label << NLT;
 
+                if(loop_info->classification == CODEGEN::TYPES::DataClassification::INTEGER)
+                {
+                    ss << NLT
+                    << "popw r0 ls" << TAB << "; Get the step variable " << NLT 
+                    << "popw r1 ls" << TAB << "; Get the end variable"   << NLT 
+                    << "blt r0 r1 " << loop_label << NLT;
+                }
+                else
+                {
+                    ss << NLT
+                    << "popw r0 ls" << TAB << "; Get the step variable " << NLT 
+                    << "popw r1 ls" << TAB << "; Get the end variable"   << NLT 
+                    << "blt.d r0 r1 " << loop_label << NLT;
+                }
                 instructions.push_back(ss.str());
             }
 
+            delete loop_info;
             return new Export(instructions);
         }
 
     private:
 
         std::string loop_label;
-        CODEGEN::TYPES::LoopInitiation loop_info;
+        CODEGEN::TYPES::ForLoopInitiation * loop_info;
 
         // Class to export the context as a block
         class Export : public Block

@@ -80,6 +80,7 @@ namespace TYPES
         LoopTypes type;
     };
 
+    //! \brief A for loop
     class ForLoop : public LoopIf
     {
     public:
@@ -94,6 +95,18 @@ namespace TYPES
         Memory::MemAlloc var;
         Memory::MemAlloc end;
         Memory::MemAlloc step;
+    };
+
+    //! \brief A while loop
+    class WhileLoop : public LoopIf
+    {
+    public:
+        WhileLoop(AssignmentClassifier classification, 
+                  Memory::MemAlloc condition_expression) : LoopIf(LoopTypes::WHILE),
+                                                           classification(classification),
+                                                           condition(condition_expression){}
+        AssignmentClassifier classification;
+        Memory::MemAlloc condition;
     };
 }
 }

@@ -170,6 +170,20 @@ namespace DEL
     };
 
     //
+    //  While Loop
+    //
+    class WhileLoop : public Element
+    {
+    public:
+        WhileLoop(AST * expression, ElementList list) : expr(expression), elements(list){}
+
+        virtual void visit(Visitor &visit) override;
+        
+        AST * expr;
+        ElementList elements;
+    };
+
+    //
     //  A call 
     //
     class Call : public Element, public AST
@@ -228,6 +242,7 @@ namespace DEL
         virtual void accept(Call       &stmt) = 0;
         virtual void accept(If         &stmt) = 0;
         virtual void accept(ForLoop    &stmt) = 0;
+        virtual void accept(WhileLoop  &stmt) = 0;
     };
 }
 

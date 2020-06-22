@@ -54,6 +54,7 @@ using token = DEL::DEL_Parser::token;
 "range"    { return token::RANGE;  }
 ":"        { return token::COL;    }
 "step"     { return token::STEP;   }
+"while"    { return token::WHILE;  }
 
 "<="       { return token::LTE;    }
 "<"        { return token::LT;     }

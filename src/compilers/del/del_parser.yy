@@ -22,6 +22,7 @@
       class Function;
       class Range;
       class Step;
+      class WhileLoop;
       struct FunctionParam;
    }
 
@@ -62,7 +63,7 @@
 
 %token INT REAL CHAR ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE NIL
-%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA IF ELIF FOR IN COL RANGE STEP
+%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA IF ELIF FOR IN COL RANGE STEP WHILE
 
 %type<DEL::Element*> stmt;
 %type<DEL::Element*> assignment;
@@ -77,6 +78,7 @@
 %type<DEL::Range*> range_decl_int;
 %type<DEL::Range*> range_decl_real;
 %type<DEL::Step*>  step_inc;
+%type<DEL::WhileLoop*> while_stmt;
 %type<std::string> identifiers;
 %type<DEL::FunctionParam*> call_item;
 
@@ -265,12 +267,17 @@ step_inc
    | STEP identifiers  { $$ = new DEL::Step(DEL::ValType::REQ_CHECK, $2); }
    ;
 
+while_stmt
+   : WHILE LEFT_PAREN expression RIGHT_PAREN block { $$ = new DEL::WhileLoop($3, $5); $$->set_line_no($4); }
+   ;
+
 stmt
    : assignment    { $$ = $1; }
    | reassignment  { $$ = $1; }
    | return_stmt   { $$ = $1; }
    | if_stmt       { $$ = $1; }
    | for_stmt      { $$ = $1; }
+   | while_stmt    { $$ = $1; }
    | direct_function_call { $$ = $1;}
    ;
 

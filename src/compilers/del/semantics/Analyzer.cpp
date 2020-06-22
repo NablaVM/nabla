@@ -468,7 +468,6 @@ namespace
         std::string artificial_context = symbol_table.generate_unique_context();
         symbol_table.new_context(artificial_context, false );
 
-
         // Create a name for the end variable
         std::string end_var;
 
@@ -524,8 +523,6 @@ namespace
             delete assign_loop_var;
         }
 
-
-
         // Setup 'step'
         std::string step_var_name;
 
@@ -568,13 +565,90 @@ namespace
         }
 
         // End the loop
-        intermediate_layer.issue_end_loop();
+        intermediate_layer.issue_end_loop(ifl);
 
         // Remove the context for the loop
         symbol_table.remove_current_context();
 
+        delete ifl;
         delete stmt.step;
         delete stmt.range;
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(WhileLoop & stmt)
+    {
+        // Determine the type of the expression
+        ValType condition_type = determine_expression_type(stmt.expr, stmt.expr, true, stmt.line_no);
+
+        // Create a context for the loop
+        std::string artificial_context = symbol_table.generate_unique_context();
+        symbol_table.new_context(artificial_context, false );
+
+        std::string while_condition_variable = symbol_table.generate_unique_variable_symbol();
+
+        // A reassignment statement to update artificial variable that checks the condition of the while
+        // when loop is executed
+        Assignment * update_condition;
+
+        // Create a variable to mark the expression as true or false
+        std::string value = (condition_type == ValType::REAL) ? "0.0" : "0";
+        DEL::AST * artificial_value = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, condition_type, value);
+        DEL::AST * artificial_check = new DEL::AST(DEL::NodeType::GT , stmt.expr, artificial_value);
+
+        // Create an assignment for the conditional 
+        Assignment * c_assign = new Assignment(condition_type, while_condition_variable, artificial_check);
+
+        // Create the conditional assignment
+
+        c_assign->line_no = stmt.line_no;
+        c_assign->visit(*this);
+
+        // To update the while condition inside the loop
+        update_condition = new DEL::Assignment(DEL::ValType::REQ_CHECK, while_condition_variable, artificial_check);
+        update_condition->line_no = stmt.line_no;
+
+        // Get the memory information
+        Memory::MemAlloc condition_mem_alloc = memory_man.get_mem_info(while_condition_variable);
+
+        // Translate data type
+        INTERMEDIATE::TYPES::AssignmentClassifier classifier = (condition_type == ValType::REAL) ? 
+                INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE : 
+                INTERMEDIATE::TYPES::AssignmentClassifier::INTEGER;
+
+        // Indicate loop start to intermediate
+        INTERMEDIATE::TYPES::WhileLoop * while_loop = new INTERMEDIATE::TYPES::WhileLoop(classifier, condition_mem_alloc);
+
+        // Start the loop
+        intermediate_layer.issue_start_loop(while_loop);
+
+        // Now that we've started the loop, we need to ensure the condition is updated each iteration
+        update_condition->visit(*this);
+
+        // Cleanup of things we don't need anymore
+        delete artificial_value;
+        delete artificial_check;
+        delete c_assign;
+        delete update_condition;
+
+
+        // Compile the statements in the for loop
+        for(auto & el : stmt.elements)
+        {
+            el->visit(*this);
+            delete el;
+        }
+
+        // End the loop
+        intermediate_layer.issue_end_loop(while_loop);
+
+        // Remove the context for the loop
+        symbol_table.remove_current_context();
+
+        delete while_loop;
     }
 
     // -----------------------------------------------------------------------------------------
@@ -619,7 +693,7 @@ namespace
         }
         else
         {
-            error_man.report_custom("Analyser", 
+            error_man.report_custom("Analyzer", 
                 " Developer Error: A step to be validated came in with an unhandled type, grammar should've stopped this",
                 true);
         }

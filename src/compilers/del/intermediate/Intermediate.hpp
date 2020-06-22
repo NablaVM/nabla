@@ -56,7 +56,7 @@ namespace DEL
         void issue_start_loop(INTERMEDIATE::TYPES::LoopIf * loop);
 
         //! \brief End of loop
-        void issue_end_loop();
+        void issue_end_loop(INTERMEDIATE::TYPES::LoopIf * loop);
 
         //! \brief Issue an assignment command to the code generator
         //! \param id The id being assigned

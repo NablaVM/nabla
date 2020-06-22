@@ -182,22 +182,31 @@ namespace DEL
                                     CODEGEN::TYPES::DataClassification::DOUBLE :
                                     CODEGEN::TYPES::DataClassification::INTEGER;
 
-                // Create codegen loopinit
-                CODEGEN::TYPES::LoopInitiation loop_init(dc, fl->var, fl->end, fl->step);
-
                 // Begin the loop
-                code_gen.begin_loop(loop_init);
+                //code_gen.begin_for_loop(CODEGEN::TYPES::ForLoopInitiation(dc, fl->var, fl->end, fl->step));
+
+                code_gen.begin_loop(new CODEGEN::TYPES::ForLoopInitiation(dc, fl->var, fl->end, fl->step));
+                break;
+            }
+            case INTERMEDIATE::TYPES::LoopTypes::WHILE:
+            {
+                // Cast to the loop type
+                INTERMEDIATE::TYPES::WhileLoop * wl = static_cast<INTERMEDIATE::TYPES::WhileLoop*>(loop);
+
+                // Convert type to one codegen understands
+                CODEGEN::TYPES::DataClassification dc = (wl->classification  == INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE ) ? 
+                                    CODEGEN::TYPES::DataClassification::DOUBLE :
+                                    CODEGEN::TYPES::DataClassification::INTEGER;
+
+                // Create codegen while init
+                //code_gen.begin_while_loop(CODEGEN::TYPES::WhileInitiation(dc, wl->condition));
+
+                code_gen.begin_loop(new CODEGEN::TYPES::WhileInitiation(dc, wl->condition));
                 break;
             }
             case INTERMEDIATE::TYPES::LoopTypes::NAMED:
             {
                 std::cerr << "UNHANDLED LOOP TYPE : 'NAMED' IN INTERMEDIATE >> DEVELOPER ERROR" << std::endl;
-                exit(EXIT_FAILURE);
-                break;
-            }
-            case INTERMEDIATE::TYPES::LoopTypes::WHILE:
-            {
-                std::cerr << "UNHANDLED LOOP TYPE : 'WHILE' IN INTERMEDIATE >> DEVELOPER ERROR" << std::endl;
                 exit(EXIT_FAILURE);
                 break;
             }
@@ -212,9 +221,28 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Intermediate::issue_end_loop()
+    void Intermediate::issue_end_loop(INTERMEDIATE::TYPES::LoopIf * loop)
     {
-        code_gen.end_loop();
+        CODEGEN::TYPES::LoopType cglt;
+
+        switch(loop->type)
+        {
+            case INTERMEDIATE::TYPES::LoopTypes::FOR:   
+                cglt = CODEGEN::TYPES::LoopType::FOR;   
+                break;
+            case INTERMEDIATE::TYPES::LoopTypes::WHILE: 
+                cglt = CODEGEN::TYPES::LoopType::WHILE; 
+                break;
+            case INTERMEDIATE::TYPES::LoopTypes::NAMED: 
+                cglt = CODEGEN::TYPES::LoopType::NAMED; 
+                break;
+            default:
+                std::cerr << "DEFAULT accessed in determining loop type in Intermediate::issue_start_loop()" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+        }
+
+        code_gen.end_loop(cglt);
     }
 
     // ----------------------------------------------------------

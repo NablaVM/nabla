@@ -38,7 +38,7 @@ namespace DEL
         void accept(Call       &stmt) override;
         void accept(If         &stmt) override;
         void accept(ForLoop    &stmt) override;
-
+        void accept(WhileLoop  &stmt) override;
 
     private:
 

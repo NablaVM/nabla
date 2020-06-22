@@ -54,12 +54,13 @@ namespace DEL
         //! \brief End a conditional
         void end_conditional();
 
-        //! \brief Begin a loop 
-        //! \param loop_init The loop information
-        void begin_loop(CODEGEN::TYPES::LoopInitiation loop_init);
+        //! \brief Begin a loop
+        //! \param loop_if The loop
+         void begin_loop(CODEGEN::TYPES::LoopIf * loop_if);
 
-        //! \brief End a loop
-        void end_loop();
+        //! \brief End while loop
+        //! \param type What type of loop is being ended
+        void end_loop(CODEGEN::TYPES::LoopType type);
 
         //! \brief Generate something based on a command
         //! \param command The instructions used to generate code
