@@ -3,14 +3,7 @@
 #include <chrono>
 #include <vector>
 
-#include "CompilerFramework.hpp"
-
 #include <libnabla/VSysLoadableMachine.hpp>
-
-/*
-    LLL - Low level language    (LLL Binary is a binary generated from raw LLL through solace)
-    HLL - High level language   (HLL Binary is a binary generated from nabla HLL compiler)
-*/
 
 namespace
 {
@@ -27,8 +20,6 @@ namespace
 }
 
 int handle_bin_exec(std::string file);
-
-int handle_compilation(std::string file);
 
 void show_help();
 
@@ -49,8 +40,7 @@ int main(int argc, char ** argv)
     NablaArguments = {
 
         { "-h", "--nabla-help", "Display help message."},
-        { "-v", "--version",    "Display the version of Nabla." },
-        { "-c", "--compile",    "Compile a DEL file."}
+        { "-v", "--version",    "Display the version of Nabla." }
     };
     
     std::vector<std::string> args(argv, argv + argc);
@@ -72,34 +62,10 @@ int main(int argc, char ** argv)
             show_version();
             return 0;
         }
-
-        // Compile DEL
-        //
-        if(args[i] == "-c" || args[i] == "--compile")
-        {
-            if(i == argc - 1)
-            {
-                std::cout << "Error: No file given" << std::endl;
-                return 1;
-            }
-
-            return handle_compilation(args[i+1]);
-        }
     }
 
     // No arguments handled, but there is at least one argument so try to execute it 
     return handle_bin_exec(args[1]);
-}
-
-// --------------------------------------------
-// Compile Nabla HLL
-// --------------------------------------------
-    
-int handle_compilation(std::string file)
-{
-    NABLA::CompilerFramework cfw;
-
-    return cfw.compile(file);
 }
 
 // --------------------------------------------
@@ -119,6 +85,8 @@ void show_help()
     {
         std::cout << na.short_arg << "\t" << na.long_arg << "\t" << na.description << std::endl;
     }
+
+    std::cout << std::endl << "To start the VM pass in a binary file as an argument to the Nabla application" << std::endl;
 }
 
 // --------------------------------------------

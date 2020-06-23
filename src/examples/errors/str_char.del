@@ -1,6 +1,0 @@
-def main() -> nil {
-
-    char my_char = "This is a test that should fail";
-
-    return;
-}

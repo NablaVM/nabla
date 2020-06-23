@@ -1,8 +1,0 @@
-
-
-def main() -> int {
-
-    int a = 6+6-2*2;
-
-    return;
-}
