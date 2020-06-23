@@ -18,10 +18,6 @@ before_install:
 
   - PARENTDIR=$(pwd)
 
-  - bash install_compiler_deps.sh
-
-  - cd $PARENTDIR
-
   - eval "${MATRIX_EVAL}"
   
   - mkdir $PARENTDIR/build-release
