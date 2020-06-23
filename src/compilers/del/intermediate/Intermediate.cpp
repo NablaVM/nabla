@@ -118,6 +118,33 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
+    void Intermediate::issue_start_conditional_context(Memory::MemAlloc memory_info )
+    {
+        code_gen.begin_conditional(CODEGEN::TYPES::ConditionalInitiation(memory_info));
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Intermediate::issue_trailed_context(Memory::MemAlloc memory_info)
+    {
+        code_gen.extend_conditional(CODEGEN::TYPES::ConditionalInitiation(memory_info));
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Intermediate::issue_end_conditional_context()
+    {
+        code_gen.end_conditional();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     void Intermediate::issue_direct_call(std::string encoded_call)
     {
         // Create the command
@@ -141,10 +168,82 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    void Intermediate::issue_assignment(std::string id, Memory::MemAlloc memory_info, INTERMEDIATE::TYPES::AssignmentClassifier classification, std::string postfix_expression)
+    void Intermediate::issue_start_loop(INTERMEDIATE::TYPES::LoopIf * loop)
+    {
+        switch(loop->type)
+        {
+            case INTERMEDIATE::TYPES::LoopTypes::FOR:
+            {
+                // Cast to the loop type
+                INTERMEDIATE::TYPES::ForLoop * fl = static_cast<INTERMEDIATE::TYPES::ForLoop*>(loop);
+
+                // Convert type to one codegen understands
+                CODEGEN::TYPES::DataClassification dc = (fl->classification == INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE ) ? 
+                                    CODEGEN::TYPES::DataClassification::DOUBLE :
+                                    CODEGEN::TYPES::DataClassification::INTEGER;
+
+                // Begin the loop
+                //code_gen.begin_for_loop(CODEGEN::TYPES::ForLoopInitiation(dc, fl->var, fl->end, fl->step));
+
+                code_gen.begin_loop(new CODEGEN::TYPES::ForLoopInitiation(dc, fl->var, fl->end, fl->step));
+                break;
+            }
+            case INTERMEDIATE::TYPES::LoopTypes::WHILE:
+            {
+                // Cast to the loop type
+                INTERMEDIATE::TYPES::WhileLoop * wl = static_cast<INTERMEDIATE::TYPES::WhileLoop*>(loop);
+
+                // Convert type to one codegen understands
+                CODEGEN::TYPES::DataClassification dc = (wl->classification  == INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE ) ? 
+                                    CODEGEN::TYPES::DataClassification::DOUBLE :
+                                    CODEGEN::TYPES::DataClassification::INTEGER;
+
+                // Create codegen while init
+                //code_gen.begin_while_loop(CODEGEN::TYPES::WhileInitiation(dc, wl->condition));
+
+                code_gen.begin_loop(new CODEGEN::TYPES::WhileInitiation(dc, wl->condition));
+                break;
+            }
+            default:
+                std::cerr << "DEFAULT accessed in determining loop type in Intermediate::issue_start_loop()" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Intermediate::issue_end_loop(INTERMEDIATE::TYPES::LoopIf * loop)
+    {
+        CODEGEN::TYPES::LoopType cglt;
+
+        switch(loop->type)
+        {
+            case INTERMEDIATE::TYPES::LoopTypes::FOR:   
+                cglt = CODEGEN::TYPES::LoopType::FOR;   
+                break;
+            case INTERMEDIATE::TYPES::LoopTypes::WHILE: 
+                cglt = CODEGEN::TYPES::LoopType::WHILE; 
+                break;
+            default:
+                std::cerr << "DEFAULT accessed in determining loop type in Intermediate::issue_start_loop()" << std::endl;
+                exit(EXIT_FAILURE);
+                break;
+        }
+
+        code_gen.end_loop(cglt);
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Intermediate::issue_assignment(std::string id, bool requires_ds_allocation, Memory::MemAlloc memory_info, INTERMEDIATE::TYPES::AssignmentClassifier classification, std::string postfix_expression)
     {
         // Build the instruction set
-        CODEGEN::TYPES::Command command = encode_postfix_assignment_expression(memory_info, classification, postfix_expression);
+        CODEGEN::TYPES::Command command = encode_postfix_assignment_expression(requires_ds_allocation, memory_info, classification, postfix_expression);
         command.id = id;
 
         // Issue the command
@@ -161,7 +260,7 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    CODEGEN::TYPES::Command Intermediate::encode_postfix_assignment_expression(Memory::MemAlloc memory_info,  INTERMEDIATE::TYPES::AssignmentClassifier classification, std::string expression)
+    CODEGEN::TYPES::Command Intermediate::encode_postfix_assignment_expression(bool rdsa, Memory::MemAlloc memory_info,  INTERMEDIATE::TYPES::AssignmentClassifier classification, std::string expression)
     {
         // Build the expression into a string vector
         std::istringstream buf(expression);
@@ -171,7 +270,7 @@ namespace DEL
         // Build instructions for command
         CODEGEN::TYPES::Command command;
 
-        command = build_assignment(classification, tokens, memory_info.bytes_alloced);
+        command = build_assignment(rdsa, classification, tokens, memory_info.bytes_requested);
 
         // Information regarding where to store result
         command.memory_info = memory_info;
@@ -183,7 +282,7 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    CODEGEN::TYPES::Command Intermediate::build_assignment(INTERMEDIATE::TYPES::AssignmentClassifier & classification, std::vector<std::string> & tokens, uint64_t byte_len)
+    CODEGEN::TYPES::Command Intermediate::build_assignment(bool rdsa, INTERMEDIATE::TYPES::AssignmentClassifier & classification, std::vector<std::string> & tokens, uint64_t byte_len)
     {
         CODEGEN::TYPES::Command command;
 
@@ -228,13 +327,17 @@ namespace DEL
             return command;
         }
 
-        CODEGEN::TYPES::InstructionSet final = (byte_len < SETTINGS::SYSTEM_WORD_SIZE_BYTES) ? 
-            CODEGEN::TYPES::InstructionSet::STORE_BYTE : 
-            CODEGEN::TYPES::InstructionSet::STORE_WORD;
+        // Requires ds allocation
+        if(rdsa)
+        {
+            command.instructions.push_back(
+                new CODEGEN::TYPES::DSAllocInstruction(CODEGEN::TYPES::InstructionSet::DS_ALLOC, byte_len)
+            );
+        }
 
         // End of assignment trigger storage of result
         command.instructions.push_back(
-            new CODEGEN::TYPES::BaseInstruction(final)
+            new CODEGEN::TYPES::BaseInstruction(CODEGEN::TYPES::InstructionSet::STORE)
         );
         return command;
     }
@@ -281,28 +384,11 @@ namespace DEL
             // Handle an ID
             case INTERMEDIATE::TYPES::DirectiveType::ID:
             {
-                // If the item is only 1 byte, call load byte on the start position
-                if(byte_len == 1)
-                { 
-                    command.instructions.push_back(
-                        new CODEGEN::TYPES::AddressValueInstruction(CODEGEN::TYPES::InstructionSet::LOAD_BYTE,
-                            directive.allocation[0].start_pos
-                        )
-                    );
-                }
-                else
-                {
-                    // If the item is multiple bytes, then we load words until we've loaded everything
-                    while(directive.allocation[0].start_pos < directive.allocation[0].end_pos)
-                    {
-                        command.instructions.push_back(
-                            new CODEGEN::TYPES::AddressValueInstruction(CODEGEN::TYPES::InstructionSet::LOAD_WORD,
-                                directive.allocation[0].start_pos
-                            )
-                        );
-                        directive.allocation[0].start_pos += SETTINGS::SYSTEM_WORD_SIZE_BYTES; // Inc by word
-                    }
-                }
+                command.instructions.push_back(
+                    new CODEGEN::TYPES::AddressValueInstruction(CODEGEN::TYPES::InstructionSet::LOAD,
+                        directive.allocation[0].start_pos, byte_len
+                    )
+                );
                 break;
             }
 

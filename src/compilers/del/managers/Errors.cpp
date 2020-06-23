@@ -217,6 +217,42 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
+    void Errors::report_range_invalid_start_gt_end(int line_no, std::string start, std::string end)
+    {
+        display_error_start(true, line_no); std::cerr << "Start position greater than end position in given range" << std::endl;
+         std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2, true, false);
+        exit(EXIT_FAILURE);
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Errors::report_range_ineffective(int line_no, std::string start, std::string end)
+    {
+        display_error_start(true, line_no); std::cerr << "Range does nothing" << std::endl;
+         std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2, true, false);
+        exit(EXIT_FAILURE);
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Errors::report_invalid_step(int line_no)
+    {
+        display_error_start(true, line_no); std::cerr << "Step is ineffective" << std::endl;
+         std::string line = driver.preproc.fetch_line(line_no);
+        display_line_and_error_pointer(line, line.size()/2, true, false);
+        exit(EXIT_FAILURE);
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     void Errors::report_preproc_file_read_fail(std::vector<std::string> include_crumbs, std::string file_in_question)
     {
         display_error_start(true); std::cerr  << "Unable to open file : " << file_in_question << std::endl;

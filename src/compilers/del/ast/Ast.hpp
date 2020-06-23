@@ -43,6 +43,34 @@ namespace DEL
     };
 
     //
+    //  A range of values
+    //
+    class Range
+    {
+    public: 
+        // Create a range
+        Range(ValType type, std::string from, std::string to, int line) : 
+            type(type), from(from), to(to), line_no(line){}
+
+        ValType type;
+        std::string from;
+        std::string to;
+        int line_no;
+    };
+
+    //
+    //  A 'step'
+    //
+    class Step
+    {
+    public:
+        Step(ValType type, std::string val) : type(type), val(val){}
+
+        ValType type;
+        std::string val;
+    };
+    
+    //
     // Fwd for a visitor
     //
     class Visitor;
@@ -84,6 +112,31 @@ namespace DEL
     };
 
     //
+    //  If statement
+    //
+    class If : public Element
+    {
+    public:
+        If(IfType type, AST * expr, ElementList elements, Element * trail, int line) : type(type), expr(expr), element_list(elements), trail(trail)
+        {
+            line_no = line;
+        }
+
+        virtual void visit(Visitor &visit) override;
+
+        void set_var_name(std::string var)
+        {
+            var_name = var;
+        }
+
+        IfType type;
+        AST * expr;
+        ElementList element_list;
+        Element * trail;
+        std::string var_name;
+    };
+
+    //
     //  A return statement
     //
     class ReturnStmt : public Element
@@ -96,6 +149,65 @@ namespace DEL
 
         ValType data_type;
         AST * rhs;
+    };
+
+    //
+    //  A for loop
+    //
+    class ForLoop : public Element
+    {
+    public: 
+        ForLoop(ValType type, std::string id, Range * range, Step * step, ElementList elements) : 
+            type(type), id(id), range(range), step(step), elements(elements){}
+
+        virtual void visit(Visitor &visit) override;
+        
+        ValType type;
+        std::string id;
+        Range * range;
+        Step * step;
+        ElementList elements;
+    };
+
+    //
+    //  While Loop
+    //
+    class WhileLoop : public Element
+    {
+    public:
+        WhileLoop(AST * expression, ElementList list) : expr(expression), elements(list){}
+
+        virtual void visit(Visitor &visit) override;
+        
+        AST * expr;
+        ElementList elements;
+    };
+
+    //
+    //  Annulment
+    //
+    class AnnulStmt : public Element
+    {
+    public:
+    
+        virtual void visit(Visitor &visit) override;
+
+        AnnulStmt(std::string variable) : var(variable) {}
+        std::string var;
+    };
+
+    //
+    //  Named Loop
+    //
+    class NamedLoop : public Element
+    {
+    public:
+        NamedLoop(std::string name, ElementList list) : name(name), elements(list){}
+
+        virtual void visit(Visitor &visit) override;
+        
+        std::string name;
+        ElementList elements;
     };
 
     //
@@ -129,6 +241,7 @@ namespace DEL
         std::vector<FunctionParam> params;
     };
 
+
     //
     //  A function
     //
@@ -154,9 +267,12 @@ namespace DEL
         virtual void accept(Assignment &stmt) = 0;
         virtual void accept(ReturnStmt &stmt) = 0;
         virtual void accept(Call       &stmt) = 0;
+        virtual void accept(If         &stmt) = 0;
+        virtual void accept(ForLoop    &stmt) = 0;
+        virtual void accept(WhileLoop  &stmt) = 0;
+        virtual void accept(NamedLoop  &stmt) = 0;
+        virtual void accept(AnnulStmt  &stmt) = 0;
     };
-
-
 }
 
 #endif

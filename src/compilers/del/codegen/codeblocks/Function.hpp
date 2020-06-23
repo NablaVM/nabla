@@ -7,7 +7,11 @@ namespace DEL
 {
 namespace CODE
 {
-        //
+namespace
+{
+    static int LABEL_COUNTER = 0;
+}
+    //
     //  A function
     //
     //      The function object collects blocks during code generation, and upon calling building_complete
@@ -115,6 +119,7 @@ namespace CODE
 
         void build_return(bool return_item = true)
         {
+            std::string dealloc_label = "function_dealloc_gs_" + std::to_string(LABEL_COUNTER++);
             /*
                 The loop code for shrinking GS is not set to be configurable on purpose
             */
@@ -125,10 +130,13 @@ namespace CODE
                << NLT << "stw" << WS << "$0(gs)" << WS << "r" << REG_ARITH_LHS << TAB << "; Reset stack pointer" << NL
                << NLT << "; Shrink GS to clean up current function" << NL 
                << NLT << "mov r1 $0" << NL
-               << NL  << "function_dealloc_gs:"
+               << NL  << dealloc_label << ":"
                << NLT << "add r1 r1 $1"
-               << NLT << "popw r7 gs"
-               << NLT << "blt r1 r9 function_dealloc_gs" << NL
+               << NLT << "popw r0 gs"
+               << NL
+               << NLT << "; Free memory from DS Device - Developer note : This might cause some return issues later on"
+               << NLT << "call __del__ds__free"
+               << NLT << "blt r1 r9" << WS << dealloc_label << NL
                << NL;
 
             if(return_item)

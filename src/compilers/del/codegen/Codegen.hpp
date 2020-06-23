@@ -11,6 +11,8 @@
 #include "Generator.hpp"
 #include "Function.hpp"
 
+#include <stack>
+
 namespace DEL
 {
     //! \brief Code generator
@@ -41,6 +43,25 @@ namespace DEL
         //! \post The code generator will be ready to begin another function
         void end_function();
 
+        //! \brief Mark the start of a conditional  (if)
+        //! \param conditional_init The information for the initiation of a conditional
+        void begin_conditional(CODEGEN::TYPES::ConditionalInitiation conditional_init);
+
+        //! \brief Extend the current conditional with a chained statement (elseif/else)
+        //! \param coniditional_init The information for the next initiiation of a conditional
+        void extend_conditional(CODEGEN::TYPES::ConditionalInitiation conditional_init);
+
+        //! \brief End a conditional
+        void end_conditional();
+
+        //! \brief Begin a loop
+        //! \param loop_if The loop
+         void begin_loop(CODEGEN::TYPES::LoopIf * loop_if);
+
+        //! \brief End while loop
+        //! \param type What type of loop is being ended
+        void end_loop(CODEGEN::TYPES::LoopType type);
+
         //! \brief Generate something based on a command
         //! \param command The instructions used to generate code
         void execute_command(CODEGEN::TYPES::Command command);
@@ -61,7 +82,16 @@ namespace DEL
         std::vector<std::string> program_init;
         std::vector<std::string> program_instructions;
 
+        // A function being generated (an aggregator)
         CODE::Function * current_function;
+
+        // Directs block generation to destination for aggregation
+        CODE::BlockAggregator * current_aggregator;
+
+        // As conditional statements come in they are pushed into this stack
+        // so we can have nested conditionals handled as they need to be.
+        // ConditionalContext objects are BlockAggregators
+        std::stack<CODE::BlockAggregator*> aggregators;
     };
 }
 

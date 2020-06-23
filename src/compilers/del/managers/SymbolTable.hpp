@@ -76,6 +76,13 @@ namespace DEL
         //! \param context The context to clear
         void clear_existing_context(std::string context);
 
+        //! \brief Remove the current operating context 
+        //! \post  This will remove all information regarding current context,
+        //!        and will not remove current context if it is the last remaining context.
+        //!        This will remove any reference to variables within this context from the memory manager
+        //!        as well.
+        void remove_current_context();
+
         //! \brief Retrieve the data type of a symbol
         //! \param symbol The symbol to check for
         //! \returns Type of the given symbol, DEL::ValType::NONE if it doesn't exist
@@ -92,6 +99,14 @@ namespace DEL
         //! \brief Generate a unique symbol for a raw item in a function call
         //! \returns Unique symbol to use as a call parameter in a call
         std::string generate_unique_call_param_symbol();
+
+        //! \brief Generate a unique symbol for an artificial variable
+        //! \returns Unique symbol to use as a variable name
+        std::string generate_unique_variable_symbol();
+
+        //! \brief Generate a unique context name
+        //! \returns Unique symbol to use as a context
+        std::string generate_unique_context();
 
         friend Codegen;
 

@@ -7,30 +7,20 @@ namespace DEL
 {
 namespace CODE
 {
+namespace
+{
+    static uint64_t SUCCESS_LABEL_COUNTER = 0;
+}
+
     //
     //  Load
     //
     class Load : public Block
     {
     public:
-        Load(SizeClassification classification, CODEGEN::TYPES::AddressValueInstruction * ins) : Block()
+        Load(CODEGEN::TYPES::AddressValueInstruction * ins) : Block()
         {
-            std::string title_comment;
-            std::string load;
-            std::string push;
-
-            if(classification == SizeClassification::BYTE)
-            {
-                title_comment = "; <<< LOAD BYTE >>> ";
-                load = "ldb";
-                push = "push";
-            }
-            else
-            {
-                title_comment = "; <<< LOAD WORD >>> ";
-                load = "ldw";
-                push = "pushw";
-            }
+            std::string title_comment = "; <<< LOAD >>>";
 
             code.push_back(std::string(NLT) + title_comment + std::string(NL));
 
@@ -40,13 +30,42 @@ namespace CODE
 
             std::stringstream ss;
 
-            ss << NLT 
+            ss << NL << NLT
                << "ldw" << WS << "r" << REG_ADDR_SP << WS << "$0(ls)" << TAB << "; Load SP into local stack" << NLT 
                << "add" << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_SP << TAB << "; Item location in function mem" << NL << NLT
-               << load  << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_RO << "(gs)" << TAB << "; Load value of thing for expression" << NL << NLT
-               << push  << WS << CALC_STACK << WS << "r" << REG_ADDR_RO << TAB << "; Push value to calc stack" << NL;
+               << "ldw r3 r" << REG_ADDR_RO << "(gs)" << TAB << "; Load the DS Address" << NLT
+               << "pushw ls r3" << NL;
 
             code.push_back(ss.str()); 
+
+            store_ins.clear();
+            store_ins = load_64_into_r0(ins->bytes / SETTINGS::SYSTEM_WORD_SIZE_BYTES, "Bytes to load");
+            code.insert(code.end(), store_ins.begin(), store_ins.end());
+
+            std::stringstream ss1;
+
+            ss1 << NL << NLT
+                << "mov r1 r0" << TAB << "; Move the words to load to r1 for call" << NLT 
+                << "popw r0 ls"<< TAB << "; Pop the DS Address into r0 for call" << NL << NLT 
+                << "call __del__ds__load" << NL << NLT;
+
+            std::string load_label = "load_success_label_" + std::to_string(SUCCESS_LABEL_COUNTER++);
+
+            ss1 << "mov r1 $0" << TAB << "; Move 0 into r1 to check for success" << NLT
+                << "beq r0 r1" << WS  << load_label << NLT 
+                << "; Failure to load causes an EXIT" << NLT 
+                << "exit" << NL << NL
+                << load_label << ":" << NL << NLT
+                << "; Move loaded words off of the GS and into LS" << NL;
+
+            for(int i = 0; i < ins->bytes / SETTINGS::SYSTEM_WORD_SIZE_BYTES; i++)
+            {
+                ss1 << NLT
+                    << "popw r0 gs" << NLT
+                    << "pushw ls r0" << NL;
+            }
+
+            code.push_back(ss1.str()); 
         }
     };
 
@@ -56,26 +75,10 @@ namespace CODE
     class Store : public Block
     {
     public:
-        Store(SizeClassification classification, uint64_t mem_start, std::string id) : Block()
+        Store(uint64_t mem_start, uint64_t byte_len, std::string id) : Block()
         {
-            std::string title_comment;
-            std::string pop;
-            std::string store;
-
+            std::string title_comment = "; <<< STORE >>>";
             std::string address_comment = "Address for [ " + id + " ]";
-
-            if(classification == SizeClassification::BYTE)
-            {
-                title_comment = "; <<< STORE BYTE >>> ";
-                pop = "pop";
-                store = "stb";
-            }
-            else
-            {
-                title_comment = "; <<< STORE WORD >>> ";
-                pop = "popw";
-                store = "stw";
-            }
 
             code.push_back(std::string(NLT) + title_comment + std::string(NL));
 
@@ -87,12 +90,30 @@ namespace CODE
             ss << NLT 
                << "ldw"  << WS << "r" << REG_ADDR_SP << WS << "$0(ls)" << TAB << "; Load SP into local stack" << NLT 
                << "add"  << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_RO << WS << "r" << REG_ADDR_SP << TAB << "; Item location in function mem" << NL << NLT
-               << "; ---- Get Result ---- " << NL << NLT
-               << pop << WS << "r" << REG_ARITH_LHS << WS << CALC_STACK << NL << NLT
-               << "; ---- Store Result ---- " << NL << NLT
-               << store << WS << "r" << REG_ADDR_RO << "(gs)" << WS << "r" << REG_ARITH_LHS << TAB << "; Store in memory" << NL;
+               << "ldw r0 r" << REG_ADDR_RO << "(gs)" << TAB << "; Load the DS Address from memory for [" << id << "] into r0 for call" << NLT
+               << "size r1 gs" << TAB << "; Get current size of GS into r1 for call" << NL << NLT
+               << "; Get words from local stack an put on gs for transit" << NL;
+
+            for(int i = 0; i < byte_len / SETTINGS::SYSTEM_WORD_SIZE_BYTES; i++)
+            {
+                ss << NLT
+                   << "popw r5" << WS << CALC_STACK << TAB << "; Get word from LS" << NLT 
+                   << "pushw gs r5" << TAB << "; Push to GS";
+            }
+
+            std::string store_label = "store_success_label_" + std::to_string(SUCCESS_LABEL_COUNTER++);
+
+            ss << NL << NLT 
+               << "size r2 gs" << TAB << "; Get new size of GS into r2 for call" << NL << NLT
+               << "call __del__ds__store" << NL << NLT
+               << "mov r1 $0" << TAB << "; Move 0 into r1 to check for success" << NLT
+               << "beq r0 r1" << WS  << store_label << NLT 
+               << "; Failure to store causes an EXIT" << NLT 
+               << "exit" << NL << NL
+               << store_label << ":" << NL;
 
             code.push_back(ss.str()); 
+
         }
     };
 

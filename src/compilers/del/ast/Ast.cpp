@@ -16,4 +16,29 @@ namespace DEL
     {
         visitor.accept(*this);
     }
+
+    void If::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void ForLoop::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void WhileLoop::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void NamedLoop::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
+
+    void AnnulStmt::visit(Visitor &visitor)
+    {
+        visitor.accept(*this);
+    }
 }

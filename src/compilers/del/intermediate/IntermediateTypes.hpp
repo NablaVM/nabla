@@ -61,6 +61,53 @@ namespace TYPES
         AssignmentClassifier assignment_classifier;
         std::vector<AssignemntInstruction> instructions;
     };
+
+    //! \brief Types of loops that Analyzer could hand intermediate layer
+    enum class LoopTypes
+    {
+        FOR,
+        WHILE,
+        NAMED
+    };
+
+    //! \brief A loop representation base
+    class LoopIf
+    {
+    public:
+        LoopIf(LoopTypes type) : type(type){}
+        virtual ~LoopIf() = default;
+
+        LoopTypes type;
+    };
+
+    //! \brief A for loop
+    class ForLoop : public LoopIf
+    {
+    public:
+        ForLoop(AssignmentClassifier classification, 
+                                Memory::MemAlloc loop_var, 
+                                Memory::MemAlloc end,
+                                Memory::MemAlloc step) : LoopIf(LoopTypes::FOR),
+                classification(classification), var(loop_var), end(end), step(step)
+        {}
+
+        AssignmentClassifier classification;
+        Memory::MemAlloc var;
+        Memory::MemAlloc end;
+        Memory::MemAlloc step;
+    };
+
+    //! \brief A while loop
+    class WhileLoop : public LoopIf
+    {
+    public:
+        WhileLoop(AssignmentClassifier classification, 
+                  Memory::MemAlloc condition_expression) : LoopIf(LoopTypes::WHILE),
+                                                           classification(classification),
+                                                           condition(condition_expression){}
+        AssignmentClassifier classification;
+        Memory::MemAlloc condition;
+    };
 }
 }
 }

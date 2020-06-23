@@ -36,7 +36,11 @@ namespace DEL
         void accept(Assignment &stmt) override;
         void accept(ReturnStmt &stmt) override;
         void accept(Call       &stmt) override;
-
+        void accept(If         &stmt) override;
+        void accept(ForLoop    &stmt) override;
+        void accept(WhileLoop  &stmt) override;
+        void accept(NamedLoop  &stmt) override;
+        void accept(AnnulStmt  &stmt) override;
 
     private:
 
@@ -46,7 +50,16 @@ namespace DEL
 
         ValType get_id_type(std::string id, int line_no);
 
+        void validate_step(int line, Step * step, ValType loop_type);
+
+        void validate_range(Range * range, ValType loop_type);
+
         void validate_call(Call & stmt);
+
+        void build_if_stmt(If & stmt);
+
+        // Given an expression attempt to determine the type that should result from its execution
+        ValType determine_expression_type(AST * ast, AST * traverse, bool left_traversal, int line_no);
 
         // Check that a given value is valid within the scope of an assignment 
         void check_value_is_valid_for_assignment(int line_no, ValType type_to_check, INTERMEDIATE::TYPES::AssignmentClassifier & classifier, ValType & assignee_type, std::string & id);
@@ -61,6 +74,8 @@ namespace DEL
         Intermediate intermediate_layer;
 
         Function * current_function;
+
+        std::vector<std::string> loop_names;
 
         struct FunctionWatch
         {

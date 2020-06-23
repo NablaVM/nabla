@@ -30,9 +30,13 @@ set(DEL_COMPILER_HEADERS
     ${DEL_COMPILER_DIR}/codegen/Codegen.hpp
     ${DEL_COMPILER_DIR}/codegen/Generator.hpp
     ${DEL_COMPILER_DIR}/codegen/asm/AsmMath.hpp
+    ${DEL_COMPILER_DIR}/codegen/asm/AsmStoreLoad.hpp
     ${DEL_COMPILER_DIR}/codegen/asm/AsmSupport.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/Alloc.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/BlockAggregator.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/Codeblock.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/ConditionalContext.hpp
+    ${DEL_COMPILER_DIR}/codegen/codeblocks/ForLoopContext.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/Function.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/LoadStore.hpp
     ${DEL_COMPILER_DIR}/codegen/codeblocks/Operations.hpp

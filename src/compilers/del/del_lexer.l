@@ -42,8 +42,25 @@ using token = DEL::DEL_Parser::token;
 "nil"       { return token::NIL;    }
 "->"        { return token::ARROW;  }
 "return"    { return token::RETURN; }
+"if"        { return token::IF;     }
+"elif"      { return token::ELIF;   }
+"else"      { 
+               yylval->build< int >( yylineno );
+               return ( token::ELSE );    
+            }
 
-
+"for"      { return token::FOR;    }
+"in"       { return token::IN;     }
+"range"    { return token::RANGE;  }
+":"        { return token::COL;    }
+"step"     { return token::STEP;   }
+"while"    { return token::WHILE;  }
+"loop"     { return token::LOOP;   }
+"'"        { 
+               yylval->build< int >( yylineno );
+               return ( token::KEY );    
+           }
+"annul"    { return token::ANNUL;  }
 "<="       { return token::LTE;    }
 "<"        { return token::LT;     }
 ">="       { return token::GTE;    }

@@ -19,6 +19,12 @@ namespace TYPES
         DOUBLE
     };
 
+    enum class LoopType
+    {
+        FOR,
+        WHILE
+    };
+
     //! \brief A set of instructions for the code generator to use in the processing of tokens
     enum class InstructionSet
     {
@@ -37,10 +43,11 @@ namespace TYPES
         MOD,
 
         // Load / Store
-        LOAD_BYTE,
-        STORE_BYTE,
-        LOAD_WORD,
-        STORE_WORD,
+        LOAD,
+        STORE,
+
+        // Data storage allocate
+        DS_ALLOC,
 
         CALL, // Call a function
         MOVE_ADDRESS, // Move data 
@@ -97,15 +104,16 @@ namespace TYPES
     };
 
     //
-    //  An instruction with a value that represents an address
+    //  An instruction with a value that represents an address, and a var that represents how many bytes are in that address
     //
     class AddressValueInstruction: public BaseInstruction
     {
     public:
-        AddressValueInstruction(InstructionSet instruction, uint64_t value) : 
-            BaseInstruction(instruction), value(value){}
+        AddressValueInstruction(InstructionSet instruction, uint64_t value, uint64_t bytes) : 
+            BaseInstruction(instruction), value(value), bytes(bytes){}
 
         uint64_t value;
+        uint64_t bytes;
     };
 
     //
@@ -123,6 +131,18 @@ namespace TYPES
     };
 
     //
+    //  An instruction that instructs allocation of data
+    //
+    class DSAllocInstruction : public BaseInstruction
+    {
+    public:
+        DSAllocInstruction(InstructionSet instruction, uint64_t bytes_to_alloc) : 
+                BaseInstruction(instruction), bytes_to_alloc(bytes_to_alloc) {}
+
+        uint64_t bytes_to_alloc;
+    };
+
+    //
     //  A command given to codgen
     //
     class Command
@@ -132,6 +152,60 @@ namespace TYPES
         Memory::MemAlloc memory_info;
         DataClassification classification;
         std::vector<BaseInstruction*> instructions;
+    };
+
+    //
+    //  Information for starting a conditional
+    //
+    class ConditionalInitiation
+    {
+    public:
+        ConditionalInitiation(Memory::MemAlloc memory_info) : mem_info(memory_info){}
+
+        Memory::MemAlloc mem_info;
+    };
+
+    //
+    //  Interface for loops
+    //
+    class LoopIf
+    {
+    public:
+        LoopIf(LoopType type) : type(type){}
+
+        LoopType type;
+    };
+
+    //
+    //  Information for starting a for loop
+    //
+    class ForLoopInitiation : public LoopIf
+    {
+    public:
+        ForLoopInitiation(DataClassification classification, 
+                       Memory::MemAlloc loop_var,
+                       Memory::MemAlloc end_var, 
+                       Memory::MemAlloc step) : LoopIf(LoopType::FOR),
+        classification(classification), loop_var(loop_var), end_var(end_var), step(step) {}
+
+        DataClassification classification; 
+        Memory::MemAlloc loop_var;
+        Memory::MemAlloc end_var;
+        Memory::MemAlloc step;
+    };
+
+    //
+    //  Information for starting a while loop
+    //
+    class WhileInitiation : public LoopIf
+    {
+    public:
+        WhileInitiation(DataClassification classification, Memory::MemAlloc condition) : LoopIf(LoopType::WHILE),
+            classification(classification), condition(condition)
+            {}
+
+        DataClassification classification;
+        Memory::MemAlloc condition;
     };
 }
 }

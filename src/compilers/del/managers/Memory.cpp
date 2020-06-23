@@ -74,33 +74,40 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
-    bool Memory::alloc_mem(std::string id, uint64_t minimum_size)
+    void Memory::remove_item(std::string id)
     {
-        if((currently_allocated_bytes + minimum_size) > MAX_GLOBAL_MEMORY )
+        if(is_id_mapped(id))
+        {
+            memory_map.erase(memory_map.find(id));
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    bool Memory::alloc_mem(std::string id, uint64_t required_size)
+    {
+        if((currently_allocated_bytes + required_size) > MAX_GLOBAL_MEMORY )
         {
             return false;
         }
 
-        MemAlloc allocated; 
-
-        allocated.bytes_requested = minimum_size;
-
-        uint8_t additional = (minimum_size % 8);
-
-        if( additional > 0)
+        // Safety check during development
+        if(required_size % SETTINGS::SYSTEM_WORD_SIZE_BYTES != 0)
         {
-            minimum_size += (8 - additional);
+            std::cerr << "Memory Manager > Required size for [" << id << "] is does not conform to word boundary" << std::endl;
+            exit(EXIT_FAILURE);
         }
 
-        //std::cout << "Bytes alloced for " << id << " " << minimum_size << std::endl;
+        MemAlloc allocated; 
 
-        allocated.bytes_alloced = minimum_size;
+        allocated.bytes_requested = required_size;
+        allocated.bytes_alloced   = SETTINGS::SYSTEM_WORD_SIZE_BYTES;   // We only need to actually store address into DS Device
 
         allocated.start_pos = currently_allocated_bytes;
 
-       // std::cout << "Start pos for : " << id << " is " << allocated.start_pos << std::endl;
-
-        currently_allocated_bytes += (allocated.bytes_alloced);
+        currently_allocated_bytes += SETTINGS::SYSTEM_WORD_SIZE_BYTES;
 
         memory_map[id] = allocated;
 

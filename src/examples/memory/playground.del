@@ -1,0 +1,40 @@
+
+
+def main() -> nil {
+
+    int * a = new int[10];
+
+    // This should be semantically disallowed - We can't determine how many memory units to generate
+    loop {
+        int * p = new int[10];
+    }
+
+    // Instead we could mark how much dyn we want to allocate, and if that goes over, we die. 
+    // In the case of the following, we should throw a warning because the loop type will probably
+    // go over 
+    'dyn[64] {
+
+        // In the case of loops, we need to figure out all of the potential stack allocations and reserve space, even if its in an if. 
+        // All things need to be accounted for :
+        loop {
+
+
+        }
+    }
+
+    // A dyn block. Required for for loops. Can be used anywhere if wanted I suppose
+    'dyn[128] {
+
+        for x in [0, 10] {
+
+            int * d = new int[9]; // We need 10 
+
+            for y in [x, 100] {
+
+                int * g = new int[55]; 
+            }
+        }
+    }
+
+    return;
+}

@@ -95,6 +95,24 @@ namespace DEL
         //! \param line_in_question The line that caused the error
         void report_syntax_error(int line, int column, std::string error_message, std::string line_in_question);
 
+        //! \brief Start greater than end error
+        //! \param line The line number
+        //! \param start The start point
+        //! \param end The end point
+        //! \note  This is a fatal error
+        void report_range_invalid_start_gt_end(int line, std::string start, std::string end);
+
+        //! \brief The given range does nothing
+        //! \param line The line number
+        //! \param start The start point
+        //! \param end The end point
+        //! \note  This is a fatal error
+        void report_range_ineffective(int line, std::string start, std::string end);
+
+        //! \brief Step command doesn't do anything
+        //! \param line The line that the step is on
+        void report_invalid_step(int line);
+
         //! \brief Report that preprocessor couldn't read in a file
         //! \param include_crumbs The file path list that lead to the file
         //! \param file_in_question The file that couldn't be read

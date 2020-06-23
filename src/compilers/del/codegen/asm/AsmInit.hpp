@@ -31,7 +31,19 @@ static const std::string ASM_INIT_FUNCTION = R"init(
 
 <__del__program__init:
 
-    call main       ; Entry to the user's application
+    call main           ; Entry to the user's application
+
+    ; Clear out the external memory device
+
+    lsh r0 $13 $56      ; Move DS id into position
+    lsh r1 $50 $48      ; Move sub-id for 'reset' into position
+    or r10 r0 r1        ; Or together to create command into r10
+
+    ; Shutdown network device 
+
+    lsh r0 $11 $56      ; Network device
+    lsh r1 $50 $48      ; Move sub-id for 'shutdown' into position
+    or r10 r0 r1        ; Or together to create command into r10
 
     exit
 >

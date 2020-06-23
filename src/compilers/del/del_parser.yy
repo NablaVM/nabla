@@ -20,6 +20,10 @@
       class AST;
       class Element;
       class Function;
+      class Range;
+      class Step;
+      class WhileLoop;
+      class NamedLoop;
       struct FunctionParam;
    }
 
@@ -60,14 +64,24 @@
 
 %token INT REAL CHAR ARROW RETURN LTE GTE GT LT EQ NE BW_NOT DIV ADD SUB MUL POW MOD
 %token LSH RSH BW_OR BW_AND BW_XOR AND OR NEGATE NIL
-%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA
+%token LEFT_PAREN LEFT_BRACKET ASSIGN DOT COMMA IF ELIF FOR IN COL RANGE STEP WHILE LOOP ANNUL
 
 %type<DEL::Element*> stmt;
 %type<DEL::Element*> assignment;
 %type<DEL::Element*> reassignment;
 %type<DEL::Element*> return_stmt;
+%type<DEL::Element*> if_stmt;
+%type<DEL::Element*> elif_stmt;
+%type<DEL::Element*> else_stmt;
+%type<DEL::Element*> for_stmt;
 %type<DEL::Element*> direct_function_call;
+%type<DEL::Element*> annul_stmt;
 %type<DEL::Function*> function_stmt;
+%type<DEL::Range*> range_decl_int;
+%type<DEL::Range*> range_decl_real;
+%type<DEL::Step*>  step_inc;
+%type<DEL::WhileLoop*> while_stmt;
+%type<DEL::NamedLoop*> named_loop_stmt;
 %type<std::string> identifiers;
 %type<DEL::FunctionParam*> call_item;
 
@@ -89,8 +103,10 @@
 %token <std::string> IDENTIFIER
 %token <int>         RIGHT_BRACKET  // These tokens encode line numbers
 %token <int>         RIGHT_PAREN    // These tokens encode line numbers
+%token <int>         KEY            // These tokens encode line numbers
 %token <int>         SEMI           // These tokens encode line numbers
 %token <int>         DEF            // These tokens encode line numbers
+%token <int>         ELSE           // These tokens encode line numbers
 %token               END    0     "end of file"
 %locations
 %start start
@@ -179,10 +195,103 @@ return_stmt
    | RETURN SEMI            { $$ = new DEL::ReturnStmt();   $$->set_line_no($2); }
    ;
 
+if_stmt
+   : IF LEFT_PAREN expression RIGHT_PAREN block elif_stmt { $$ = new DEL::If(DEL::IfType::IF, $3, $5, $6, $4);      }
+   | IF LEFT_PAREN expression RIGHT_PAREN block else_stmt { $$ = new DEL::If(DEL::IfType::IF, $3, $5, $6, $4);      }
+   | IF LEFT_PAREN expression RIGHT_PAREN block           { $$ = new DEL::If(DEL::IfType::IF, $3, $5, nullptr, $4); }
+   ;
+
+elif_stmt
+   : ELIF LEFT_PAREN expression RIGHT_PAREN block elif_stmt  { $$ = new DEL::If(DEL::IfType::ELIF, $3, $5, $6, $4);      }
+   | ELIF LEFT_PAREN expression RIGHT_PAREN block else_stmt  { $$ = new DEL::If(DEL::IfType::ELIF, $3, $5, $6, $4);      }
+   | ELIF LEFT_PAREN expression RIGHT_PAREN block            { $$ = new DEL::If(DEL::IfType::ELIF, $3, $5, nullptr, $4); }
+   ;
+
+else_stmt
+   : ELSE block   { $$ = new DEL::If(DEL::IfType::ELSE, 
+                                     new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, DEL::ValType::INTEGER, "1"), 
+                                     $2, 
+                                     nullptr, 
+                                     $1); 
+                     // We create an "always true" statement so we can leverage elseif code, while still
+                     // treating this as an "else"
+                  }
+   ;
+
+
+//
+//    NEED TO ADD 'STEP' HERE and then work for_stmt into the stmt list, 
+//    Then update analyzer, then ensure that the statements here have no issues in F/B
+//
+for_stmt 
+   : FOR IDENTIFIER IN range_decl_int block 
+      { $$ = new DEL::ForLoop(ValType::INTEGER, $2, $4, new DEL::Step(DEL::ValType::INTEGER, "1"), $5); }
+
+   | FOR IDENTIFIER IN range_decl_int step_inc block 
+      { $$ = new DEL::ForLoop(ValType::INTEGER, $2, $4, $5, $6); }
+
+   | FOR IDENTIFIER IN range_decl_real block 
+      { $$ = new DEL::ForLoop(ValType::REAL, $2, $4, new DEL::Step(DEL::ValType::REAL, "1.0"), $5); }
+
+   | FOR IDENTIFIER IN range_decl_real step_inc block 
+      { $$ = new DEL::ForLoop(ValType::REAL, $2, $4, $5, $6); }
+   ;
+
+range_decl_int
+   : RANGE COL INT LEFT_PAREN INT_LITERAL COMMA INT_LITERAL RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::INTEGER, $5, $7, $8); }
+
+   | RANGE COL INT LEFT_PAREN identifiers COMMA INT_LITERAL RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+
+   | RANGE COL INT LEFT_PAREN identifiers COMMA identifiers RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+
+   | RANGE COL INT LEFT_PAREN INT_LITERAL COMMA identifiers RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+   ;
+
+range_decl_real
+   : RANGE COL REAL LEFT_PAREN REAL_LITERAL COMMA REAL_LITERAL RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REAL, $5, $7, $8); }
+
+   | RANGE COL REAL LEFT_PAREN identifiers COMMA REAL_LITERAL RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+
+   | RANGE COL REAL LEFT_PAREN identifiers COMMA identifiers RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+
+   | RANGE COL REAL LEFT_PAREN REAL_LITERAL COMMA identifiers RIGHT_PAREN 
+      { $$ = new DEL::Range(ValType::REQ_CHECK, $5, $7, $8); }
+   ;
+
+step_inc
+   : STEP INT_LITERAL  { $$ = new DEL::Step(DEL::ValType::INTEGER,   $2); }
+   | STEP REAL_LITERAL { $$ = new DEL::Step(DEL::ValType::REAL,      $2); }
+   | STEP identifiers  { $$ = new DEL::Step(DEL::ValType::REQ_CHECK, $2); }
+   ;
+
+while_stmt
+   : WHILE LEFT_PAREN expression RIGHT_PAREN block { $$ = new DEL::WhileLoop($3, $5); $$->set_line_no($4); }
+   ;
+
+named_loop_stmt
+   : LOOP KEY identifiers block { $$ = new DEL::NamedLoop($3, $4); $$->set_line_no($2); }
+   ;
+
+annul_stmt
+   : ANNUL identifiers SEMI { $$ = new DEL::AnnulStmt($2); $$->set_line_no($3); }
+   ;
+
 stmt
-   : assignment    { $$ = $1; }
-   | reassignment  { $$ = $1; }
-   | return_stmt   { $$ = $1; }
+   : assignment      { $$ = $1; }
+   | reassignment    { $$ = $1; }
+   | return_stmt     { $$ = $1; }
+   | if_stmt         { $$ = $1; }
+   | for_stmt        { $$ = $1; }
+   | while_stmt      { $$ = $1; }
+   | named_loop_stmt { $$ = $1; }
+   | annul_stmt      { $$ = $1; }
    | direct_function_call { $$ = $1;}
    ;
 

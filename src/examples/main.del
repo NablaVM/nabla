@@ -1,33 +1,32 @@
 
+def moot() -> int {
 
-//def some_routine() -> nil {
-//
-//  return;
-//}
+  int a = 3;
 
-// Parameters are passed given an address and loaded when needed.
-// This also means that an operation done on a parameter will be reflected elsewhere
-
-def some_routine() -> nil {
-
-  return;
-}
-
-def do_math(int someint) -> int {
-
-  int b = 10;
-
-  return 3 + b; //3 + b;
+  return a;
 }
 
 
 def main() -> int {
 
-  int a = 3;
 
-  int b = 3 + do_math(a);
+  for x in range:int(1, 100) 
+  {
+    for y in range:int(1, 100)
+    {
+        // This works! 
+        if( y % 2 == 0)
+        {
+            int g = 3;
+        }
+        elif (y % 2 && x % 2)
+        {
+            int a = 44;
+        }
+    }
+  }
 
-  some_routine();
+  int a = 2 + moot();
 
   return 0;
 }

@@ -6,8 +6,27 @@
 
 #include "SystemSettings.hpp"
 
+#define N_UNUSED(x) (void)x;
+
 namespace DEL
 {
+namespace
+{
+    bool is_only_number(std::string v)
+    {
+        try
+        {
+            double value = std::stod(v);
+            N_UNUSED(value)
+            return true;
+        }
+        catch(std::exception& e)
+        {
+            // Its not a number
+        }
+        return false;
+    }
+}
     // ----------------------------------------------------------
     //
     // ----------------------------------------------------------
@@ -120,6 +139,8 @@ namespace DEL
             error_man.report_previously_declared(function->name, function->line_no);
         }
 
+        symbol_table.new_context(function->name);
+
         // Check for 'main'
         if(function->name == "main")
         {
@@ -136,7 +157,6 @@ namespace DEL
 
         // Create function context
         // Don't remove previous context.. we clear the variables out later
-        symbol_table.new_context(function->name, false );
 
         // Place function parameters into context
         for(auto & p : function->params)
@@ -206,14 +226,13 @@ namespace DEL
             allows us to do assignments. 
         */
 
-
         Memory::MemAlloc memory_info;
 
+        bool requires_ds_allocation = true;
         bool requires_allocation_in_symbol_table = true;
         if(stmt.data_type == ValType::REQ_CHECK)
         {
             // Check that the rhs is in context and is a type that we are allowing for assignment
-            // NOTE : When functions are allowed in asssignment this will have to be updated <<<<<<<<<<<<<<<<<<
             ensure_id_in_current_context(stmt.lhs, stmt.line_no, {ValType::INTEGER, ValType::REAL, ValType::CHAR});
 
             // Now we know it exists, we set the data type to what it states in the map
@@ -224,6 +243,7 @@ namespace DEL
             memory_info = memory_man.get_mem_info(stmt.lhs);
 
             requires_allocation_in_symbol_table = false;
+            requires_ds_allocation = false;
         }
         else
         {
@@ -256,7 +276,7 @@ namespace DEL
             memory_info = memory_man.get_mem_info(stmt.lhs);
         }
 
-        intermediate_layer.issue_assignment(stmt.lhs, memory_info, classification, postfix_expression);
+        intermediate_layer.issue_assignment(stmt.lhs, requires_ds_allocation, memory_info, classification, postfix_expression);
     }
 
     // ----------------------------------------------------------
@@ -306,11 +326,517 @@ namespace DEL
         );
     }
 
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(If & stmt)
+    {
+        If * if_ptr = & stmt;
+
+        std::string artificial_context = symbol_table.generate_unique_context();
+        symbol_table.new_context(artificial_context, false );
+
+        // Setup variables for conditions
+        while(if_ptr != nullptr)
+        {
+            std::string if_condition_variable = symbol_table.generate_unique_variable_symbol();
+
+            // Attempt to determine the type of the expression
+            ValType condition_type = determine_expression_type(if_ptr->expr, if_ptr->expr, true, if_ptr->line_no);
+
+            std::string value = (condition_type == ValType::REAL) ? "0.0" : "0";
+            DEL::AST * artificial_value = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, condition_type, value);
+            DEL::AST * artificial_check = new DEL::AST(DEL::NodeType::GT , if_ptr->expr, artificial_value);
+
+            // Create an assignment for the conditional 
+            Assignment * c_assign = new Assignment(condition_type, if_condition_variable, artificial_check);
+
+            c_assign->line_no = if_ptr->line_no;
+            c_assign->visit(*this);
+
+            delete artificial_value;
+            delete artificial_check;
+            delete c_assign;
+
+            if_ptr->set_var_name(if_condition_variable);
+
+            // Inc the if_ptr to its trail. Check for nullptr so we dont attempt to stati cast nothing
+            if_ptr = (if_ptr->trail == nullptr) ? nullptr : static_cast<If*>(if_ptr->trail);
+        }
+
+        // Now that the conditionals are set, we can build the if statements
+        build_if_stmt(stmt);
+
+        // Remove the current context from the symbol table
+        // This will remove all elements allocated by id from the memory manager as well
+        // while preserving their id incs. 
+        symbol_table.remove_current_context();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::build_if_stmt(If & stmt)
+    {
+        switch(stmt.type)
+        {
+            case IfType::IF:
+            {
+                std::string artificial_context = symbol_table.generate_unique_context();
+
+                // Create an artificial context in symbol table for the current if statement
+                symbol_table.new_context(artificial_context, false );
+
+                // Initiate the start of the conditional - memory should have been assigned to the variable by the assignment above
+                intermediate_layer.issue_start_conditional_context(memory_man.get_mem_info(stmt.var_name));
+
+                // Visit all statements in the conditional
+                for(auto & el : stmt.element_list)
+                {
+                    el->visit(*this);
+                    delete el;
+                }
+
+                // Remove the current context from the symbol table
+                // This will remove all elements allocated by id from the memory manager as well
+                // while preserving their id incs. 
+                symbol_table.remove_current_context();
+
+                // If theres a trailing elif or else
+                if(stmt.trail != nullptr)
+                {
+                    If * ifp = static_cast<If*>(stmt.trail);
+                    build_if_stmt(*ifp);
+                }
+                break;
+            }
+            case IfType::ELIF:
+            case IfType::ELSE:
+            {
+                std::string artificial_context = symbol_table.generate_unique_context();
+
+                // Create an artificial context in symbol table for the current if statement
+                symbol_table.new_context(artificial_context, false );
+
+                // Initiate the start of the conditional - memory should have been assigned to the variable by the assignment above
+                intermediate_layer.issue_trailed_context(memory_man.get_mem_info(stmt.var_name));
+
+                // Visit all statements in the conditional
+                for(auto & el : stmt.element_list)
+                {
+                    el->visit(*this);
+                    delete el;
+                }
+
+                // Remove the current context from the symbol table
+                // This will remove all elements allocated by id from the memory manager as well
+                // while preserving their id incs. 
+                symbol_table.remove_current_context();
+
+                if(stmt.trail != nullptr)
+                {
+                    If * ifp = static_cast<If*>(stmt.trail);
+                    build_if_stmt(*ifp);
+                }
+                return;
+            }
+            default:
+                std::cout << "If statement : DEFAULT : " << (int)stmt.type << std::endl;
+                return;
+        }
+
+        // Mark that we are done with the if/elif/else chains. For this to work, we have to BREAK from base IF, and RETURN
+        // from the trailing elif / else checks (I think)
+        intermediate_layer.issue_end_conditional_context();
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(ForLoop & stmt)
+    {
+        // Ensure that the range isn't bonked
+        validate_range(stmt.range, stmt.type);
+
+        // Validate step
+        validate_step(stmt.line_no, stmt.step, stmt.type);
+
+        // Create a context for the loop
+        std::string artificial_context = symbol_table.generate_unique_context();
+        symbol_table.new_context(artificial_context, false );
+
+        // Create a name for the end variable
+        std::string end_var;
+
+        if(stmt.range->type == ValType::REQ_CHECK)
+        {
+            if(is_only_number(stmt.range->to))
+            {
+                end_var = symbol_table.generate_unique_variable_symbol();
+
+                // Create the end variable, and assign it to the final position (to)
+                Assignment * assign_end_var = new Assignment(stmt.type, end_var, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.range->to));
+                assign_end_var->line_no = stmt.line_no;
+                this->accept(*assign_end_var);
+                delete assign_end_var;
+            }
+            else
+            {
+                // Here we will use the raw var
+                end_var = stmt.range->to;
+            }
+
+            if(is_only_number(stmt.range->from))
+            {
+                // Create the loop variable, and assign it to the initial position (from) represented by a raw value
+                Assignment * assign_loop_var = new Assignment(stmt.type, stmt.id, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.range->from));
+                assign_loop_var->line_no = stmt.line_no;
+                this->accept(*assign_loop_var);
+                delete assign_loop_var;
+            }
+            else
+            {
+                // Create the loop variable, and assign it to the initial position (from) represented by a variable value
+                Assignment * assign_loop_var = new Assignment(stmt.type, stmt.id, new DEL::AST(DEL::NodeType::ID, nullptr, nullptr, stmt.type, stmt.range->from));
+                assign_loop_var->line_no = stmt.line_no;
+                this->accept(*assign_loop_var);
+                delete assign_loop_var;
+            }
+        }
+        else
+        {
+            end_var = symbol_table.generate_unique_variable_symbol();
+
+            // Create the end variable, and assign it to the final position (to)
+            Assignment * assign_end_var = new Assignment(stmt.type, end_var, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.range->to));
+            assign_end_var->line_no = stmt.line_no;
+            this->accept(*assign_end_var);
+            delete assign_end_var;
+
+            // Create the loop variable, and assign it to the initial position (from) represented by a raw value
+            Assignment * assign_loop_var = new Assignment(stmt.type, stmt.id, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.range->from));
+            assign_loop_var->line_no = stmt.line_no;
+            this->accept(*assign_loop_var);
+            delete assign_loop_var;
+        }
+
+        // Setup 'step'
+        std::string step_var_name;
+
+        // If step is just a raw value, create a variable for it
+        if(stmt.step->type != ValType::REQ_CHECK)
+        {
+            step_var_name = symbol_table.generate_unique_variable_symbol();
+
+            // Create the step variable, and assign it to the final position (to)
+            Assignment * assign_end_var = new Assignment(stmt.type, step_var_name, new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, stmt.type, stmt.step->val));
+            assign_end_var->line_no = stmt.line_no;
+            this->accept(*assign_end_var);
+            delete assign_end_var;
+        }
+
+        // Otherwise, use the value given to us
+        else
+        {
+            step_var_name = stmt.step->val;
+        }
+
+        // Translate data type
+        INTERMEDIATE::TYPES::AssignmentClassifier classifier = (stmt.type == ValType::REAL) ? 
+                INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE : 
+                INTERMEDIATE::TYPES::AssignmentClassifier::INTEGER;
+
+        // Create intermediate representation for the loop
+        INTERMEDIATE::TYPES::ForLoop * ifl = new INTERMEDIATE::TYPES::ForLoop(classifier,
+                                                                              memory_man.get_mem_info(stmt.id),
+                                                                              memory_man.get_mem_info(end_var),
+                                                                              memory_man.get_mem_info(step_var_name));
+        // Start off the for loop
+        intermediate_layer.issue_start_loop(ifl);
+ 
+        // Compile the statements in the for loop
+        for(auto & el : stmt.elements)
+        {
+            el->visit(*this);
+            delete el;
+        }
+
+        // End the loop
+        intermediate_layer.issue_end_loop(ifl);
+
+        // Remove the context for the loop
+        symbol_table.remove_current_context();
+
+        delete ifl;
+        delete stmt.step;
+        delete stmt.range;
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(WhileLoop & stmt)
+    {
+        // Determine the type of the expression
+        ValType condition_type = determine_expression_type(stmt.expr, stmt.expr, true, stmt.line_no);
+
+        // Create a context for the loop
+        std::string artificial_context = symbol_table.generate_unique_context();
+        symbol_table.new_context(artificial_context, false );
+
+        std::string while_condition_variable = symbol_table.generate_unique_variable_symbol();
+
+        // A reassignment statement to update artificial variable that checks the condition of the while
+        // when loop is executed
+        Assignment * update_condition;
+
+        // Create a variable to mark the expression as true or false
+        std::string value = (condition_type == ValType::REAL) ? "0.0" : "0";
+        DEL::AST * artificial_value = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, condition_type, value);
+        DEL::AST * artificial_check = new DEL::AST(DEL::NodeType::GT , stmt.expr, artificial_value);
+
+        // Create an assignment for the conditional 
+        Assignment * c_assign = new Assignment(condition_type, while_condition_variable, artificial_check);
+
+        // Create the conditional assignment
+
+        c_assign->line_no = stmt.line_no;
+        c_assign->visit(*this);
+
+        // To update the while condition inside the loop
+        update_condition = new DEL::Assignment(DEL::ValType::REQ_CHECK, while_condition_variable, artificial_check);
+        update_condition->line_no = stmt.line_no;
+
+        // Get the memory information
+        Memory::MemAlloc condition_mem_alloc = memory_man.get_mem_info(while_condition_variable);
+
+        // Translate data type
+        INTERMEDIATE::TYPES::AssignmentClassifier classifier = (condition_type == ValType::REAL) ? 
+                INTERMEDIATE::TYPES::AssignmentClassifier::DOUBLE : 
+                INTERMEDIATE::TYPES::AssignmentClassifier::INTEGER;
+
+        // Indicate loop start to intermediate
+        INTERMEDIATE::TYPES::WhileLoop * while_loop = new INTERMEDIATE::TYPES::WhileLoop(classifier, condition_mem_alloc);
+
+        // Start the loop
+        intermediate_layer.issue_start_loop(while_loop);
+
+        // Now that we've started the loop, we need to ensure the condition is updated each iteration
+        update_condition->visit(*this);
+
+        // Cleanup of things we don't need anymore
+        delete artificial_value;
+        delete artificial_check;
+        delete c_assign;
+        delete update_condition;
+
+
+        // Compile the statements in the for loop
+        for(auto & el : stmt.elements)
+        {
+            el->visit(*this);
+            delete el;
+        }
+
+        // End the loop
+        intermediate_layer.issue_end_loop(while_loop);
+
+        // Remove the context for the loop
+        symbol_table.remove_current_context();
+
+        delete while_loop;
+    }
+
+    // ----------------------------------------------------------
+    // Named loops are just while loops under the hood
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(NamedLoop & stmt)
+    {
+        std::string artificial_context = symbol_table.generate_unique_context();
+        symbol_table.new_context(artificial_context, false );
+
+        // Ensure the symbol for the loop name is unique
+        ensure_unique_symbol(stmt.name, stmt.line_no);
+
+        // Create a variable for the named loop
+        DEL::AST * loop_variable = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, ValType::INTEGER, "1");
+        Assignment * c_assign = new Assignment(ValType::INTEGER, stmt.name, loop_variable); 
+        c_assign->line_no = stmt.line_no;
+        c_assign->visit(*this);
+
+        delete loop_variable;
+        delete c_assign;
+
+        // Make an expression that is the loop name 
+        DEL::AST * expr = new DEL::AST(DEL::NodeType::ID,  nullptr, nullptr, DEL::ValType::STRING,  stmt.name);
+
+        // Create a while loop with that expression and the loop's elements  ==>  while(loop_name){ loop.eleemnts; }
+        //
+        DEL::WhileLoop * wl = new DEL::WhileLoop(expr, stmt.elements);
+
+        wl->visit(*this);
+
+        // Wl will be deleted by the function that it accepts to
+
+        // Remove the context for the loop
+        symbol_table.remove_current_context();
+    }
+
+    // ----------------------------------------------------------
+    // Annulments set an int or double to their representation of 0
+    // ----------------------------------------------------------
+
+    void Analyzer::accept(AnnulStmt & stmt)
+    {
+        // Ensure variable exists
+        ensure_id_in_current_context(stmt.var, stmt.line_no, {ValType::INTEGER, ValType::REAL});
+
+        DEL::AST * annul_val;
+
+        // Create the correct annulment
+        if(symbol_table.is_existing_symbol_of_type(stmt.var, ValType::REAL))
+        {
+            annul_val = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, ValType::REAL, "0.0");
+        }
+        else
+        {
+            annul_val = new DEL::AST(DEL::NodeType::VAL, nullptr, nullptr, ValType::INTEGER, "0");
+        }
+
+        // Assignment to annul the variable
+        DEL::Assignment * annulment = new DEL::Assignment(DEL::ValType::REQ_CHECK, stmt.var, annul_val); 
+        annulment->set_line_no(stmt.line_no);
+
+        // Execute assignment
+        annulment->visit(*this);
+
+        // Cleanup
+        delete annul_val;
+        delete annulment;
+    }
+
     // -----------------------------------------------------------------------------------------
     // 
     //                              Validation Methods
     //
     // -----------------------------------------------------------------------------------------
+
+    void Analyzer::validate_step(int line, Step * step, ValType loop_type)
+    {
+        if(step->type == ValType::REQ_CHECK)
+        {
+            // If the step is a variable all we can do is ensure that the step variable
+            // exists and matches the type of the loop
+            ensure_id_in_current_context(step->val, line, {loop_type});
+            return;
+        }
+
+        // Ensure that the step type matches the loop type
+        if(step->type != loop_type)
+        {
+            error_man.report_unallowed_type("step", line, true);
+        }
+
+        if(ValType::INTEGER == step->type)
+        {
+            uint64_t s = std::stoull(step->val);
+
+            if(s == 0)
+            {
+                error_man.report_invalid_step(line);
+            }
+        }
+        else if(ValType::REAL == step->type)
+        {
+            double s = std::stod(step->val);
+
+            if(s == 0.0)
+            {
+                error_man.report_invalid_step(line);
+            }
+        }
+        else
+        {
+            error_man.report_custom("Analyzer", 
+                " Developer Error: A step to be validated came in with an unhandled type, grammar should've stopped this",
+                true);
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
+    void Analyzer::validate_range(Range * range, ValType loop_type)
+    {
+        // Integers
+        if(ValType::INTEGER == range->type)
+        {
+            uint64_t start = std::stoull(range->from);
+            uint64_t end   = std::stoull(range->to);
+
+            if(start > end)
+            {
+                error_man.report_range_invalid_start_gt_end(range->line_no, range->from, range->to);
+            }
+
+            if(start == end)
+            {
+                error_man.report_range_ineffective(range->line_no, range->from, range->to);
+            }
+            return;
+        }
+
+        // Reals
+        if(ValType::REAL == range->type)
+        {
+            double start = std::stod(range->from);
+            double end   = std::stod(range->to);
+
+            if(start > end)
+            {
+                error_man.report_range_invalid_start_gt_end(range->line_no, range->from, range->to);
+            }
+
+            if(start == end)
+            {
+                error_man.report_range_ineffective(range->line_no, range->from, range->to);
+            }
+            return;
+        }
+
+        // Something.. more complicated
+        if (ValType::REQ_CHECK == range->type)
+        {
+            // Check from and to, if they aren't a number then they are a variable.
+            // If they are a variable we need to ensure the variable exists and is the same type as the range statement
+            if(!is_only_number(range->from))
+            {
+                ensure_id_in_current_context(range->from, range->line_no, {loop_type});
+            }
+
+            if(!is_only_number(range->to))
+            {
+                ensure_id_in_current_context(range->to, range->line_no, {loop_type});
+            }
+            return;
+        }
+
+
+        // If we come here, an unhandled type cropped up
+        error_man.report_custom("Analyser", 
+            " Developer Error: A range to be validated came in with an unhandled type, grammar should've stopped this",
+            true);
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
 
     void Analyzer::validate_call(Call & stmt)
     {
@@ -395,6 +921,49 @@ namespace DEL
     //
     // ----------------------------------------------------------
 
+    ValType Analyzer::determine_expression_type(AST * ast, AST * traverse, bool left, int line_no)
+    {
+        if(ast->node_type == NodeType::VAL)
+        {
+            return ast->val_type;
+        }
+        else if (ast->node_type == NodeType::ID)
+        {
+            return get_id_type(ast->value, line_no);
+        }
+        else if (ast->node_type == NodeType::CALL)
+        {
+            Call * call = static_cast<Call*>(ast);
+            return call->val_type;
+        }
+
+        if(left)
+        {
+            // This should never happen, but we handle it just in case
+            if(ast->l == nullptr)
+            {
+                return determine_expression_type(traverse, traverse, false, line_no);
+            }
+
+            // Go down left side - we only need to traverse one side
+            return determine_expression_type(ast->l, traverse, true, line_no);
+        }
+        else
+        {
+            // This REALLY should't happen.
+            if(ast->r == nullptr)
+            {
+                error_man.report_custom("Analyzer::determine_expression_type()", " Developer error : Failed to determine expression type", true);
+            }
+
+            return determine_expression_type(ast->r, traverse, false, line_no);
+        }
+    }
+
+    // ----------------------------------------------------------
+    //
+    // ----------------------------------------------------------
+
     void Analyzer::check_value_is_valid_for_assignment(int line_no, ValType type_to_check, INTERMEDIATE::TYPES::AssignmentClassifier & c, ValType & et, std::string & id)
     {
         switch(type_to_check)
@@ -446,7 +1015,7 @@ namespace DEL
         switch(ast->node_type)
         {
             case NodeType::ID  : 
-            { 
+            {
                 // Ensure the ID is within current context. Allowing any type
                 ensure_id_in_current_context(ast->value, line_no, {});
 
