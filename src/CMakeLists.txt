@@ -25,11 +25,20 @@ find_package(libnabla REQUIRED)
 
 include_directories(${LIBNABLA_INCLUDE_DIRS})
 
+
+include_directories(${CMAKE_SOURCE_DIR}/exec)
+
+set(EXEC_SRCS
+        ${CMAKE_SOURCE_DIR}/exec/NablaExec.cpp
+)
+
+
 #-------------------------------------------------
 #   Executable
 #-------------------------------------------------
 
 add_executable(nabla
+        ${EXEC_SRCS}
         main.cpp
 )
 
